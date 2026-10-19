@@ -32,10 +32,29 @@
   }
   .topbar{
     position:sticky;top:0;z-index:10;background:var(--primary);color:#fff;
-    display:flex;align-items:center;gap:8px;padding:10px 14px;flex-wrap:wrap;
+    display:flex;align-items:center;justify-content:space-between;padding:9px 18px;gap:16px;
     box-shadow:0 2px 6px rgba(0,0,0,.15);
   }
-  .topbar h1{font-size:16px;margin:0;font-weight:600;flex:1;min-width:150px}
+  .topbar-left{
+    display:flex;align-items:center;gap:14px;flex:0 0 auto;
+  }
+  .brand-title{
+    font-size:16px;margin:0;font-weight:700;letter-spacing:.3px;white-space:nowrap;
+  }
+  .btn-autofill{
+    border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;
+    padding:6px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;
+    display:inline-flex;align-items:center;gap:5px;transition:all .15s ease;
+  }
+  .btn-autofill:hover{background:#ffd166;color:#14425f;border-color:#ffd166}
+  .desktop-only{display:inline-flex}
+  @media (max-width:768px){
+    .desktop-only{display:none !important}
+    .btn-autofill{display:none !important}
+  }
+  .topbar-right{
+    display:flex;align-items:center;gap:12px;flex:0 0 auto;
+  }
   .tabs{display:flex;background:rgba(255,255,255,.15);border-radius:8px;padding:3px}
   .tabs button{
     border:0;background:transparent;color:#fff;padding:7px 14px;border-radius:6px;
@@ -114,50 +133,162 @@
   .invtable .xbtn{border:0;background:transparent;color:var(--danger);cursor:pointer;font-size:16px}
   .inv-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 
-  /* ---------- PREVIEW ---------- */
-  #summaryTab{display:none}
+  /* ---------- PREVIEW & A4 FORMAT ---------- */
+  #summaryTab{
+    display:none;
+    background:#dfe5ec;
+    padding:20px 10px 40px;
+  }
+  #summaryTab .wrap{
+    max-width:none;
+    padding:0;
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
   .paper{
-    background:var(--paper);border:1px solid var(--line);border-radius:8px;
-    padding:28px 34px;font-size:14px;color:#111;
+    background:#ffffff;
+    width:210mm;
+    min-height:297mm;
+    box-sizing:border-box;
+    padding:16mm 14mm;
+    margin:0 auto 20px;
+    box-shadow:0 0 0 1px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
+    border-radius:2px;
+    font-size:13px;
+    color:#111;
+    position:relative;
   }
-  .doc-head{position:relative;text-align:center;border-bottom:2px solid #111;padding:0 8px 10px;margin-bottom:18px;min-height:66px}
-  .logo-box{position:absolute;left:0;top:0;width:60px;height:60px;border:1px solid #111;object-fit:contain;background:#fff}
-  .logo-box.empty{display:flex;align-items:center;justify-content:center;font-size:9px;color:#b0b0b0;letter-spacing:1px}
-  .head-text{padding:0 4px}
-  .doc-head .college{font-size:19px;font-weight:800;letter-spacing:.5px;text-transform:uppercase}
-  .doc-head .addr{font-size:13px;margin-top:2px;text-transform:uppercase;letter-spacing:.3px}
-  .doc-head .dept{font-size:14px;font-weight:700;margin-top:6px;text-transform:uppercase}
+
+  /* 1.7x enlarged emblem & header */
+  .doc-head{
+    position:relative;text-align:center;border-bottom:2px solid #111;
+    padding:0 8px 12px;margin-bottom:14px;min-height:112px;
+  }
+  .logo-box{
+    position:absolute;left:0;top:0;width:105px;height:105px;
+    border:none;object-fit:contain;background:transparent;
+  }
+  .logo-box.empty{display:flex;align-items:center;justify-content:center;font-size:9px;color:#b0b0b0;letter-spacing:1px;border:1px solid #ccc}
+  .head-text{padding:0 115px}
+  .doc-head .college{font-size:18px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;line-height:1.2}
+  .doc-head .addr{font-size:12px;margin-top:2px;text-transform:uppercase;letter-spacing:.3px}
+  .doc-head .dept{font-size:13px;font-weight:700;margin-top:4px;text-transform:uppercase}
   .doc-head .kind{
-    display:inline-block;margin-top:8px;font-size:13.5px;font-weight:700;
-    border:1.5px solid #111;padding:3px 14px;border-radius:3px;text-transform:uppercase;
+    display:inline-block;margin-top:6px;font-size:13px;font-weight:700;
+    border:1.5px solid #111;padding:2px 14px;border-radius:3px;text-transform:uppercase;
   }
+
   .pt-grid{
-    display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:6px 20px;margin:16px 0 6px;
-    font-size:13.5px;
+    display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:5px 16px;margin:12px 0 6px;
+    font-size:13px;break-inside:avoid;page-break-inside:avoid;
   }
-  .pt-grid div{padding:3px 0;border-bottom:1px dotted #bbb;min-height:24px}
-  .pt-grid b{display:inline-block;min-width:66px;font-weight:700}
-  .sec{margin-top:20px}
+  .pt-grid div{padding:2.5px 0;border-bottom:1px dotted #bbb;min-height:22px}
+  .pt-grid b{display:inline-block;min-width:64px;font-weight:700}
+
+  /* Optimized space-occupying section styles */
+  .sec{
+    margin-top:11px;
+    page-break-inside:auto;
+    break-inside:auto;
+  }
   .sec h3{
-    font-size:14px;font-weight:800;text-transform:uppercase;margin:0 0 7px;
-    border-bottom:1.5px solid #111;padding-bottom:2px;letter-spacing:.5px;display:inline-block;
+    font-size:13px;font-weight:800;text-transform:uppercase;margin:0 0 4px;
+    border-bottom:1.5px solid #111;padding-bottom:1px;letter-spacing:.5px;display:inline-block;
+    page-break-after:avoid;
+    break-after:avoid;
   }
-  .sec .content{font-size:14px;white-space:pre-wrap}
-  .sec ul{margin:4px 0 0;padding-left:20px}
-  .sec ul li{margin-bottom:2px}
+  .sec .content{font-size:13px;line-height:1.4;white-space:pre-wrap}
+  .sec ul{margin:3px 0 0;padding-left:18px;page-break-inside:auto;break-inside:auto}
+  .sec ul li{margin-bottom:1.5px;line-height:1.35;page-break-inside:avoid;break-inside:avoid}
   .empty{color:#999;font-style:italic}
-  .prev-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}
-  .prev-table th,.prev-table td{border:1px solid #333;padding:5px 8px;text-align:center}
+
+  /* Investigation table that breaks & flows naturally across pages */
+  .inv-table-wrap{overflow-x:auto;page-break-inside:auto;break-inside:auto}
+  .prev-table{
+    width:100%;border-collapse:collapse;font-size:12px;margin-top:3px;
+    page-break-inside:auto;break-inside:auto;
+  }
+  .prev-table th,.prev-table td{border:1px solid #333;padding:3.5px 6px;text-align:center}
   .prev-table th{background:#f0f0f0;font-weight:700}
   .prev-table td.pn{text-align:left;font-weight:600}
-  .sign-row{display:flex;justify-content:space-between;margin-top:40px;font-size:13px}
+  .prev-table thead{display:table-header-group}
+  .prev-table tr{page-break-inside:avoid;break-inside:avoid}
+
+  /* Sub-blocks in discharge advice that stay intact individually while letting the section break across pages */
+  .adv-items-group{page-break-inside:auto;break-inside:auto}
+  .adv-item{page-break-inside:avoid;break-inside:avoid;line-height:1.4}
+  .med-list{margin:3px 0 0;padding-left:18px;page-break-inside:auto;break-inside:auto}
+  .med-list li{margin-bottom:2px;page-break-inside:avoid;break-inside:avoid}
+
+  .sign-row{
+    display:flex;justify-content:space-between;margin-top:24px;font-size:12.5px;
+    page-break-inside:avoid;break-inside:avoid;
+  }
   .sign-row div{text-align:center;border-top:1px solid #111;padding-top:4px;min-width:180px}
 
+  /* Visual A4 page break indicator line on screen */
+  .a4-page-guide{
+    position:absolute;left:-14mm;right:-14mm;width:calc(100% + 28mm);
+    height:32px;background:#dfe5ec;
+    border-top:1px solid #c7d2dc;border-bottom:1px solid #c7d2dc;
+    box-shadow:inset 0 2px 4px rgba(0,0,0,0.06);
+    display:flex;align-items:center;justify-content:center;
+    pointer-events:none;z-index:10;
+  }
+  .a4-page-guide-badge{
+    background:#14425f;color:#fff;font-size:11px;font-weight:700;
+    padding:3px 14px;border-radius:12px;letter-spacing:.6px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.18);text-transform:uppercase;
+  }
+
   @media (max-width:620px){
-    .pt-grid{grid-template-columns:1fr 1fr}
-    .paper{padding:20px 16px}
-    .doc-head .college{font-size:16px}
-    .wrap{padding:10px}
+    .topbar{padding:8px 10px;gap:8px;flex-wrap:wrap}
+    .topbar-left{width:100%;justify-content:space-between}
+    .brand-title{font-size:15px}
+    .desktop-only,.btn-autofill{display:none !important}
+    .topbar-right{width:100%;display:flex;flex-direction:column;gap:6px}
+    .tabs{width:100%;display:flex}
+    .tabs button{flex:1;text-align:center;padding:7px 10px;font-size:13.5px}
+    .actions{width:100%;display:flex;justify-content:space-between;gap:6px}
+    .actions button{flex:1;padding:7px 4px;font-size:12px;text-align:center}
+
+    .wrap{padding:8px}
+    .card{margin-bottom:10px;border-radius:8px}
+    .card > summary{padding:10px 12px;font-size:13.5px}
+    .card .body{padding:10px}
+
+    .paper{
+      width:100%;min-height:auto;padding:14px 10px;
+      font-size:12.5px;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.12);
+    }
+    .doc-head{
+      display:flex;flex-direction:row;align-items:center;gap:12px;
+      text-align:left;padding:0 0 10px;margin-bottom:12px;min-height:auto;
+    }
+    .logo-box{position:static;width:75px;height:75px;flex:0 0 75px;border:none}
+    .head-text{padding:0;flex:1;min-width:0;text-align:left}
+    .doc-head .college{font-size:14px;line-height:1.2}
+    .doc-head .addr{font-size:11px}
+    .doc-head .dept{font-size:11.5px;margin-top:2px}
+    .doc-head .kind{font-size:11px;padding:2px 8px;margin-top:4px}
+
+    .pt-grid{grid-template-columns:1fr 1fr;gap:4px 8px;font-size:12px;margin:10px 0 4px}
+    .pt-grid div{min-height:22px;padding:2px 0}
+    .pt-grid b{min-width:54px}
+    .pt-grid div:last-child:nth-child(odd){grid-column:1 / -1}
+
+    .vitals-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+    .addrow > div{min-width:calc(50% - 6px);flex:1}
+    .addrow > div[style*="flex:2"]{min-width:100%}
+    .addrow > div[style*="flex:0"]{min-width:100%;margin-top:4px}
+    .addrow > div[style*="flex:0"] button{width:100%;padding:8px;font-size:13px}
+
+    .chip{padding:6px 11px;font-size:12px}
+    .sign-row{margin-top:24px;font-size:12px;gap:10px}
+    .sign-row div{min-width:0;flex:1}
+    .a4-page-guide{display:none !important}
   }
 
   /* ---------- new field types ---------- */
@@ -177,40 +308,70 @@
   .inline-btn-field input{flex:1}
   .inline-btn-field button{flex:0 0 auto}
   .pagebanner{
-    display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;
-    font-size:13px;font-weight:600;margin-bottom:12px;
+    display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:8px;
+    font-size:13px;font-weight:600;margin-bottom:14px;max-width:210mm;width:100%;box-sizing:border-box;
   }
   .pagebanner.ok{background:#e3f4ea;color:#1c6b3f}
   .pagebanner.warn{background:#fdecea;color:#a4322a}
   .install-btn{display:none}
 
-  /* ---------- print compaction (applies to same markup on screen preview too) ---------- */
-  .paper.compact .sec{margin-top:13px}
-  .paper.compact .sec h3{font-size:12.5px;margin-bottom:5px}
-  .paper.compact .content,.paper.compact li,.paper.compact .prev-table{font-size:12px}
-  .paper.compact .doc-head{margin-bottom:10px;padding-bottom:6px;min-height:54px}
-  .paper.compact .logo-box{width:48px;height:48px}
+  /* ---------- Space-occupying compaction levels ---------- */
+  .paper.relaxed .sec{margin-top:14px}
+  .paper.relaxed .sec h3{font-size:13.5px;margin-bottom:6px}
+  .paper.relaxed .content,.paper.relaxed li,.paper.relaxed .prev-table{font-size:13px;line-height:1.48}
+  .paper.relaxed .pt-grid{margin:14px 0 8px;font-size:13px;gap:5px 16px}
+  .paper.relaxed .sign-row{margin-top:36px}
+
+  .paper.compact .sec{margin-top:7px}
+  .paper.compact .sec h3{font-size:12px;margin-bottom:2px}
+  .paper.compact .content,.paper.compact li,.paper.compact .prev-table,.paper.compact .adv-item{font-size:11.5px;line-height:1.30}
+  .paper.compact .prev-table th,.paper.compact .prev-table td{padding:2.5px 5px}
+  .paper.compact .doc-head{margin-bottom:8px;padding-bottom:6px;min-height:92px}
+  .paper.compact .logo-box{width:88px;height:88px}
+  .paper.compact .head-text{padding:0 92px}
   .paper.compact .doc-head .college{font-size:16px}
-  .paper.compact .pt-grid{margin:10px 0 4px;font-size:12px;gap:4px 16px}
-  .paper.compact .sign-row{margin-top:26px}
-  .paper.compact2 .sec{margin-top:9px}
-  .paper.compact2 .sec h3{font-size:11.5px;margin-bottom:3px}
-  .paper.compact2 .content,.paper.compact2 li,.paper.compact2 .prev-table{font-size:11px}
-  .paper.compact2 .doc-head{margin-bottom:7px;padding-bottom:5px;min-height:46px}
-  .paper.compact2 .logo-box{width:40px;height:40px}
+  .paper.compact .pt-grid{margin:6px 0 3px;font-size:11.5px;gap:2.5px 12px}
+  .paper.compact .sign-row{margin-top:16px}
+
+  .paper.compact2 .sec{margin-top:5px}
+  .paper.compact2 .sec h3{font-size:11px;margin-bottom:2px}
+  .paper.compact2 .content,.paper.compact2 li,.paper.compact2 .prev-table,.paper.compact2 .adv-item{font-size:10.5px;line-height:1.22}
+  .paper.compact2 .prev-table th,.paper.compact2 .prev-table td{padding:1.5px 4px}
+  .paper.compact2 .doc-head{margin-bottom:5px;padding-bottom:4px;min-height:76px}
+  .paper.compact2 .logo-box{width:72px;height:72px}
+  .paper.compact2 .head-text{padding:0 76px}
   .paper.compact2 .doc-head .college{font-size:14px}
-  .paper.compact2 .doc-head .addr,.paper.compact2 .doc-head .dept{font-size:11px}
-  .paper.compact2 .pt-grid{margin:8px 0 3px;font-size:11px;gap:3px 14px}
-  .paper.compact2 .sign-row{margin-top:16px;font-size:11px}
+  .paper.compact2 .doc-head .addr,.paper.compact2 .doc-head .dept{font-size:10px}
+  .paper.compact2 .pt-grid{margin:4px 0 2px;font-size:10.5px;gap:2px 10px}
+  .paper.compact2 .sign-row{margin-top:12px;font-size:10px}
 
   /* ---------- PRINT ---------- */
   @media print{
-    .topbar,#formTab,.no-print{display:none !important}
-    #summaryTab{display:block !important}
-    body{background:#fff}
-    .wrap{max-width:none;padding:0;margin:0}
-    .paper{border:0;border-radius:0;padding:0;font-size:12.5px}
-    .sec{page-break-inside:avoid}
+    .topbar,#formTab,.no-print,.a4-page-guide,.pagebanner{display:none !important}
+    #summaryTab{display:block !important;padding:0 !important;background:#fff !important}
+    body{background:#fff !important}
+    .wrap{max-width:none !important;padding:0 !important;margin:0 !important}
+    .paper{
+      width:auto !important;
+      min-height:0 !important;
+      border:0 !important;
+      border-radius:0 !important;
+      box-shadow:none !important;
+      padding:0 !important;
+      margin:0 !important;
+      font-size:12px;
+    }
+    .sec{page-break-inside:auto !important;break-inside:auto !important}
+    .sec h3{page-break-after:avoid !important;break-after:avoid !important}
+    .sec ul{page-break-inside:auto !important;break-inside:auto !important}
+    .sec ul li{page-break-inside:avoid !important;break-inside:avoid !important}
+    .inv-table-wrap{overflow:visible !important;page-break-inside:auto !important;break-inside:auto !important}
+    .prev-table{page-break-inside:auto !important;break-inside:auto !important}
+    .prev-table thead{display:table-header-group !important}
+    .prev-table tr{page-break-inside:avoid !important;break-inside:avoid !important}
+    .pt-grid,.sign-row{page-break-inside:avoid !important;break-inside:avoid !important}
+    .adv-items-group,.med-list{page-break-inside:auto !important;break-inside:auto !important}
+    .adv-item{page-break-inside:avoid !important;break-inside:avoid !important}
     @page{size:A4;margin:16mm 14mm}
   }
 </style>
@@ -218,16 +379,21 @@
 <body>
 
 <div class="topbar">
-  <h1>Discharge Summary Builder</h1>
-  <div class="tabs">
-    <button id="tabForm" class="active" onclick="showTab('form')">Fill form</button>
-    <button id="tabSummary" onclick="showTab('summary')">View summary</button>
+  <div class="topbar-left">
+    <h1 class="brand-title">Discharge Summary Builder</h1>
+    <button id="btnAutofill" type="button" class="btn-autofill desktop-only" onclick="autofillTest()" title="Autofill sample patient data for testing (Desktop only)">⚡ Autofill (test)</button>
   </div>
-  <div class="actions">
-    <button class="ghost install-btn" id="installBtn" onclick="doInstall()">Install app</button>
-    <button class="ghost" onclick="newSummary()">New patient</button>
-    <button class="ghost" onclick="copyText()">Copy text</button>
-    <button onclick="checkAndPrint()">Print / PDF</button>
+  <div class="topbar-right">
+    <div class="tabs">
+      <button id="tabForm" class="active" onclick="showTab('form')">Fill form</button>
+      <button id="tabSummary" onclick="showTab('summary')">View summary</button>
+    </div>
+    <div class="actions">
+      <button class="ghost install-btn" id="installBtn" onclick="doInstall()">Install app</button>
+      <button class="ghost" onclick="newSummary()">New patient</button>
+      <button class="ghost" onclick="copyText()">Copy text</button>
+      <button onclick="checkAndPrint()">Print / PDF</button>
+    </div>
   </div>
 </div>
 
@@ -280,13 +446,9 @@
         </div>
         <div><label>IP No.</label><input type="text" id="ipno"></div>
       </div>
-      <div class="field"><label>Resides at (address)</label><input type="text" id="resides" placeholder="No. __, __ Street, __"></div>
       <div class="row">
         <div><label>Date of Admission (DOA)</label><input type="date" id="doa"></div>
-        <div><label>Date of Surgery (DOS)</label><input type="date" id="dos"></div>
-      </div>
-      <div class="row">
-        <div style="flex:2">
+        <div>
           <label>Date of Discharge (DOD)</label>
           <div class="inline-btn-field">
             <input type="date" id="dod">
@@ -294,7 +456,6 @@
           </div>
           <p class="hint">Defaults to today — edit or clear as needed.</p>
         </div>
-        <div><label>ICU Duration</label><input type="text" id="icuDuration" placeholder="e.g. 2 days / Nil"></div>
       </div>
       <div class="subhead">Unit</div>
       <div class="unit-row">
@@ -306,19 +467,15 @@
           </select>
         </div>
       </div>
-      <div class="field"><label>Custom unit (overrides prefix + numeral if filled)</label>
-        <input type="text" id="unitCustom" placeholder="e.g. Ortho Unit II"></div>
-      <div class="row">
-        <div><label>Department / Referred Unit</label><input type="text" id="referred" placeholder="optional"></div>
-        <div><label>Mode of Discharge</label>
-          <select id="modeOfDischarge">
-            <option>Discharge</option>
-            <option>At Request Discharge</option>
-            <option>LAMA</option>
-            <option>Absconded</option>
-            <option>Death</option>
-          </select>
-        </div>
+      <div class="field" style="margin-top:12px">
+        <label>Mode of Discharge</label>
+        <select id="modeOfDischarge">
+          <option>Discharge</option>
+          <option>At Request Discharge</option>
+          <option>LAMA</option>
+          <option>Absconded</option>
+          <option>Death</option>
+        </select>
       </div>
     </div>
   </details>
@@ -328,10 +485,6 @@
     <div class="body">
       <label>Diagnosis (one per line)</label>
       <textarea id="diagnosis" placeholder="e.g.&#10;Dengue fever with warning signs&#10;Thrombocytopenia"></textarea>
-      <div class="field" style="margin-top:10px"><label>ICD Code(s)</label>
-        <input type="text" id="icdCode" placeholder="e.g. A91, D69.6"></div>
-      <div class="field"><label>Surgery / Management (brief, one line)</label>
-        <input type="text" id="surgeryBrief" placeholder="e.g. Left dental tooth extraction of 26 done under LA"></div>
     </div>
   </details>
 
@@ -356,13 +509,10 @@
   </details>
 
   <details class="card">
-    <summary>History (HOPI, Past History, Comorbidities, Rx Hx)</summary>
+    <summary>History (HOPI, Past History, Rx Hx)</summary>
     <div class="body">
       <div class="subhead">History of Present Illness (HOPI)</div>
       <textarea id="hopi" placeholder="The patient was apparently normal [__] back, then developed..."></textarea>
-
-      <div class="subhead">Clinical History</div>
-      <textarea id="clinicalHistory" placeholder="Onset, duration, progression, associated symptoms, negative history..."></textarea>
 
       <div class="subhead">Past History</div>
       <div class="chips" id="pastChips"></div>
@@ -371,14 +521,6 @@
         <div style="flex:0"><button class="btn sm" onclick="addPast()">Add</button></div>
       </div>
       <ul class="list" id="pastListOut"></ul>
-
-      <div class="subhead">Comorbidities</div>
-      <div class="chips" id="comorbidChips"></div>
-      <div class="addrow">
-        <div style="flex:1"><input type="text" id="comorbidText" placeholder="e.g. Systemic Hypertension"></div>
-        <div style="flex:0"><button class="btn sm" onclick="addComorbid()">Add</button></div>
-      </div>
-      <ul class="list" id="comorbidListOut"></ul>
 
       <div class="subhead">Rx History (home medications before admission)</div>
       <div class="addrow">
@@ -427,17 +569,6 @@
   </details>
 
   <details class="card">
-    <summary>Course in the hospital</summary>
-    <div class="body">
-      <label>Insert a template (tap to drop in, then edit the blanks)</label>
-      <div class="chips" id="courseTpl"></div>
-      <label>Narrative</label>
-      <textarea id="course" style="min-height:150px" placeholder="Patient admitted with above complaints. Evaluated and managed as detailed. Responded to treatment…"></textarea>
-      <p class="hint">Tapping a template appends to whatever's already in the box. Fill the [ ] blanks.</p>
-    </div>
-  </details>
-
-  <details class="card">
     <summary>Investigations</summary>
     <div class="body">
       <div class="inv-controls">
@@ -451,6 +582,25 @@
         <label>Other investigations / imaging (free text)</label>
         <textarea id="invOther" placeholder="ECG: sinus tachycardia&#10;CXR: normal study&#10;USG abdomen: mild hepatomegaly"></textarea>
       </div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Opinions</summary>
+    <div class="body">
+      <label>Consultations / opinions obtained</label>
+      <textarea id="opinions" placeholder="Cardiology opinion obtained — advised…&#10;Nephrology opinion obtained — advised…"></textarea>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Course in the hospital</summary>
+    <div class="body">
+      <label>Insert a template (tap to drop in, then edit the blanks)</label>
+      <div class="chips" id="courseTpl"></div>
+      <label>Narrative</label>
+      <textarea id="course" style="min-height:150px" placeholder="Patient admitted with above complaints. Evaluated and managed as detailed. Responded to treatment…"></textarea>
+      <p class="hint">Tapping a template appends to whatever's already in the box. Fill the [ ] blanks.</p>
     </div>
   </details>
 
@@ -474,22 +624,6 @@
         <div style="flex:0"><button class="btn sm" onclick="addTx()">Add</button></div>
       </div>
       <ul class="list" id="txListOut"></ul>
-    </div>
-  </details>
-
-  <details class="card">
-    <summary>Opinions</summary>
-    <div class="body">
-      <label>Consultations / opinions obtained</label>
-      <textarea id="opinions" placeholder="Cardiology opinion obtained — advised…&#10;Nephrology opinion obtained — advised…"></textarea>
-    </div>
-  </details>
-
-  <details class="card">
-    <summary>Management / Surgery (Operation Notes)</summary>
-    <div class="body">
-      <label>Detailed operation / procedure notes</label>
-      <textarea id="opNotes" placeholder="e.g. Left dental tooth extraction of 26 done under LA. No intraoperative complications..."></textarea>
     </div>
   </details>
 
@@ -616,8 +750,6 @@ const COMMON_PAST = ["K/C/O T2DM on medication","K/C/O Systemic Hypertension on 
   "K/C/O CAD","K/C/O CVA","K/C/O Epilepsy","K/C/O Bronchial Asthma/COPD","K/C/O CKD",
   "K/C/O Koch's disease (TB) — treated","K/C/O Chronic Liver Disease","K/C/O Hypothyroidism",
   "No significant past history"];
-const COMMON_COMORBID = ["Type 2 Diabetes Mellitus","Systemic Hypertension","Coronary Artery Disease",
-  "Chronic Kidney Disease","COPD / Bronchial Asthma","Hypothyroidism","No other co-morbidities"];
 
 const RX_BUNDLES={
  "CAD":["Tab. Aspirin 75 mg OD (continue)","Tab. Clopidogrel 75 mg OD × 12 months","Tab. Atorvastatin 40 mg HS (continue)","Tab. Metoprolol 25 mg BD (continue)","Tab. Ramipril 2.5 mg OD (continue)","Tab. Sorbitrate 5 mg SL SOS (for chest pain)"],
@@ -657,7 +789,7 @@ const COURSE_TEMPLATES=[
 let complaints=[], treatment=[], rxMeds=[];
 let invDates=[], invParams=[], invSeq=0;
 let logoData="omandurar_footer.jpg";
-let pastHistory=[], comorbidities=[], rxHistory=[];
+let pastHistory=[], rxHistory=[];
 let ynState={physio:"",equip:"",dress:""};
 
 /* ---------- init datalists & chips ---------- */
@@ -672,8 +804,6 @@ document.getElementById("condChips").innerHTML =
   COMMON_COND.map(c=>`<span class="chip" onclick="document.getElementById('condition').value='${c}';render()">${c}</span>`).join("");
 document.getElementById("pastChips").innerHTML =
   COMMON_PAST.map(c=>`<span class="chip" onclick="document.getElementById('pastText').value=${JSON.stringify(c)};addPast()">${c}</span>`).join("");
-document.getElementById("comorbidChips").innerHTML =
-  COMMON_COMORBID.map(c=>`<span class="chip" onclick="document.getElementById('comorbidText').value=${JSON.stringify(c)};addComorbid()">${c}</span>`).join("");
 document.getElementById("invPanels").innerHTML =
   Object.keys(PANELS).map(p=>`<span class="chip" onclick="addPanel('${p}')">+ ${p}</span>`).join("");
 document.getElementById("courseTpl").innerHTML =
@@ -714,7 +844,7 @@ function renderComplaints(){
     `<li><span>${esc(c)}</span><button onclick="complaints.splice(${i},1);renderComplaints();render()">×</button></li>`).join("");
 }
 
-/* ---------- past history / comorbidities / rx history ---------- */
+/* ---------- past history / rx history ---------- */
 function addPast(){
   const t=document.getElementById("pastText").value.trim(); if(!t)return;
   pastHistory.push(t); document.getElementById("pastText").value="";
@@ -723,15 +853,6 @@ function addPast(){
 function renderPast(){
   document.getElementById("pastListOut").innerHTML = pastHistory.map((c,i)=>
     `<li><span>${esc(c)}</span><button onclick="pastHistory.splice(${i},1);renderPast();render()">×</button></li>`).join("");
-}
-function addComorbid(){
-  const t=document.getElementById("comorbidText").value.trim(); if(!t)return;
-  comorbidities.push(t); document.getElementById("comorbidText").value="";
-  renderComorbid();render();
-}
-function renderComorbid(){
-  document.getElementById("comorbidListOut").innerHTML = comorbidities.map((c,i)=>
-    `<li><span>${esc(c)}</span><button onclick="comorbidities.splice(${i},1);renderComorbid();render()">×</button></li>`).join("");
 }
 function addRxHistory(){
   const n=document.getElementById("rxhName").value.trim(); if(!n)return;
@@ -765,8 +886,6 @@ function setYN(key,val_){
 
 /* ---------- unit & honorific helpers ---------- */
 function getUnit(){
-  const custom=val("unitCustom");
-  if(custom) return custom;
   return (val("unitPrefix")||"")+(document.getElementById("unitRoman").value||"");
 }
 function ensureDr(name){
@@ -865,37 +984,27 @@ function render(){
   const ageSex=[val("age"),val("sex")].filter(Boolean).join(" / ");
   h+=`<div class="pt-grid">
     <div><b>Name</b> : ${esc(val("name"))}</div>
-    <div><b>DOA</b> : ${fmtDate(val("doa"))}</div>
-    <div><b>Unit</b> : ${esc(getUnit())}</div>
     <div><b>Age/Sex</b> : ${esc(ageSex)}</div>
-    <div><b>DOS</b> : ${fmtDate(val("dos"))}</div>
-    <div><b>Dept/Unit</b> : ${esc(val("referred"))}</div>
     <div><b>IP No.</b> : ${esc(val("ipno"))}</div>
+    <div><b>DOA</b> : ${fmtDate(val("doa"))}</div>
     <div><b>DOD</b> : ${fmtDate(val("dod"))}</div>
-    <div><b>ICU Duration</b> : ${esc(val("icuDuration"))}</div>
-    <div><b>Resides at</b> : ${esc(val("resides"))}</div>
+    <div><b>Unit</b> : ${esc(getUnit())}</div>
     <div><b>Mode of D/C</b> : ${esc(val("modeOfDischarge"))}</div>
-    <div></div>
   </div>`;
 
-  const diagICD=val("icdCode");
-  h+=section("Diagnosis"+(val("icdCode")?" with ICD Code":""), listOrText(val("diagnosis"))+(val("icdCode")?`<div class="content" style="margin-top:4px"><b>ICD Code:</b> ${esc(val("icdCode"))}</div>`:""));
-  if(val("surgeryBrief")) h+=section("Surgery / Management", `<div class="content">${esc(val("surgeryBrief"))}</div>`);
+  h+=section("Diagnosis", listOrText(val("diagnosis")));
 
   h+=section("Presenting Complaints (Chief C/O)", complaints.length?ul(complaints):empty());
   if(val("hopi")) h+=section("HOPI", `<div class="content">${esc(val("hopi"))}</div>`);
-  if(val("clinicalHistory")) h+=section("Clinical History", `<div class="content">${esc(val("clinicalHistory"))}</div>`);
   if(pastHistory.length) h+=section("Past History", ul(pastHistory));
-  if(comorbidities.length) h+=section("Comorbidities", ul(comorbidities));
   if(rxHistory.length) h+=section("Rx History", ul(rxHistory));
 
   const exam = examinationHTML();
   if(exam) h+=section("Examination", exam);
 
-  h+=section("Course in the Hospital", val("course")?`<div class="content">${esc(val("course"))}</div>`:empty());
   h+=section("Investigations", investigationsHTML());
   h+=section("Opinions", val("opinions")?`<div class="content">${esc(val("opinions"))}</div>`:empty());
-  if(val("opNotes")) h+=section("Management / Surgery (Operation Notes)", `<div class="content">${esc(val("opNotes"))}</div>`);
+  h+=section("Course in the Hospital", val("course")?`<div class="content">${esc(val("course"))}</div>`:empty());
   h+=section("Treatment Given", treatment.length?ul(treatment):empty());
   const cond=[val("condition"),val("condExtra")].filter(Boolean).join(" — ");
   h+=section("Condition at Discharge", cond?`<div class="content">${esc(cond)}</div>`:empty());
@@ -903,18 +1012,21 @@ function render(){
   // discharge advice block
   let adv="";
   const advBits=[];
-  if(val("diet")) advBits.push(`<b>Diet:</b> ${esc(val("diet"))}`);
-  if(val("physicalActivity")) advBits.push(`<b>Physical Activity:</b> ${esc(val("physicalActivity"))}`);
-  if(ynState.physio) advBits.push(`<b>Physiotherapy at home:</b> ${ynState.physio}`);
-  if(ynState.equip) advBits.push(`<b>Home medical equipment needed:</b> ${ynState.equip}`);
-  if(ynState.dress) advBits.push(`<b>Dressing needs at home:</b> ${ynState.dress}`);
-  if(val("otherNeeds")) advBits.push(`<b>Other needs:</b> ${esc(val("otherNeeds"))}`);
-  if(advBits.length) adv+=`<div class="content">${advBits.join("<br>")}</div>`;
-  if(rxMeds.length) adv+=`<div style="font-weight:700;margin-top:6px;margin-bottom:2px">Medications:</div>${ul(rxMeds)}`;
-  if(val("advice")) adv+=`<div class="content" style="margin-top:6px">${esc(val("advice"))}</div>`;
-  if(val("emergencyContact")) adv+=`<div class="content" style="margin-top:6px"><b>Emergency contact:</b> ${esc(val("emergencyContact"))}</div>`;
-  if(val("review")) adv+=`<div class="content" style="margin-top:6px"><b>Follow-Up:</b> ${esc(val("review"))}</div>`;
-  if(val("warning")) adv+=`<div class="content" style="margin-top:6px"><b>Return immediately if:</b> ${esc(val("warning"))}</div>`;
+  if(val("diet")) advBits.push(`<div class="adv-item"><b>Diet:</b> ${esc(val("diet"))}</div>`);
+  if(val("physicalActivity")) advBits.push(`<div class="adv-item"><b>Physical Activity:</b> ${esc(val("physicalActivity"))}</div>`);
+  if(ynState.physio) advBits.push(`<div class="adv-item"><b>Physiotherapy at home:</b> ${ynState.physio}</div>`);
+  if(ynState.equip) advBits.push(`<div class="adv-item"><b>Home medical equipment needed:</b> ${ynState.equip}</div>`);
+  if(ynState.dress) advBits.push(`<div class="adv-item"><b>Dressing needs at home:</b> ${ynState.dress}</div>`);
+  if(val("otherNeeds")) advBits.push(`<div class="adv-item"><b>Other needs:</b> ${esc(val("otherNeeds"))}</div>`);
+  if(advBits.length) adv+=`<div class="adv-items-group">${advBits.join("")}</div>`;
+  if(rxMeds.length) {
+    adv+=`<div class="adv-item" style="font-weight:700;margin-top:6px;margin-bottom:2px">Medications:</div>`;
+    adv+=`<ul class="med-list">${rxMeds.map(m=>`<li class="adv-item">${esc(m)}</li>`).join("")}</ul>`;
+  }
+  if(val("advice")) adv+=`<div class="content adv-item" style="margin-top:5px">${esc(val("advice"))}</div>`;
+  if(val("emergencyContact")) adv+=`<div class="content adv-item" style="margin-top:5px"><b>Emergency contact:</b> ${esc(val("emergencyContact"))}</div>`;
+  if(val("review")) adv+=`<div class="content adv-item" style="margin-top:5px"><b>Follow-Up:</b> ${esc(val("review"))}</div>`;
+  if(val("warning")) adv+=`<div class="content adv-item" style="margin-top:5px"><b>Return immediately if:</b> ${esc(val("warning"))}</div>`;
   h+=section("Advice on Discharge (Rx)", adv||empty());
 
   const prep=ensureDr(val("preparedBy")), chf=ensureDr(val("chief"));
@@ -927,7 +1039,7 @@ function render(){
   document.getElementById("paper").innerHTML=h;
   scheduleSave();
   clearTimeout(pageCheckTimer);
-  pageCheckTimer=setTimeout(updatePageBanner,400);
+  pageCheckTimer=setTimeout(autoOptimizeSpacing,100);
 }
 function section(title,content){return `<div class="sec"><h3>${title}</h3>${content}</div>`;}
 function empty(){return `<div class="empty">—</div>`;}
@@ -950,7 +1062,7 @@ function investigationsHTML(){
   let out="";
   const hasTable = invDates.length && invParams.some(p=>p.name.trim());
   if(hasTable){
-    let h=`<table class="prev-table"><thead><tr><th>Investigation</th>`;
+    let h=`<div class="inv-table-wrap"><table class="prev-table"><thead><tr><th>Investigation</th>`;
     invDates.forEach(d=>{h+=`<th>${d.date?fmtDateShort(d.date):"—"}</th>`;});
     h+=`</tr></thead><tbody>`;
     invParams.forEach(p=>{
@@ -959,9 +1071,9 @@ function investigationsHTML(){
       invDates.forEach(d=>{h+=`<td>${esc(p.values[d.id]||"")}</td>`;});
       h+=`</tr>`;
     });
-    h+=`</tbody></table>`;out+=h;
+    h+=`</tbody></table></div>`;out+=h;
   }
-  if(val("invOther")) out+=`<div class="content" style="margin-top:8px">${esc(val("invOther"))}</div>`;
+  if(val("invOther")) out+=`<div class="content" style="margin-top:6px">${esc(val("invOther"))}</div>`;
   return out||empty();
 }
 
@@ -972,7 +1084,7 @@ function showTab(t){
   document.getElementById("summaryTab").style.display=form?"none":"block";
   document.getElementById("tabForm").classList.toggle("active",form);
   document.getElementById("tabSummary").classList.toggle("active",!form);
-  if(!form){render();window.scrollTo(0,0);updatePageBanner();}
+  if(!form){render();window.scrollTo(0,0);setTimeout(autoOptimizeSpacing,60);}
 }
 function copyText(){
   render();
@@ -989,53 +1101,127 @@ function toast(msg){
   document.body.appendChild(el);setTimeout(()=>el.remove(),2200);
 }
 
-/* ---------- A4 page-count measurement & print ---------- */
+/* ---------- A4 page-count measurement, auto-fit & print ---------- */
 let pageCheckTimer;
-const PAGE_PX_HEIGHT=1000; // approx A4 content height in px after 16mm top/bottom margins
-const PAGE_PX_WIDTH=688;   // approx A4 content width in px after 14mm left/right margins
+const PAGE_PX_HEIGHT=1000; // approx A4 printable height in px after 16mm top/bottom margins
+const PAGE_PX_WIDTH=688;   // approx A4 printable width in px after 14mm left/right margins
 
 function measurePagesFor(compactClass){
   const src=document.getElementById("paper");
+  if(!src) return {height: 0, pages: 1};
   const clone=document.createElement("div");
   clone.className="paper"+(compactClass?" "+compactClass:"");
-  clone.style.cssText=`position:absolute;left:-9999px;top:0;width:${PAGE_PX_WIDTH}px;padding:0;border:0;font-size:12.5px;`;
-  clone.innerHTML=src.innerHTML;
+  clone.style.cssText=`position:absolute;left:-9999px;top:0;width:${PAGE_PX_WIDTH}px;padding:0;border:0;box-sizing:border-box;`;
+  clone.innerHTML=src.innerHTML.replace(/<div class="a4-page-guide[^"]*"[^>]*><\/div>/g,"");
   document.body.appendChild(clone);
   const hgt=clone.scrollHeight;
   document.body.removeChild(clone);
   return {height:hgt, pages: hgt/PAGE_PX_HEIGHT};
 }
 
+function autoOptimizeSpacing(){
+  const paper=document.getElementById("paper");
+  if(!paper) return;
+
+  // Clear previous compaction classes
+  paper.classList.remove("relaxed","compact","compact2");
+
+  // Step 1: Measure standard density
+  let r=measurePagesFor("");
+
+  // Space-occupying auto-fit algorithm:
+  // Case 1: Very short content (< 0.65 pages) -> relaxed spacing fills the page pleasantly
+  if(r.pages < 0.65){
+    paper.classList.add("relaxed");
+  }
+  // Case 2: Slight overflow beyond 1 page (up to 1.25 pages) -> compact brings it to exactly 1 page
+  else if(r.pages > 1.00 && r.pages <= 1.25){
+    paper.classList.add("compact");
+    let r1=measurePagesFor("compact");
+    if(r1.pages > 1.01 && r.pages <= 1.30){
+      paper.classList.remove("compact");
+      paper.classList.add("compact2");
+      let r2=measurePagesFor("compact2");
+      if(r2.pages > 1.02){
+        // Overflows even with compact2 -> prefer comfortable natural 2-page layout
+        paper.classList.remove("compact2");
+      }
+    }
+  }
+  // Case 3: Slight overflow beyond 2 pages (up to 2.30 pages) -> compact maintains 2 pages
+  else if(r.pages > 2.00 && r.pages <= 2.30){
+    paper.classList.add("compact");
+    let r1=measurePagesFor("compact");
+    if(r1.pages > 2.01){
+      paper.classList.remove("compact");
+      paper.classList.add("compact2");
+    }
+  }
+
+  // Draw authentic A4 page boundary dividers on screen in View summary
+  renderA4PageGuides();
+  updatePageBanner();
+}
+
+function renderA4PageGuides(){
+  const paper=document.getElementById("paper");
+  if(!paper) return;
+  paper.querySelectorAll(".a4-page-guide").forEach(el=>el.remove());
+
+  // A4 sheet height in screen preview is 297mm (approx 1123px at 96 DPI)
+  const fullHeight=paper.scrollHeight;
+  const A4_SHEET_PX = 1123;
+  if(fullHeight > A4_SHEET_PX + 30){
+    const g1=document.createElement("div");
+    g1.className="a4-page-guide no-print";
+    g1.style.top = `${A4_SHEET_PX}px`;
+    g1.innerHTML = `<span class="a4-page-guide-badge">PAGE 1 ENDS (A4) · PAGE 2 CONTINUES</span>`;
+    paper.appendChild(g1);
+  }
+  if(fullHeight > A4_SHEET_PX * 2 + 30){
+    const g2=document.createElement("div");
+    g2.className="a4-page-guide no-print";
+    g2.style.top = `${A4_SHEET_PX * 2}px`;
+    g2.innerHTML = `<span class="a4-page-guide-badge">PAGE 2 ENDS (A4) · PAGE 3 CONTINUES</span>`;
+    paper.appendChild(g2);
+  }
+}
+
 function updatePageBanner(){
   const banner=document.getElementById("pageBanner");
   if(!banner) return;
-  const r=measurePagesFor("");
+  const paper=document.getElementById("paper");
+  const isCompact2 = paper.classList.contains("compact2");
+  const isCompact = paper.classList.contains("compact");
+  const isRelaxed = paper.classList.contains("relaxed");
+  const cls = isCompact2 ? "compact compact2" : (isCompact ? "compact" : (isRelaxed ? "relaxed" : ""));
+  const r=measurePagesFor(cls);
   const pages=Math.max(1,Math.ceil(r.pages));
-  if(r.pages<=2.02){
+  let note = "";
+  if(isCompact2) note = " · Auto-optimized (Level 2 compact)";
+  else if(isCompact) note = " · Auto-optimized (Compact fit)";
+  else if(isRelaxed) note = " · Relaxed spacing";
+
+  if(r.pages<=2.05){
     banner.style.display="flex";
     banner.className="pagebanner no-print ok";
-    banner.textContent=`Fits on ${pages} A4 page${pages>1?"s":""}.`;
+    banner.innerHTML=`<span>📄 <b>A4 Format</b>: Content fits on <b>${pages} page${pages>1?"s":""}</b>${note}. Spacing optimally filled.</span>`;
   } else {
     banner.style.display="flex";
     banner.className="pagebanner no-print warn";
-    banner.textContent=`⚠ Content is longer than 2 A4 pages (~${pages} pages). Shorten a section, or continue — Print / PDF will try to compact it and warn again if it still doesn't fit.`;
+    banner.innerHTML=`<span>⚠ <b>A4 Format</b>: Content spans ~<b>${pages} pages</b>${note}. Shorten lengthy narrative if fewer pages desired.</span>`;
   }
 }
 
 function checkAndPrint(){
   render();
+  autoOptimizeSpacing();
   const paper=document.getElementById("paper");
-  paper.classList.remove("compact","compact2");
-  let r=measurePagesFor("");
-  if(r.pages<=2.02){ window.print(); return; }
-  paper.classList.add("compact");
-  r=measurePagesFor("compact");
-  if(r.pages<=2.02){ window.print(); return; }
-  paper.classList.add("compact2");
-  r=measurePagesFor("compact compact2");
+  const cls = paper.classList.contains("compact2") ? "compact compact2" : (paper.classList.contains("compact") ? "compact" : "");
+  let r=measurePagesFor(cls);
   if(r.pages<=2.05){ window.print(); return; }
   const pages=Math.ceil(r.pages);
-  const proceed=confirm(`⚠ Content exceeds 2 A4 pages even after compacting (~${pages} pages estimated). It will likely overflow or get cut off when printed.\n\nTap OK to print anyway, or Cancel to go back and shorten a section (e.g. History, Course, Advice).`);
+  const proceed=confirm(`⚠ Content spans ~${pages} A4 pages after automatic space optimization.\n\nTap OK to proceed with Print / PDF, or Cancel to shorten any narrative.`);
   if(proceed) window.print();
 }
 
@@ -1067,11 +1253,11 @@ if("serviceWorker" in navigator){
 document.addEventListener("input",e=>{ if(e.target.closest("#invEditor"))return; render(); });
 
 /* ---------- persistence ---------- */
-const FIELDS=["college","address","dept","summaryType","name","age","sex","ipno","resides",
-  "doa","dos","dod","icuDuration","unitPrefix","unitCustom","referred","modeOfDischarge",
-  "diagnosis","icdCode","surgeryBrief","hopi","clinicalHistory",
+const FIELDS=["college","address","dept","summaryType","name","age","sex","ipno",
+  "doa","dod","unitPrefix","modeOfDischarge",
+  "diagnosis","hopi",
   "generalExam","vBP","vPR","vRR","vSpO2","vTemp","vGRBS","seCVS","seRS","sePA","seCNS",
-  "course","invOther","opinions","opNotes","condition","condExtra",
+  "invOther","opinions","course","condition","condExtra",
   "diet","physicalActivity","otherNeeds","advice","emergencyContact","review","warning",
   "preparedBy","chief","signDateTime"];
 const SELECT_FIELDS=["unitRoman"];
@@ -1100,15 +1286,15 @@ function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{store.
 function collectDraft(){
   const f={};FIELDS.forEach(id=>f[id]=document.getElementById(id).value);
   SELECT_FIELDS.forEach(id=>f[id]=document.getElementById(id).value);
-  return {f,complaints,treatment,rxMeds,invDates,invParams,invSeq,pastHistory,comorbidities,rxHistory,ynState};
+  return {f,complaints,treatment,rxMeds,invDates,invParams,invSeq,pastHistory,rxHistory,ynState};
 }
 function restoreDraft(o){if(!o)return;
   if(o.f){FIELDS.forEach(id=>{if(id in o.f)setVal_(id,o.f[id]);});SELECT_FIELDS.forEach(id=>{if(o.f[id]!=null)setVal_(id,o.f[id]);});}
   complaints=o.complaints||[];treatment=o.treatment||[];rxMeds=o.rxMeds||[];
   invDates=o.invDates||[];invParams=o.invParams||[];invSeq=o.invSeq||0;
-  pastHistory=o.pastHistory||[];comorbidities=o.comorbidities||[];rxHistory=o.rxHistory||[];
+  pastHistory=o.pastHistory||[];rxHistory=o.rxHistory||[];
   ynState=o.ynState||{physio:"",equip:"",dress:""};
-  renderComplaints();renderTx();renderRx();renderInvEditor();renderPast();renderComorbid();renderRxHistory();
+  renderComplaints();renderTx();renderRx();renderInvEditor();renderPast();renderRxHistory();
   ["physio","equip","dress"].forEach(k=>{ if(ynState[k]) setYNui(k,ynState[k]); });
   if(!val("dod")) setVal_("dod",todayISO());
   render();
@@ -1127,14 +1313,137 @@ async function newSummary(){
   if(!confirm("Start a new patient? Patient details will be cleared. Your saved defaults are kept."))return;
   PATIENT_FIELDS.forEach(id=>setVal_(id,""));
   complaints=[];treatment=[];rxMeds=[];invDates=[];invParams=[];invSeq=0;
-  pastHistory=[];comorbidities=[];rxHistory=[];ynState={physio:"",equip:"",dress:""};
+  pastHistory=[];rxHistory=[];ynState={physio:"",equip:"",dress:""};
   ["ynPhysio","ynEquip","ynDress"].forEach(id=>{const b=document.getElementById(id);if(b)[...b.children].forEach(c=>c.classList.remove("sel"));});
   setVal_("dod",todayISO());
   const d=safeParse(await store.get("ds:defaults"));
   ["advice","review","warning"].forEach(id=>setVal_(id,(d&&d[id]!=null)?d[id]:SEED[id]));
-  renderComplaints();renderTx();renderRx();renderInvEditor();renderPast();renderComorbid();renderRxHistory();render();
+  renderComplaints();renderTx();renderRx();renderInvEditor();renderPast();renderRxHistory();render();
   await store.set("ds:draft",JSON.stringify(collectDraft()));
   showTab("form");toast("New patient — defaults kept");
+}
+
+/* ---------- autofill sample data for testing on click ---------- */
+function autofillTest(){
+  if (val("name") || val("diagnosis") || complaints.length > 0) {
+    if (!confirm("Autofill sample test data? Existing entries will be overwritten.")) return;
+  }
+  // Patient details
+  setVal_("name", "Ramasamy M.");
+  setVal_("age", "52");
+  setVal_("sex", "M");
+  setVal_("ipno", "2026/04812");
+  setVal_("doa", "2026-10-15");
+  setVal_("dod", todayISO());
+  setVal_("unitPrefix", "M-");
+  setVal_("unitRoman", "IV");
+  setVal_("modeOfDischarge", "Discharge");
+
+  // Diagnosis
+  setVal_("diagnosis", "Type 2 Diabetes Mellitus with DKA (Resolved)\nCommunity Acquired Pneumonia (Right Lower Lobe)\nEssential Hypertension");
+
+  // Complaints
+  complaints = [
+    "H/o fever for 4 days",
+    "H/o cough with expectoration for 4 days",
+    "H/o breathlessness for 2 days"
+  ];
+  renderComplaints();
+
+  // History
+  setVal_("hopi", "Patient was apparently normal 4 days ago, then developed high-grade fever with chills and cough with expectoration. Developed progressive breathlessness (MMRC Grade III) for 2 days. No history of chest pain or palpitations. Patient had nausea, vomiting and reduced oral intake for 1 day prior to admission.");
+  pastHistory = [
+    "K/C/O Type 2 Diabetes Mellitus on medication",
+    "K/C/O Systemic Hypertension on medication"
+  ];
+  renderPast();
+  rxHistory = [
+    "Tab. Metformin 500 mg BD",
+    "Tab. Telmisartan 40 mg OD"
+  ];
+  renderRxHistory();
+
+  // Examination
+  setVal_("generalExam", "Patient conscious, oriented, tachypneic, afebrile, not pale, no icterus, cyanosis, clubbing, lymphadenopathy. Mild bilateral pedal edema present.");
+  setVal_("vBP", "130/80");
+  setVal_("vPR", "88");
+  setVal_("vRR", "22");
+  setVal_("vSpO2", "96% RA");
+  setVal_("vTemp", "Afebrile");
+  setVal_("vGRBS", "164");
+  setVal_("seCVS", "S1, S2 heard, no murmurs");
+  setVal_("seRS", "Bilateral air entry present, crepitations in right infrascapular area");
+  setVal_("sePA", "Soft, non-tender, no organomegaly");
+  setVal_("seCNS", "Conscious, oriented, NFND, GCS 15/15");
+
+  // Investigations
+  invSeq = 0;
+  const d1Id = ++invSeq, d2Id = ++invSeq;
+  invDates = [
+    { id: d1Id, date: "2026-10-15" },
+    { id: d2Id, date: "2026-10-19" }
+  ];
+  invParams = [
+    { id: ++invSeq, name: "Hb", values: { [d1Id]: "11.8", [d2Id]: "12.2" } },
+    { id: ++invSeq, name: "TC", values: { [d1Id]: "14200", [d2Id]: "8600" } },
+    { id: ++invSeq, name: "Platelet", values: { [d1Id]: "2.1 L", [d2Id]: "2.4 L" } },
+    { id: ++invSeq, name: "Urea", values: { [d1Id]: "42", [d2Id]: "28" } },
+    { id: ++invSeq, name: "Creatinine", values: { [d1Id]: "1.4", [d2Id]: "0.9" } },
+    { id: ++invSeq, name: "RBS", values: { [d1Id]: "340", [d2Id]: "138" } },
+    { id: ++invSeq, name: "Na", values: { [d1Id]: "132", [d2Id]: "138" } },
+    { id: ++invSeq, name: "K", values: { [d1Id]: "4.8", [d2Id]: "4.2" } }
+  ];
+  renderInvEditor();
+  setVal_("invOther", "CXR (PA view): Right lower zone consolidation resolving.\nECG: Normal sinus rhythm, HR 86/min.\nUSG Abdomen: Grade 1 fatty liver, normal bilateral kidneys.");
+
+  // Opinions
+  setVal_("opinions", "Pulmonology opinion obtained on 16/10/2026 — advised IV antibiotics and nebulisation.\nEndocrinology opinion obtained — advised sliding scale insulin, transitioned to basal-bolus regimen.");
+
+  // Course in hospital
+  setVal_("course", "Patient admitted with diabetic ketoacidosis precipitated by community-acquired pneumonia. Evaluated with blood sugars, arterial blood gases, septic screen, and chest radiography. Initially managed in HDU with IV fluids, insulin infusion, and broad-spectrum IV antibiotics (Inj. Ceftriaxone) along with nebulisation. Acidosis resolved and blood glucose levels normalised. Transitioned to subcutaneous insulin. Cough and breathlessness settled; patient maintained adequate saturation on room air. Vitals remained stable, tolerating normal diabetic diet. Patient is being discharged in a stable condition with oral medications and glycemic control advice.");
+
+  // Treatment given in hospital
+  treatment = [
+    "Inj. Ceftriaxone 1 g IV BD",
+    "Inj. Insulin (Regular) IV infusion as per protocol, transitioned to SC",
+    "Inj. Pantoprazole 40 mg IV OD",
+    "Inj. Paracetamol 1 g IV SOS",
+    "Neb. Ipratropium-Salbutamol Q8H",
+    "IV Fluids 0.9% Normal Saline"
+  ];
+  renderTx();
+
+  // Condition at discharge
+  setVal_("condition", "Clinically stable and symptomatically improved");
+  setVal_("condExtra", "Afebrile, eupneic, hemodynamically stable, tolerating diabetic diet");
+
+  // Discharge advice
+  setVal_("diet", "Diabetic and salt-restricted diet");
+  setVal_("physicalActivity", "Ambulant, adequate rest");
+  ynState = { physio: "No", equip: "No", dress: "No" };
+  ["physio","equip","dress"].forEach(k => setYNui(k, ynState[k]));
+  setVal_("otherNeeds", "Daily foot care and regular blood glucose monitoring");
+  rxMeds = [
+    "Tab. Cefpodoxime 200 mg BD × 5 days",
+    "Tab. Metformin 500 mg BD",
+    "Tab. Glimepiride 1 mg OD before breakfast",
+    "Tab. Telmisartan 40 mg OD",
+    "Tab. Pantoprazole 40 mg OD before food × 5 days",
+    "Tab. Paracetamol 650 mg SOS for fever/bodyache"
+  ];
+  renderRx();
+  setVal_("advice", "Take medications strictly as advised.\nAdequate hydration and diabetic diet.\nMonitor fasting and post-prandial blood sugar regularly.\nAvoid skipping meals.");
+  setVal_("emergencyContact", "Casualty / Emergency Dept: 044-25305000");
+  setVal_("review", "Review in Medicine OPD after 1 week with fasting and PP blood sugar reports (or earlier if needed).");
+  setVal_("warning", "Fever, increasing breathlessness, chest pain, persistent vomiting, reduced urine output, or severe giddiness — report to Casualty immediately.");
+
+  // Signatures
+  setVal_("preparedBy", "Dr. K. Vignesh (JR)");
+  setVal_("chief", "Dr. S. Sundararajan (Unit Chief)");
+  setVal_("signDateTime", "20/10/2026, 11:30 AM");
+
+  render();
+  toast("All details autofilled with test data");
 }
 
 async function loadAll(){
