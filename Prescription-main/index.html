@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#14425f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DS Builder">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<title>Discharge Summary Builder</title>
+<style>
+  :root{
+    --ink:#1b2733;
+    --muted:#5b6b7a;
+    --primary:#14425f;
+    --primary-soft:#e6eef4;
+    --line:#d3dce4;
+    --chip:#d9e8f2;
+    --chip-ink:#123a54;
+    --danger:#b0413a;
+    --paper:#ffffff;
+    --bg:#eaeef2;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.45;
+  }
+  .topbar{
+    position:sticky;top:0;z-index:10;background:var(--primary);color:#fff;
+    display:flex;align-items:center;gap:8px;padding:10px 14px;flex-wrap:wrap;
+    box-shadow:0 2px 6px rgba(0,0,0,.15);
+  }
+  .topbar h1{font-size:16px;margin:0;font-weight:600;flex:1;min-width:150px}
+  .tabs{display:flex;background:rgba(255,255,255,.15);border-radius:8px;padding:3px}
+  .tabs button{
+    border:0;background:transparent;color:#fff;padding:7px 14px;border-radius:6px;
+    font-size:14px;font-weight:600;cursor:pointer;
+  }
+  .tabs button.active{background:#fff;color:var(--primary)}
+  .actions{display:flex;gap:8px}
+  .actions button{
+    border:0;background:#fff;color:var(--primary);padding:8px 12px;border-radius:6px;
+    font-size:13px;font-weight:600;cursor:pointer;
+  }
+  .actions button.ghost{background:rgba(255,255,255,.15);color:#fff}
+
+  .wrap{max-width:820px;margin:0 auto;padding:14px}
+
+  /* ---------- FORM ---------- */
+  .card{
+    background:#fff;border:1px solid var(--line);border-radius:10px;
+    margin-bottom:14px;overflow:hidden;
+  }
+  .card > summary{
+    list-style:none;cursor:pointer;padding:12px 14px;font-weight:700;font-size:14px;
+    color:var(--primary);background:var(--primary-soft);display:flex;align-items:center;gap:8px;
+  }
+  .card > summary::-webkit-details-marker{display:none}
+  .card > summary::before{content:"▸";font-size:12px;transition:transform .15s}
+  .card[open] > summary::before{transform:rotate(90deg)}
+  .card .body{padding:14px}
+
+  label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:0 0 4px}
+  input[type=text],input[type=date],textarea,select{
+    width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;
+    font-size:15px;font-family:inherit;color:var(--ink);background:#fff;
+  }
+  textarea{resize:vertical;min-height:70px}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--primary);outline-offset:-1px;border-color:var(--primary)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .row > div{flex:1;min-width:130px}
+  .field{margin-bottom:12px}
+  .hint{font-size:11px;color:var(--muted);margin-top:4px}
+
+  .btn{
+    border:1px solid var(--primary);background:var(--primary);color:#fff;
+    padding:8px 12px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;
+  }
+  .btn.sm{padding:6px 10px;font-size:12px}
+  .btn.out{background:#fff;color:var(--primary)}
+  .btn.danger{border-color:var(--danger);background:#fff;color:var(--danger)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .chip{
+    border:1px solid var(--chip);background:var(--chip);color:var(--chip-ink);
+    padding:5px 10px;border-radius:20px;font-size:12px;cursor:pointer;font-weight:600;
+  }
+  .chip:active{transform:scale(.97)}
+
+  .list{list-style:none;margin:8px 0 0;padding:0}
+  .list li{
+    display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);
+    border-radius:7px;margin-bottom:6px;font-size:14px;background:#fafcfe;
+  }
+  .list li span{flex:1}
+  .list li button{
+    border:0;background:transparent;color:var(--danger);font-size:18px;line-height:1;
+    cursor:pointer;padding:0 4px;
+  }
+  .addrow{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+  .addrow > div{flex:1;min-width:90px}
+
+  /* investigations editor */
+  .invtable{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+  .invtable th,.invtable td{border:1px solid var(--line);padding:4px;text-align:center}
+  .invtable th{background:var(--primary-soft);color:var(--primary);font-weight:700}
+  .invtable input{padding:6px;font-size:13px;text-align:center;border-radius:5px}
+  .invtable .pname input{text-align:left;font-weight:600}
+  .invtable .xbtn{border:0;background:transparent;color:var(--danger);cursor:pointer;font-size:16px}
+  .inv-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+
+  /* ---------- PREVIEW ---------- */
+  #summaryTab{display:none}
+  .paper{
+    background:var(--paper);border:1px solid var(--line);border-radius:8px;
+    padding:28px 34px;font-size:14px;color:#111;
+  }
+  .doc-head{position:relative;text-align:center;border-bottom:2px solid #111;padding:0 8px 10px;margin-bottom:18px;min-height:66px}
+  .logo-box{position:absolute;left:0;top:0;width:60px;height:60px;border:1px solid #111;object-fit:contain;background:#fff}
+  .logo-box.empty{display:flex;align-items:center;justify-content:center;font-size:9px;color:#b0b0b0;letter-spacing:1px}
+  .head-text{padding:0 4px}
+  .doc-head .college{font-size:19px;font-weight:800;letter-spacing:.5px;text-transform:uppercase}
+  .doc-head .addr{font-size:13px;margin-top:2px;text-transform:uppercase;letter-spacing:.3px}
+  .doc-head .dept{font-size:14px;font-weight:700;margin-top:6px;text-transform:uppercase}
+  .doc-head .kind{
+    display:inline-block;margin-top:8px;font-size:13.5px;font-weight:700;
+    border:1.5px solid #111;padding:3px 14px;border-radius:3px;text-transform:uppercase;
+  }
+  .pt-grid{
+    display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:6px 20px;margin:16px 0 6px;
+    font-size:13.5px;
+  }
+  .pt-grid div{padding:3px 0;border-bottom:1px dotted #bbb;min-height:24px}
+  .pt-grid b{display:inline-block;min-width:66px;font-weight:700}
+  .sec{margin-top:20px}
+  .sec h3{
+    font-size:14px;font-weight:800;text-transform:uppercase;margin:0 0 7px;
+    border-bottom:1.5px solid #111;padding-bottom:2px;letter-spacing:.5px;display:inline-block;
+  }
+  .sec .content{font-size:14px;white-space:pre-wrap}
+  .sec ul{margin:4px 0 0;padding-left:20px}
+  .sec ul li{margin-bottom:2px}
+  .empty{color:#999;font-style:italic}
+  .prev-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}
+  .prev-table th,.prev-table td{border:1px solid #333;padding:5px 8px;text-align:center}
+  .prev-table th{background:#f0f0f0;font-weight:700}
+  .prev-table td.pn{text-align:left;font-weight:600}
+  .sign-row{display:flex;justify-content:space-between;margin-top:40px;font-size:13px}
+  .sign-row div{text-align:center;border-top:1px solid #111;padding-top:4px;min-width:180px}
+
+  @media (max-width:620px){
+    .pt-grid{grid-template-columns:1fr 1fr}
+    .paper{padding:20px 16px}
+    .doc-head .college{font-size:16px}
+    .wrap{padding:10px}
+  }
+
+  /* ---------- new field types ---------- */
+  .subhead{font-size:12.5px;font-weight:700;color:var(--primary);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.3px}
+  .subhead:first-child{margin-top:0}
+  .yn{display:flex;gap:8px;margin-bottom:2px}
+  .yn button{
+    flex:1;border:1px solid var(--line);background:#fff;color:var(--muted);
+    padding:8px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;
+  }
+  .yn button.sel{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .vitals-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 10px;margin-bottom:12px}
+  .vitals-grid > div{min-width:0}
+  .unit-row{display:flex;gap:8px;align-items:flex-end}
+  .unit-row > div{flex:1;min-width:70px}
+  .inline-btn-field{display:flex;gap:6px;align-items:flex-end}
+  .inline-btn-field input{flex:1}
+  .inline-btn-field button{flex:0 0 auto}
+  .pagebanner{
+    display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;
+    font-size:13px;font-weight:600;margin-bottom:12px;
+  }
+  .pagebanner.ok{background:#e3f4ea;color:#1c6b3f}
+  .pagebanner.warn{background:#fdecea;color:#a4322a}
+  .install-btn{display:none}
+
+  /* ---------- print compaction (applies to same markup on screen preview too) ---------- */
+  .paper.compact .sec{margin-top:13px}
+  .paper.compact .sec h3{font-size:12.5px;margin-bottom:5px}
+  .paper.compact .content,.paper.compact li,.paper.compact .prev-table{font-size:12px}
+  .paper.compact .doc-head{margin-bottom:10px;padding-bottom:6px;min-height:54px}
+  .paper.compact .logo-box{width:48px;height:48px}
+  .paper.compact .doc-head .college{font-size:16px}
+  .paper.compact .pt-grid{margin:10px 0 4px;font-size:12px;gap:4px 16px}
+  .paper.compact .sign-row{margin-top:26px}
+  .paper.compact2 .sec{margin-top:9px}
+  .paper.compact2 .sec h3{font-size:11.5px;margin-bottom:3px}
+  .paper.compact2 .content,.paper.compact2 li,.paper.compact2 .prev-table{font-size:11px}
+  .paper.compact2 .doc-head{margin-bottom:7px;padding-bottom:5px;min-height:46px}
+  .paper.compact2 .logo-box{width:40px;height:40px}
+  .paper.compact2 .doc-head .college{font-size:14px}
+  .paper.compact2 .doc-head .addr,.paper.compact2 .doc-head .dept{font-size:11px}
+  .paper.compact2 .pt-grid{margin:8px 0 3px;font-size:11px;gap:3px 14px}
+  .paper.compact2 .sign-row{margin-top:16px;font-size:11px}
+
+  /* ---------- PRINT ---------- */
+  @media print{
+    .topbar,#formTab,.no-print{display:none !important}
+    #summaryTab{display:block !important}
+    body{background:#fff}
+    .wrap{max-width:none;padding:0;margin:0}
+    .paper{border:0;border-radius:0;padding:0;font-size:12.5px}
+    .sec{page-break-inside:avoid}
+    @page{size:A4;margin:16mm 14mm}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Discharge Summary Builder</h1>
+  <div class="tabs">
+    <button id="tabForm" class="active" onclick="showTab('form')">Fill form</button>
+    <button id="tabSummary" onclick="showTab('summary')">View summary</button>
+  </div>
+  <div class="actions">
+    <button class="ghost install-btn" id="installBtn" onclick="doInstall()">Install app</button>
+    <button class="ghost" onclick="newSummary()">New patient</button>
+    <button class="ghost" onclick="copyText()">Copy text</button>
+    <button onclick="checkAndPrint()">Print / PDF</button>
+  </div>
+</div>
+
+<!-- ================= FORM ================= -->
+<div class="wrap" id="formTab">
+
+  <details class="card">
+    <summary>Setup &amp; defaults</summary>
+    <div class="body">
+      <p class="hint" style="margin-top:0">Fill your <b>college, unit, chief</b> and the standard <b>advice / warning / review</b> lines once, then tap <b>Save as my defaults</b>. They auto-fill every new summary and survive a refresh. Everything you type also auto-saves as a draft.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="saveDefaults()">Save as my defaults</button>
+        <button class="btn out" onclick="newSummary()">New patient (keep defaults)</button>
+      </div>
+      <p class="hint">Defaults kept: college, address, department, summary type, unit, chief, prepared-by, and the advice / warning / review templates. Set unit &amp; chief in the sections below, then save.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Institution header</summary>
+    <div class="body">
+      <div class="field"><label>College / Hospital</label>
+        <input type="text" id="college" value="Government Medical College Hospital"></div>
+      <div class="field"><label>Address line</label>
+        <input type="text" id="address" value="Omandurar Government Estate, Chennai - 02"></div>
+      <div class="field"><label>Department</label>
+        <input type="text" id="dept" value="Department of General Medicine"></div>
+      <div class="field"><label>College logo / emblem (optional)</label>
+        <input type="file" id="logoFile" accept="image/*" onchange="onLogo(event)">
+        <p class="hint">Shows top-left of the summary. Saved with your defaults. Leave empty for a plain box.</p>
+      </div>
+      <div class="field"><label>Summary type</label>
+        <select id="summaryType">
+          <option>Discharge Summary</option>
+          <option>Discharge Summary (At Request)</option>
+          <option>Discharge Summary (AMA)</option>
+        </select>
+      </div>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary>Patient details</summary>
+    <div class="body">
+      <div class="field"><label>Name</label><input type="text" id="name"></div>
+      <div class="row">
+        <div><label>Age</label><input type="text" id="age" placeholder="e.g. 45"></div>
+        <div><label>Sex</label>
+          <select id="sex"><option value=""></option><option>M</option><option>F</option><option>Other</option></select>
+        </div>
+        <div><label>IP No.</label><input type="text" id="ipno"></div>
+      </div>
+      <div class="field"><label>Resides at (address)</label><input type="text" id="resides" placeholder="No. __, __ Street, __"></div>
+      <div class="row">
+        <div><label>Date of Admission (DOA)</label><input type="date" id="doa"></div>
+        <div><label>Date of Surgery (DOS)</label><input type="date" id="dos"></div>
+      </div>
+      <div class="row">
+        <div style="flex:2">
+          <label>Date of Discharge (DOD)</label>
+          <div class="inline-btn-field">
+            <input type="date" id="dod">
+            <button class="btn sm out" onclick="clearDOD()" title="Clear DOD">Clear</button>
+          </div>
+          <p class="hint">Defaults to today — edit or clear as needed.</p>
+        </div>
+        <div><label>ICU Duration</label><input type="text" id="icuDuration" placeholder="e.g. 2 days / Nil"></div>
+      </div>
+      <div class="subhead">Unit</div>
+      <div class="unit-row">
+        <div><label>Prefix</label><input type="text" id="unitPrefix" value="M-"></div>
+        <div><label>Roman numeral</label>
+          <select id="unitRoman">
+            <option>I</option><option>II</option><option>III</option><option selected>IV</option>
+            <option>V</option><option>VI</option><option>VII</option><option>VIII</option><option>IX</option><option>X</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Custom unit (overrides prefix + numeral if filled)</label>
+        <input type="text" id="unitCustom" placeholder="e.g. Ortho Unit II"></div>
+      <div class="row">
+        <div><label>Department / Referred Unit</label><input type="text" id="referred" placeholder="optional"></div>
+        <div><label>Mode of Discharge</label>
+          <select id="modeOfDischarge">
+            <option>Discharge</option>
+            <option>At Request Discharge</option>
+            <option>LAMA</option>
+            <option>Absconded</option>
+            <option>Death</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary>Diagnosis</summary>
+    <div class="body">
+      <label>Diagnosis (one per line)</label>
+      <textarea id="diagnosis" placeholder="e.g.&#10;Dengue fever with warning signs&#10;Thrombocytopenia"></textarea>
+      <div class="field" style="margin-top:10px"><label>ICD Code(s)</label>
+        <input type="text" id="icdCode" placeholder="e.g. A91, D69.6"></div>
+      <div class="field"><label>Surgery / Management (brief, one line)</label>
+        <input type="text" id="surgeryBrief" placeholder="e.g. Left dental tooth extraction of 26 done under LA"></div>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary>Chief complaints (Presenting Complaints)</summary>
+    <div class="body">
+      <div class="chips" id="ccChips"></div>
+      <div class="addrow">
+        <div style="flex:2"><label>Complaint</label>
+          <input type="text" id="ccText" list="ccList" placeholder="breathlessness">
+          <datalist id="ccList"></datalist>
+        </div>
+        <div style="max-width:80px"><label>For</label><input type="text" id="ccDur" placeholder="4"></div>
+        <div style="max-width:100px"><label>Unit</label>
+          <select id="ccUnit"><option>days</option><option>weeks</option><option>months</option><option>hours</option><option>year</option></select>
+        </div>
+        <div style="flex:0"><button class="btn sm" onclick="addComplaint()">Add</button></div>
+      </div>
+      <p class="hint">Tap a common complaint above, or type your own. Adds as “H/o breathlessness for 4 days”.</p>
+      <ul class="list" id="ccListOut"></ul>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>History (HOPI, Past History, Comorbidities, Rx Hx)</summary>
+    <div class="body">
+      <div class="subhead">History of Present Illness (HOPI)</div>
+      <textarea id="hopi" placeholder="The patient was apparently normal [__] back, then developed..."></textarea>
+
+      <div class="subhead">Clinical History</div>
+      <textarea id="clinicalHistory" placeholder="Onset, duration, progression, associated symptoms, negative history..."></textarea>
+
+      <div class="subhead">Past History</div>
+      <div class="chips" id="pastChips"></div>
+      <div class="addrow">
+        <div style="flex:1"><input type="text" id="pastText" placeholder="e.g. K/C/O T2DM x 8 years on medication"></div>
+        <div style="flex:0"><button class="btn sm" onclick="addPast()">Add</button></div>
+      </div>
+      <ul class="list" id="pastListOut"></ul>
+
+      <div class="subhead">Comorbidities</div>
+      <div class="chips" id="comorbidChips"></div>
+      <div class="addrow">
+        <div style="flex:1"><input type="text" id="comorbidText" placeholder="e.g. Systemic Hypertension"></div>
+        <div style="flex:0"><button class="btn sm" onclick="addComorbid()">Add</button></div>
+      </div>
+      <ul class="list" id="comorbidListOut"></ul>
+
+      <div class="subhead">Rx History (home medications before admission)</div>
+      <div class="addrow">
+        <div style="flex:2"><input type="text" id="rxhName" list="drugList" placeholder="Tab. Metformin"></div>
+        <div style="max-width:80px"><input type="text" id="rxhDose" placeholder="500 mg"></div>
+        <div style="max-width:80px">
+          <select id="rxhFreq"><option value=""></option><option>OD</option><option>BD</option><option>TDS</option><option>QID</option><option>HS</option><option>SOS</option></select>
+        </div>
+        <div style="flex:0"><button class="btn sm" onclick="addRxHistory()">Add</button></div>
+      </div>
+      <ul class="list" id="rxhListOut"></ul>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Examination</summary>
+    <div class="body">
+      <div class="subhead">General Examination</div>
+      <div class="chips"><span class="chip" onclick="insertGeneralExam()">+ Standard PICCLE findings</span></div>
+      <textarea id="generalExam" placeholder="Patient conscious, oriented, afebrile..."></textarea>
+
+      <div class="subhead">Vitals</div>
+      <div class="vitals-grid">
+        <div><label>BP (mmHg)</label><input type="text" id="vBP" placeholder="120/80"></div>
+        <div><label>PR (/min)</label><input type="text" id="vPR" placeholder="80"></div>
+        <div><label>RR (/min)</label><input type="text" id="vRR" placeholder="18"></div>
+        <div><label>SpO2 (%)</label><input type="text" id="vSpO2" placeholder="98% RA"></div>
+        <div><label>Temp</label><input type="text" id="vTemp" placeholder="Afebrile"></div>
+        <div><label>GRBS</label><input type="text" id="vGRBS" placeholder="optional"></div>
+      </div>
+
+      <div class="subhead">Systemic Examination</div>
+      <div class="row">
+        <div><label>CVS</label><input type="text" id="seCVS" placeholder="S1S2+, no murmurs">
+          <span class="hint" style="cursor:pointer;color:var(--primary)" onclick="document.getElementById('seCVS').value='S1S2+, no murmurs';render()">use normal</span></div>
+        <div><label>RS</label><input type="text" id="seRS" placeholder="BAE+, NVBS">
+          <span class="hint" style="cursor:pointer;color:var(--primary)" onclick="document.getElementById('seRS').value='BAE+, NVBS';render()">use normal</span></div>
+      </div>
+      <div class="row">
+        <div><label>P/A</label><input type="text" id="sePA" placeholder="Soft, non-tender">
+          <span class="hint" style="cursor:pointer;color:var(--primary)" onclick="document.getElementById('sePA').value='Soft, non-tender';render()">use normal</span></div>
+        <div><label>CNS</label><input type="text" id="seCNS" placeholder="NFND">
+          <span class="hint" style="cursor:pointer;color:var(--primary)" onclick="document.getElementById('seCNS').value='NFND';render()">use normal</span></div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Course in the hospital</summary>
+    <div class="body">
+      <label>Insert a template (tap to drop in, then edit the blanks)</label>
+      <div class="chips" id="courseTpl"></div>
+      <label>Narrative</label>
+      <textarea id="course" style="min-height:150px" placeholder="Patient admitted with above complaints. Evaluated and managed as detailed. Responded to treatment…"></textarea>
+      <p class="hint">Tapping a template appends to whatever's already in the box. Fill the [ ] blanks.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Investigations</summary>
+    <div class="body">
+      <div class="inv-controls">
+        <button class="btn sm" onclick="addInvDate()">+ Add date</button>
+        <button class="btn sm out" onclick="addInvParam('')">+ Add row</button>
+      </div>
+      <div class="chips" id="invPanels"></div>
+      <div style="overflow-x:auto"><div id="invEditor"></div></div>
+      <datalist id="labList"></datalist>
+      <div class="field" style="margin-top:14px">
+        <label>Other investigations / imaging (free text)</label>
+        <textarea id="invOther" placeholder="ECG: sinus tachycardia&#10;CXR: normal study&#10;USG abdomen: mild hepatomegaly"></textarea>
+      </div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Treatment given (in hospital)</summary>
+    <div class="body">
+      <label>Quick bundles (tap to add the usual set, then edit)</label>
+      <div class="chips" id="txBundles"></div>
+      <div class="addrow">
+        <div style="flex:2"><label>Drug</label>
+          <input type="text" id="txName" list="drugList" placeholder="Inj. Ceftriaxone">
+          <datalist id="drugList"></datalist>
+        </div>
+        <div style="max-width:90px"><label>Dose</label><input type="text" id="txDose" placeholder="1 g"></div>
+        <div style="max-width:90px"><label>Route</label>
+          <select id="txRoute"><option value=""></option><option>IV</option><option>IM</option><option>PO</option><option>SC</option><option>Neb</option><option>PR</option><option>SL</option></select>
+        </div>
+        <div style="max-width:90px"><label>Freq</label>
+          <select id="txFreq"><option value=""></option><option>OD</option><option>BD</option><option>TDS</option><option>QID</option><option>HS</option><option>Q6H</option><option>Q8H</option><option>Q12H</option><option>SOS</option><option>Stat</option></select>
+        </div>
+        <div style="flex:0"><button class="btn sm" onclick="addTx()">Add</button></div>
+      </div>
+      <ul class="list" id="txListOut"></ul>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Opinions</summary>
+    <div class="body">
+      <label>Consultations / opinions obtained</label>
+      <textarea id="opinions" placeholder="Cardiology opinion obtained — advised…&#10;Nephrology opinion obtained — advised…"></textarea>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Management / Surgery (Operation Notes)</summary>
+    <div class="body">
+      <label>Detailed operation / procedure notes</label>
+      <textarea id="opNotes" placeholder="e.g. Left dental tooth extraction of 26 done under LA. No intraoperative complications..."></textarea>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary>Condition at discharge</summary>
+    <div class="body">
+      <div class="chips" id="condChips"></div>
+      <div class="field"><label>Condition</label><input type="text" id="condition" placeholder="Stable / Improved"></div>
+      <div class="field"><label>Additional note (optional)</label><input type="text" id="condExtra" placeholder="Afebrile, vitals stable, tolerating orals"></div>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary>Discharge advice (Rx)</summary>
+    <div class="body">
+      <div class="subhead">Advice on Discharge</div>
+      <div class="row">
+        <div><label>1. Diet</label><input type="text" id="diet" placeholder="e.g. Diabetic diet"></div>
+        <div><label>2. Physical Activity</label><input type="text" id="physicalActivity" placeholder="e.g. Ambulant, avoid strenuous activity"></div>
+      </div>
+      <div class="row">
+        <div>
+          <label>3. Physiotherapy needed at home?</label>
+          <div class="yn" id="ynPhysio">
+            <button type="button" onclick="setYN('physio','Yes')">Yes</button>
+            <button type="button" onclick="setYN('physio','No')">No</button>
+          </div>
+        </div>
+        <div>
+          <label>4. Home medical equipment needed?</label>
+          <div class="yn" id="ynEquip">
+            <button type="button" onclick="setYN('equip','Yes')">Yes</button>
+            <button type="button" onclick="setYN('equip','No')">No</button>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>5. Dressing needs at home anticipated?</label>
+          <div class="yn" id="ynDress">
+            <button type="button" onclick="setYN('dress','Yes')">Yes</button>
+            <button type="button" onclick="setYN('dress','No')">No</button>
+          </div>
+        </div>
+        <div><label>6. Any other needs</label><input type="text" id="otherNeeds" placeholder="optional"></div>
+      </div>
+
+      <div class="subhead">7. Medication</div>
+      <label style="margin-bottom:6px">Discharge medications</label>
+      <div class="chips" id="rxBundles"></div>
+      <div class="addrow">
+        <div style="flex:2"><input type="text" id="rxName" list="drugList" placeholder="Tab. Paracetamol"></div>
+        <div style="max-width:80px"><input type="text" id="rxDose" placeholder="650 mg"></div>
+        <div style="max-width:80px">
+          <select id="rxFreq"><option value=""></option><option>OD</option><option>BD</option><option>TDS</option><option>QID</option><option>HS</option><option>SOS</option></select>
+        </div>
+        <div style="max-width:90px"><input type="text" id="rxDur" placeholder="× 5 days"></div>
+        <div style="flex:0"><button class="btn sm" onclick="addRx()">Add</button></div>
+      </div>
+      <ul class="list" id="rxListOut"></ul>
+
+      <div class="field" style="margin-top:14px"><label>General advice</label>
+        <textarea id="advice" placeholder="Take rest. Adequate oral fluids.">Take medications as advised.
+Adequate rest and oral fluids.
+Take diet as advised.</textarea></div>
+      <div class="field"><label>8. In case of Emergency, contact no.</label>
+        <input type="text" id="emergencyContact" placeholder="e.g. Casualty: 044-XXXXXXX"></div>
+      <div class="field"><label>9. Follow-Up / Review</label>
+        <input type="text" id="review" value="Review in Medicine OPD after 1 week with reports (or earlier if needed)."></div>
+      <div class="field"><label>Warning signs — return immediately if (optional)</label>
+        <textarea id="warning" placeholder="bleeding, breathlessness, giddiness…">Fever not subsiding, breathlessness, chest pain, giddiness, reduced urine output, bleeding, or drowsiness — report to casualty immediately.</textarea></div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Signatures</summary>
+    <div class="body">
+      <div class="row">
+        <div><label>Prepared by</label><input type="text" id="preparedBy" placeholder="____ (JR)"></div>
+        <div><label>Medical Officer / Unit Chief</label><input type="text" id="chief" placeholder="____"></div>
+      </div>
+      <div class="field"><label>Date &amp; Time (of signing)</label><input type="text" id="signDateTime" placeholder="e.g. 21/06/26, 4:30 PM"></div>
+      <p class="hint">"Dr." is added automatically in the printed summary — just type the name.</p>
+    </div>
+  </details>
+
+  <p class="hint no-print" style="text-align:center;padding-bottom:20px">
+    Tip: switch to <b>View summary</b> to check spacing, then <b>Print / PDF</b>. Your entries stay only in this session.
+  </p>
+</div>
+
+<!-- ================= SUMMARY ================= -->
+<div class="wrap" id="summaryTab">
+  <div class="pagebanner no-print" id="pageBanner" style="display:none"></div>
+  <div class="paper" id="paper"></div>
+</div>
+
+<script>
+/* ---------- data ---------- */
+const COMMON_CC = ["fever","breathlessness","cough","chest pain","palpitations",
+  "abdominal pain","vomiting","loose stools","decreased urine output","pedal edema",
+  "giddiness","headache","altered sensorium","seizures","loss of consciousness",
+  "weakness of limbs","yellowish discolouration of eyes","decreased appetite",
+  "hematemesis","melena","burning micturition"];
+const COMMON_LABS = ["Hb","TC","DC","Platelet","PCV","ESR","Urea","Creatinine","Na","K",
+  "Cl","HCO3","RBS","FBS","PPBS","HbA1c","T.Bilirubin","D.Bilirubin","SGOT","SGPT","ALP",
+  "T.Protein","Albumin","PT","INR","aPTT","TSH","Ca","PO4","Mg","CRP","Troponin"];
+const PANELS = {
+  "CBC":["Hb","TC","DC","Platelet","PCV"],
+  "RFT":["Urea","Creatinine","Na","K","Cl"],
+  "LFT":["T.Bilirubin","D.Bilirubin","SGOT","SGPT","ALP","T.Protein","Albumin"],
+  "Coagulation":["PT","INR","aPTT"],
+  "Sugar":["RBS","HbA1c"]
+};
+const COMMON_DRUGS = ["Inj. Ceftriaxone","Inj. Piperacillin-Tazobactam","Inj. Meropenem",
+  "Inj. Doxycycline","Tab. Doxycycline","Tab. Azithromycin","Inj. Pantoprazole","Tab. Pantoprazole",
+  "Inj. Ondansetron","Inj. Paracetamol","Tab. Paracetamol","Inj. Metronidazole","Tab. Metformin",
+  "Inj. Insulin (HAI)","Inj. Furosemide","Tab. Furosemide","Tab. Aspirin","Tab. Atorvastatin",
+  "Tab. Clopidogrel","Tab. Amlodipine","Tab. Telmisartan","Inj. Hydrocortisone","Neb. Ipravent",
+  "Neb. Budecort","Inj. Vitamin K","Inj. Thiamine","Tab. Ecosprin","Tab. Pan 40"];
+const COMMON_COND = ["Stable","Improved","Symptomatically better","Hemodynamically stable",
+  "Afebrile and stable","Discharged at request","Discharged against medical advice"];
+const COMMON_PAST = ["K/C/O T2DM on medication","K/C/O Systemic Hypertension on medication",
+  "K/C/O CAD","K/C/O CVA","K/C/O Epilepsy","K/C/O Bronchial Asthma/COPD","K/C/O CKD",
+  "K/C/O Koch's disease (TB) — treated","K/C/O Chronic Liver Disease","K/C/O Hypothyroidism",
+  "No significant past history"];
+const COMMON_COMORBID = ["Type 2 Diabetes Mellitus","Systemic Hypertension","Coronary Artery Disease",
+  "Chronic Kidney Disease","COPD / Bronchial Asthma","Hypothyroidism","No other co-morbidities"];
+
+const RX_BUNDLES={
+ "CAD":["Tab. Aspirin 75 mg OD (continue)","Tab. Clopidogrel 75 mg OD × 12 months","Tab. Atorvastatin 40 mg HS (continue)","Tab. Metoprolol 25 mg BD (continue)","Tab. Ramipril 2.5 mg OD (continue)","Tab. Sorbitrate 5 mg SL SOS (for chest pain)"],
+ "HFrEF":["Tab. Furosemide 40 mg BD (continue)","Tab. Sacubitril-Valsartan 50 mg BD (continue)","Tab. Carvedilol 3.125 mg BD (continue)","Tab. Spironolactone 25 mg OD (continue)","Tab. Dapagliflozin 10 mg OD (continue)"],
+ "COPD":["MDI Budesonide-Formoterol 1 puff BD (continue)","MDI Tiotropium 1 puff OD (continue)","Tab. Prednisolone 40 mg OD × 5 days","Tab. Pantoprazole 40 mg OD × 5 days"],
+ "CAP":["Tab. Cefpodoxime 200 mg BD × 5 days","Tab. Azithromycin 500 mg OD × 3 days","Tab. Paracetamol 650 mg TDS SOS × 3 days","Tab. Pantoprazole 40 mg OD × 5 days"],
+ "T2DM":["Tab. Metformin 500 mg BD (continue)","Tab. Glimepiride 1 mg OD before breakfast (continue)","GRBS monitoring + diabetic diet"],
+ "SHTN":["Tab. Amlodipine 5 mg OD (continue)","Tab. Telmisartan 40 mg OD (continue)","Tab. Chlorthalidone 12.5 mg OD (continue)","Home BP monitoring"]
+};
+
+const TX_BUNDLES={
+ "CAD":["Tab. Aspirin 75 mg PO OD","Tab. Clopidogrel 75 mg PO OD","Tab. Atorvastatin 40 mg PO HS","Tab. Metoprolol 25 mg PO BD","Tab. Ramipril 2.5 mg PO OD","Inj. Enoxaparin 0.6 mL SC BD","Tab. Nitroglycerin 0.5 mg SL SOS"],
+ "HFrEF":["Inj. Furosemide 40 mg IV BD","Tab. Sacubitril-Valsartan 50 mg PO BD","Tab. Carvedilol 3.125 mg PO BD","Tab. Spironolactone 25 mg PO OD","Tab. Dapagliflozin 10 mg PO OD"],
+ "COPD":["Neb. Ipratropium-Salbutamol Q6H","Neb. Budesonide BD","Inj. Hydrocortisone 100 mg IV Q8H","Inj. Ceftriaxone 1 g IV BD","Tab. Pantoprazole 40 mg PO OD","Controlled O2 to target SpO2 88–92%"],
+ "CAP":["Inj. Ceftriaxone 1 g IV BD","Tab. Azithromycin 500 mg PO OD","Inj. Paracetamol 1 g IV SOS","Tab. Pantoprazole 40 mg PO OD"],
+ "T2DM":["Inj. Insulin (HAI) SC TDS (pre-meal / sliding scale)","Tab. Metformin 500 mg PO BD","GRBS monitoring QID"],
+ "SHTN":["Tab. Amlodipine 5 mg PO OD","Tab. Telmisartan 40 mg PO OD","Tab. Chlorthalidone 12.5 mg PO OD","BP monitoring"]
+};
+
+const COURSE_TEMPLATES=[
+ {label:"Dengue",text:`Patient admitted with above complaints. On evaluation found to have thrombocytopenia with [NS1/IgM] positivity, suggestive of Dengue fever [with/without warning signs]. Managed with IV fluids as per dengue protocol, antipyretics and serial platelet monitoring. Platelet count reached a nadir of [___] on [__/__] and subsequently improved. Patient remained hemodynamically stable, became afebrile with improving counts, and is being discharged in a stable condition.`},
+ {label:"LRTI / CAP",text:`Patient admitted with above complaints. Clinically and radiologically diagnosed as Community-acquired pneumonia (LRTI). Started on IV antibiotics, nebulisation, antipyretics and supportive care. Saturation monitored and maintained [on room air / with O2 support]. Symptomatically improved — afebrile, breathlessness settled, maintaining saturation on room air — and is being discharged in a stable condition with oral antibiotics to complete the course.`},
+ {label:"AGE w/ dehydration",text:`Patient admitted with above complaints with features of [mild/moderate] dehydration, diagnosed as Acute gastroenteritis with dehydration. Rehydrated with IV fluids, given antiemetics, [antibiotics] and supportive care. Electrolytes monitored and corrected. Stool frequency reduced, tolerating orals well, and is being discharged in a stable condition.`},
+ {label:"CKD",text:`Patient admitted with above complaints. [Known/Newly detected] Chronic kidney disease (Stage [__]). Evaluated with RFT, electrolytes, urine analysis and USG abdomen. Managed with fluid and salt restriction, [diuretics], correction of electrolyte and acid-base derangements and supportive care. [Nephrology opinion obtained.] Symptomatically improved, hemodynamically stable, and is being discharged in a stable condition with renal diet advice and follow-up.`},
+ {label:"Tropical fever",text:`Patient admitted with above complaints. Evaluated for acute febrile illness — septic screen, dengue / leptospira / scrub typhus serology and peripheral smear sent. Started on empirical [doxycycline/ceftriaxone] with antipyretics and supportive care. [Scrub typhus/leptospirosis] [confirmed/considered clinically]. Became afebrile with treatment, remained hemodynamically stable, and is being discharged in a stable condition.`},
+ {label:"COPD exac.",text:`Patient, a known case of COPD, admitted with acute exacerbation. Managed with nebulised bronchodilators, systemic steroids, antibiotics, controlled oxygen and [NIV / BiPAP support]. Breathlessness improved, maintaining saturation on room air, and is being discharged in a stable condition with inhaler technique advice.`},
+ {label:"DKA",text:`Patient admitted with above complaints, found to have hyperglycemia with ketosis and metabolic acidosis suggestive of Diabetic ketoacidosis. Managed with IV fluids, insulin infusion and potassium monitoring as per DKA protocol. Blood sugars and anion gap normalised; transitioned to subcutaneous insulin. Tolerating orals, stable, and is being discharged with insulin / OHA and diabetic diet advice.`},
+ {label:"ACS",text:`Patient admitted with above complaints. ECG and cardiac markers suggestive of [STEMI / NSTEMI / Unstable angina]. Managed as Acute coronary syndrome with antiplatelets, statin, anticoagulation and supportive care. Cardiology opinion obtained; [thrombolysed / advised coronary angiogram]. Hemodynamically stable, chest pain settled, and is being discharged in a stable condition on cardiac medications.`},
+ {label:"CVA / Stroke",text:`Patient admitted with above complaints. CT / MRI brain suggestive of [ischemic / hemorrhagic] stroke. Managed with [antiplatelets / anti-edema measures], physiotherapy and supportive care. Neurology opinion obtained. Vitals stable, [neurological deficit improving], and is being discharged in a stable condition with physiotherapy and follow-up advice.`},
+ {label:"UTI / Pyelo",text:`Patient admitted with above complaints. Urine analysis and culture suggestive of [urinary tract infection / pyelonephritis]. Started on IV antibiotics [as per sensitivity], antipyretics and adequate hydration. Became afebrile with treatment, symptomatically improved, and is being discharged in a stable condition with oral antibiotics to complete the course.`},
+ {label:"ALD / Hepatitis",text:`Patient, [chronic alcoholic], admitted with above complaints. Evaluated with LFT, USG abdomen and coagulation profile suggestive of [alcoholic hepatitis / decompensated chronic liver disease]. Managed with [diuretics for ascites], hepatoprotective measures, vitamin supplementation, [lactulose] and supportive care. Alcohol abstinence counselling given. Symptomatically improved, stable, and is being discharged with follow-up advice.`},
+ {label:"Cellulitis",text:`Patient admitted with above complaints suggestive of cellulitis of [site]. Managed with IV antibiotics, limb elevation, analgesics and wound care. [Blood sugars optimised.] Local signs of inflammation reduced, became afebrile, and is being discharged in a stable condition with oral antibiotics.`},
+ {label:"Seizure / GTCS",text:`Patient admitted following [new-onset / breakthrough] generalised tonic-clonic seizures. Evaluated with CT / MRI brain, EEG and metabolic workup. [Started on / optimised] anti-epileptic drugs. Neurology opinion obtained. No further seizure episodes during the stay, conscious and oriented, and is being discharged in a stable condition on AEDs with advice.`}
+];
+
+/* ---------- state ---------- */
+let complaints=[], treatment=[], rxMeds=[];
+let invDates=[], invParams=[], invSeq=0;
+let logoData="omandurar_footer.jpg";
+let pastHistory=[], comorbidities=[], rxHistory=[];
+let ynState={physio:"",equip:"",dress:""};
+
+/* ---------- init datalists & chips ---------- */
+function fillDatalist(id,arr){document.getElementById(id).innerHTML=arr.map(x=>`<option value="${x}">`).join("");}
+fillDatalist("ccList",COMMON_CC);
+fillDatalist("labList",COMMON_LABS);
+fillDatalist("drugList",COMMON_DRUGS);
+
+document.getElementById("ccChips").innerHTML =
+  COMMON_CC.slice(0,12).map(c=>`<span class="chip" onclick="document.getElementById('ccText').value='${c}';document.getElementById('ccDur').focus()">${c}</span>`).join("");
+document.getElementById("condChips").innerHTML =
+  COMMON_COND.map(c=>`<span class="chip" onclick="document.getElementById('condition').value='${c}';render()">${c}</span>`).join("");
+document.getElementById("pastChips").innerHTML =
+  COMMON_PAST.map(c=>`<span class="chip" onclick="document.getElementById('pastText').value=${JSON.stringify(c)};addPast()">${c}</span>`).join("");
+document.getElementById("comorbidChips").innerHTML =
+  COMMON_COMORBID.map(c=>`<span class="chip" onclick="document.getElementById('comorbidText').value=${JSON.stringify(c)};addComorbid()">${c}</span>`).join("");
+document.getElementById("invPanels").innerHTML =
+  Object.keys(PANELS).map(p=>`<span class="chip" onclick="addPanel('${p}')">+ ${p}</span>`).join("");
+document.getElementById("courseTpl").innerHTML =
+  COURSE_TEMPLATES.map((t,i)=>`<span class="chip" onclick="insertCourse(${i})">${t.label}</span>`).join("");
+document.getElementById("txBundles").innerHTML =
+  Object.keys(TX_BUNDLES).map(k=>`<span class="chip" onclick="addBundle('${k}')">+ ${k}</span>`).join("");
+document.getElementById("rxBundles").innerHTML =
+  Object.keys(RX_BUNDLES).map(k=>`<span class="chip" onclick="addRxBundle('${k}')">+ ${k}</span>`).join("");
+
+function addBundle(k){
+  (TX_BUNDLES[k]||[]).forEach(d=>{ if(!treatment.includes(d)) treatment.push(d); });
+  renderTx();render();
+}
+function addRxBundle(k){
+  (RX_BUNDLES[k]||[]).forEach(d=>{ if(!rxMeds.includes(d)) rxMeds.push(d); });
+  renderRx();render();
+}
+
+function insertCourse(i){
+  const el=document.getElementById("course");
+  const t=COURSE_TEMPLATES[i].text;
+  el.value = el.value.trim() ? el.value.trim()+"\n\n"+t : t;
+  render();
+}
+
+/* ---------- complaints ---------- */
+function addComplaint(){
+  const t=document.getElementById("ccText").value.trim();
+  if(!t)return;
+  const d=document.getElementById("ccDur").value.trim();
+  const u=document.getElementById("ccUnit").value;
+  complaints.push(d ? `H/o ${t} for ${d} ${u}` : `H/o ${t}`);
+  document.getElementById("ccText").value="";document.getElementById("ccDur").value="";
+  renderComplaints();render();
+}
+function renderComplaints(){
+  document.getElementById("ccListOut").innerHTML = complaints.map((c,i)=>
+    `<li><span>${esc(c)}</span><button onclick="complaints.splice(${i},1);renderComplaints();render()">×</button></li>`).join("");
+}
+
+/* ---------- past history / comorbidities / rx history ---------- */
+function addPast(){
+  const t=document.getElementById("pastText").value.trim(); if(!t)return;
+  pastHistory.push(t); document.getElementById("pastText").value="";
+  renderPast();render();
+}
+function renderPast(){
+  document.getElementById("pastListOut").innerHTML = pastHistory.map((c,i)=>
+    `<li><span>${esc(c)}</span><button onclick="pastHistory.splice(${i},1);renderPast();render()">×</button></li>`).join("");
+}
+function addComorbid(){
+  const t=document.getElementById("comorbidText").value.trim(); if(!t)return;
+  comorbidities.push(t); document.getElementById("comorbidText").value="";
+  renderComorbid();render();
+}
+function renderComorbid(){
+  document.getElementById("comorbidListOut").innerHTML = comorbidities.map((c,i)=>
+    `<li><span>${esc(c)}</span><button onclick="comorbidities.splice(${i},1);renderComorbid();render()">×</button></li>`).join("");
+}
+function addRxHistory(){
+  const n=document.getElementById("rxhName").value.trim(); if(!n)return;
+  const parts=[n,document.getElementById("rxhDose").value.trim(),document.getElementById("rxhFreq").value].filter(Boolean);
+  rxHistory.push(parts.join(" "));
+  ["rxhName","rxhDose"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("rxhFreq").value="";
+  renderRxHistory();render();
+}
+function renderRxHistory(){
+  document.getElementById("rxhListOut").innerHTML = rxHistory.map((t,i)=>
+    `<li><span>${esc(t)}</span><button onclick="rxHistory.splice(${i},1);renderRxHistory();render()">×</button></li>`).join("");
+}
+
+/* ---------- examination helpers ---------- */
+function insertGeneralExam(){
+  const el=document.getElementById("generalExam");
+  const t="Patient conscious, oriented, afebrile, not pale / icteric / cyanosed / clubbed, no lymphadenopathy, no pedal edema.";
+  el.value = el.value.trim() ? el.value.trim()+"\n"+t : t;
+  render();
+}
+
+/* ---------- yes/no toggles ---------- */
+function setYN(key,val_){
+  ynState[key]=val_;
+  const map={physio:"ynPhysio",equip:"ynEquip",dress:"ynDress"};
+  const box=document.getElementById(map[key]);
+  if(box) [...box.children].forEach(b=>b.classList.toggle("sel", b.textContent===val_));
+  render();
+}
+
+/* ---------- unit & honorific helpers ---------- */
+function getUnit(){
+  const custom=val("unitCustom");
+  if(custom) return custom;
+  return (val("unitPrefix")||"")+(document.getElementById("unitRoman").value||"");
+}
+function ensureDr(name){
+  const n=(name||"").trim();
+  if(!n) return "";
+  return /^dr\.?\s/i.test(n) ? n : "Dr. "+n;
+}
+function todayISO(){
+  const d=new Date(); const local=new Date(d.getTime()-d.getTimezoneOffset()*60000);
+  return local.toISOString().slice(0,10);
+}
+function clearDOD(){ document.getElementById("dod").value=""; render(); }
+
+/* ---------- treatment ---------- */
+function addTx(){
+  const n=document.getElementById("txName").value.trim();if(!n)return;
+  const parts=[n,document.getElementById("txDose").value.trim(),
+    document.getElementById("txRoute").value,document.getElementById("txFreq").value].filter(Boolean);
+  treatment.push(parts.join(" "));
+  ["txName","txDose"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("txRoute").value="";document.getElementById("txFreq").value="";
+  renderTx();render();
+}
+function renderTx(){
+  document.getElementById("txListOut").innerHTML = treatment.map((t,i)=>
+    `<li><span>${esc(t)}</span><button onclick="treatment.splice(${i},1);renderTx();render()">×</button></li>`).join("");
+}
+
+/* ---------- discharge meds ---------- */
+function addRx(){
+  const n=document.getElementById("rxName").value.trim();if(!n)return;
+  const parts=[n,document.getElementById("rxDose").value.trim(),
+    document.getElementById("rxFreq").value,document.getElementById("rxDur").value.trim()].filter(Boolean);
+  rxMeds.push(parts.join(" "));
+  ["rxName","rxDose","rxDur"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("rxFreq").value="";
+  renderRx();render();
+}
+function renderRx(){
+  document.getElementById("rxListOut").innerHTML = rxMeds.map((t,i)=>
+    `<li><span>${esc(t)}</span><button onclick="rxMeds.splice(${i},1);renderRx();render()">×</button></li>`).join("");
+}
+
+/* ---------- investigations editor ---------- */
+function addInvDate(){invDates.push({id:++invSeq,date:""});renderInvEditor();render();}
+function addInvParam(name){invParams.push({id:++invSeq,name:name,values:{}});renderInvEditor();render();}
+function addPanel(p){PANELS[p].forEach(n=>invParams.push({id:++invSeq,name:n,values:{}}));
+  if(invDates.length===0)addInvDate();else{renderInvEditor();render();}}
+function delInvDate(id){invDates=invDates.filter(d=>d.id!==id);renderInvEditor();render();}
+function delInvParam(id){invParams=invParams.filter(p=>p.id!==id);renderInvEditor();render();}
+
+function renderInvEditor(){
+  const box=document.getElementById("invEditor");
+  if(invDates.length===0 && invParams.length===0){
+    box.innerHTML=`<p class="hint">Add a date column, then add lab rows (or tap a panel like CBC / RFT above).</p>`;return;
+  }
+  let h='<table class="invtable"><thead><tr><th style="min-width:120px">Investigation</th>';
+  invDates.forEach(d=>{h+=`<th><input type="date" value="${d.date}" onchange="setDate(${d.id},this.value)"><button class="xbtn" title="remove date" onclick="delInvDate(${d.id})">×</button></th>`;});
+  h+='<th></th></tr></thead><tbody>';
+  invParams.forEach(p=>{
+    h+=`<tr><td class="pname"><input type="text" list="labList" value="${esc(p.name)}" placeholder="parameter" oninput="setPName(${p.id},this.value)"></td>`;
+    invDates.forEach(d=>{h+=`<td><input type="text" value="${esc(p.values[d.id]||'')}" oninput="setVal(${p.id},${d.id},this.value)"></td>`;});
+    h+=`<td><button class="xbtn" onclick="delInvParam(${p.id})">×</button></td></tr>`;
+  });
+  h+='</tbody></table>';
+  box.innerHTML=h;
+}
+function setDate(id,v){const d=invDates.find(x=>x.id===id);if(d){d.date=v;render();}}
+function setPName(id,v){const p=invParams.find(x=>x.id===id);if(p){p.name=v;render();}}
+function setVal(pid,did,v){const p=invParams.find(x=>x.id===pid);if(p){p.values[did]=v;render();}}
+
+/* ---------- helpers ---------- */
+function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function val(id){return document.getElementById(id).value.trim();}
+function fmtDate(v){if(!v)return"";const[y,m,d]=v.split("-");return `${d}/${m}/${y}`;}
+function fmtDateShort(v){if(!v)return"";const[y,m,d]=v.split("-");return `${d}/${m}`;}
+function lines(t){return t.split("\n").map(s=>s.trim()).filter(Boolean);}
+
+/* ---------- render preview ---------- */
+function render(){
+  const kind = val("summaryType").toUpperCase();
+  const logoHTML = logoData
+    ? `<img class="logo-box" src="${logoData}" alt="logo">`
+    : `<img class="logo-box" src="omandurar_footer.jpg" alt="logo">`;
+  let h="";
+  h+=`<div class="doc-head">
+    ${logoHTML}
+    <div class="head-text">
+      <div class="college">${esc(val("college"))}</div>
+      ${val("address")?`<div class="addr">${esc(val("address"))}</div>`:""}
+      <div class="dept">${esc(val("dept"))}</div>
+      <div class="kind">${esc(kind)}</div>
+    </div>
+  </div>`;
+
+  const ageSex=[val("age"),val("sex")].filter(Boolean).join(" / ");
+  h+=`<div class="pt-grid">
+    <div><b>Name</b> : ${esc(val("name"))}</div>
+    <div><b>DOA</b> : ${fmtDate(val("doa"))}</div>
+    <div><b>Unit</b> : ${esc(getUnit())}</div>
+    <div><b>Age/Sex</b> : ${esc(ageSex)}</div>
+    <div><b>DOS</b> : ${fmtDate(val("dos"))}</div>
+    <div><b>Dept/Unit</b> : ${esc(val("referred"))}</div>
+    <div><b>IP No.</b> : ${esc(val("ipno"))}</div>
+    <div><b>DOD</b> : ${fmtDate(val("dod"))}</div>
+    <div><b>ICU Duration</b> : ${esc(val("icuDuration"))}</div>
+    <div><b>Resides at</b> : ${esc(val("resides"))}</div>
+    <div><b>Mode of D/C</b> : ${esc(val("modeOfDischarge"))}</div>
+    <div></div>
+  </div>`;
+
+  const diagICD=val("icdCode");
+  h+=section("Diagnosis"+(val("icdCode")?" with ICD Code":""), listOrText(val("diagnosis"))+(val("icdCode")?`<div class="content" style="margin-top:4px"><b>ICD Code:</b> ${esc(val("icdCode"))}</div>`:""));
+  if(val("surgeryBrief")) h+=section("Surgery / Management", `<div class="content">${esc(val("surgeryBrief"))}</div>`);
+
+  h+=section("Presenting Complaints (Chief C/O)", complaints.length?ul(complaints):empty());
+  if(val("hopi")) h+=section("HOPI", `<div class="content">${esc(val("hopi"))}</div>`);
+  if(val("clinicalHistory")) h+=section("Clinical History", `<div class="content">${esc(val("clinicalHistory"))}</div>`);
+  if(pastHistory.length) h+=section("Past History", ul(pastHistory));
+  if(comorbidities.length) h+=section("Comorbidities", ul(comorbidities));
+  if(rxHistory.length) h+=section("Rx History", ul(rxHistory));
+
+  const exam = examinationHTML();
+  if(exam) h+=section("Examination", exam);
+
+  h+=section("Course in the Hospital", val("course")?`<div class="content">${esc(val("course"))}</div>`:empty());
+  h+=section("Investigations", investigationsHTML());
+  h+=section("Opinions", val("opinions")?`<div class="content">${esc(val("opinions"))}</div>`:empty());
+  if(val("opNotes")) h+=section("Management / Surgery (Operation Notes)", `<div class="content">${esc(val("opNotes"))}</div>`);
+  h+=section("Treatment Given", treatment.length?ul(treatment):empty());
+  const cond=[val("condition"),val("condExtra")].filter(Boolean).join(" — ");
+  h+=section("Condition at Discharge", cond?`<div class="content">${esc(cond)}</div>`:empty());
+
+  // discharge advice block
+  let adv="";
+  const advBits=[];
+  if(val("diet")) advBits.push(`<b>Diet:</b> ${esc(val("diet"))}`);
+  if(val("physicalActivity")) advBits.push(`<b>Physical Activity:</b> ${esc(val("physicalActivity"))}`);
+  if(ynState.physio) advBits.push(`<b>Physiotherapy at home:</b> ${ynState.physio}`);
+  if(ynState.equip) advBits.push(`<b>Home medical equipment needed:</b> ${ynState.equip}`);
+  if(ynState.dress) advBits.push(`<b>Dressing needs at home:</b> ${ynState.dress}`);
+  if(val("otherNeeds")) advBits.push(`<b>Other needs:</b> ${esc(val("otherNeeds"))}`);
+  if(advBits.length) adv+=`<div class="content">${advBits.join("<br>")}</div>`;
+  if(rxMeds.length) adv+=`<div style="font-weight:700;margin-top:6px;margin-bottom:2px">Medications:</div>${ul(rxMeds)}`;
+  if(val("advice")) adv+=`<div class="content" style="margin-top:6px">${esc(val("advice"))}</div>`;
+  if(val("emergencyContact")) adv+=`<div class="content" style="margin-top:6px"><b>Emergency contact:</b> ${esc(val("emergencyContact"))}</div>`;
+  if(val("review")) adv+=`<div class="content" style="margin-top:6px"><b>Follow-Up:</b> ${esc(val("review"))}</div>`;
+  if(val("warning")) adv+=`<div class="content" style="margin-top:6px"><b>Return immediately if:</b> ${esc(val("warning"))}</div>`;
+  h+=section("Advice on Discharge (Rx)", adv||empty());
+
+  const prep=ensureDr(val("preparedBy")), chf=ensureDr(val("chief"));
+  if(prep||chf||val("signDateTime")){
+    h+=`<div class="sign-row">
+      <div>${esc(prep)}<br><small>Prepared by</small></div>
+      <div>${esc(chf)}<br><small>Medical Officer (Name &amp; Seal)</small>${val("signDateTime")?`<br><small>${esc(val("signDateTime"))}</small>`:""}</div>
+    </div>`;
+  }
+  document.getElementById("paper").innerHTML=h;
+  scheduleSave();
+  clearTimeout(pageCheckTimer);
+  pageCheckTimer=setTimeout(updatePageBanner,400);
+}
+function section(title,content){return `<div class="sec"><h3>${title}</h3>${content}</div>`;}
+function empty(){return `<div class="empty">—</div>`;}
+function ul(arr){return `<ul>${arr.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;}
+function listOrText(t){const l=lines(t);if(!l.length)return empty();return l.length>1?ul(l):`<div class="content">${esc(l[0])}</div>`;}
+function listOrTextRaw(t){const l=lines(t);return l.join(", ");}
+
+function examinationHTML(){
+  let parts=[];
+  if(val("generalExam")) parts.push(`<div class="content">${esc(val("generalExam"))}</div>`);
+  const vit=[["BP",val("vBP")],["PR",val("vPR")],["RR",val("vRR")],["SpO2",val("vSpO2")],["Temp",val("vTemp")],["GRBS",val("vGRBS")]]
+    .filter(([,v])=>v);
+  if(vit.length) parts.push(`<div class="content" style="margin-top:4px"><b>Vitals:</b> ${vit.map(([k,v])=>`${k} - ${esc(v)}`).join(", ")}</div>`);
+  const se=[["CVS",val("seCVS")],["RS",val("seRS")],["P/A",val("sePA")],["CNS",val("seCNS")]].filter(([,v])=>v);
+  if(se.length) parts.push(`<div class="content" style="margin-top:4px"><b>Systemic Examination:</b> ${se.map(([k,v])=>`${k} - ${esc(v)}`).join("; ")}</div>`);
+  return parts.join("");
+}
+
+function investigationsHTML(){
+  let out="";
+  const hasTable = invDates.length && invParams.some(p=>p.name.trim());
+  if(hasTable){
+    let h=`<table class="prev-table"><thead><tr><th>Investigation</th>`;
+    invDates.forEach(d=>{h+=`<th>${d.date?fmtDateShort(d.date):"—"}</th>`;});
+    h+=`</tr></thead><tbody>`;
+    invParams.forEach(p=>{
+      if(!p.name.trim())return;
+      h+=`<tr><td class="pn">${esc(p.name)}</td>`;
+      invDates.forEach(d=>{h+=`<td>${esc(p.values[d.id]||"")}</td>`;});
+      h+=`</tr>`;
+    });
+    h+=`</tbody></table>`;out+=h;
+  }
+  if(val("invOther")) out+=`<div class="content" style="margin-top:8px">${esc(val("invOther"))}</div>`;
+  return out||empty();
+}
+
+/* ---------- tabs / copy ---------- */
+function showTab(t){
+  const form=t==="form";
+  document.getElementById("formTab").style.display=form?"block":"none";
+  document.getElementById("summaryTab").style.display=form?"none":"block";
+  document.getElementById("tabForm").classList.toggle("active",form);
+  document.getElementById("tabSummary").classList.toggle("active",!form);
+  if(!form){render();window.scrollTo(0,0);updatePageBanner();}
+}
+function copyText(){
+  render();
+  const t=document.getElementById("paper").innerText.replace(/\n{3,}/g,"\n\n");
+  navigator.clipboard.writeText(t).then(
+    ()=>toast("Summary copied to clipboard"),
+    ()=>toast("Copy failed — long-press to select in View summary")
+  );
+}
+function toast(msg){
+  let el=document.createElement("div");
+  el.textContent=msg;
+  el.style.cssText="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#14425f;color:#fff;padding:10px 18px;border-radius:8px;font-size:14px;z-index:99;box-shadow:0 3px 10px rgba(0,0,0,.25)";
+  document.body.appendChild(el);setTimeout(()=>el.remove(),2200);
+}
+
+/* ---------- A4 page-count measurement & print ---------- */
+let pageCheckTimer;
+const PAGE_PX_HEIGHT=1000; // approx A4 content height in px after 16mm top/bottom margins
+const PAGE_PX_WIDTH=688;   // approx A4 content width in px after 14mm left/right margins
+
+function measurePagesFor(compactClass){
+  const src=document.getElementById("paper");
+  const clone=document.createElement("div");
+  clone.className="paper"+(compactClass?" "+compactClass:"");
+  clone.style.cssText=`position:absolute;left:-9999px;top:0;width:${PAGE_PX_WIDTH}px;padding:0;border:0;font-size:12.5px;`;
+  clone.innerHTML=src.innerHTML;
+  document.body.appendChild(clone);
+  const hgt=clone.scrollHeight;
+  document.body.removeChild(clone);
+  return {height:hgt, pages: hgt/PAGE_PX_HEIGHT};
+}
+
+function updatePageBanner(){
+  const banner=document.getElementById("pageBanner");
+  if(!banner) return;
+  const r=measurePagesFor("");
+  const pages=Math.max(1,Math.ceil(r.pages));
+  if(r.pages<=2.02){
+    banner.style.display="flex";
+    banner.className="pagebanner no-print ok";
+    banner.textContent=`Fits on ${pages} A4 page${pages>1?"s":""}.`;
+  } else {
+    banner.style.display="flex";
+    banner.className="pagebanner no-print warn";
+    banner.textContent=`⚠ Content is longer than 2 A4 pages (~${pages} pages). Shorten a section, or continue — Print / PDF will try to compact it and warn again if it still doesn't fit.`;
+  }
+}
+
+function checkAndPrint(){
+  render();
+  const paper=document.getElementById("paper");
+  paper.classList.remove("compact","compact2");
+  let r=measurePagesFor("");
+  if(r.pages<=2.02){ window.print(); return; }
+  paper.classList.add("compact");
+  r=measurePagesFor("compact");
+  if(r.pages<=2.02){ window.print(); return; }
+  paper.classList.add("compact2");
+  r=measurePagesFor("compact compact2");
+  if(r.pages<=2.05){ window.print(); return; }
+  const pages=Math.ceil(r.pages);
+  const proceed=confirm(`⚠ Content exceeds 2 A4 pages even after compacting (~${pages} pages estimated). It will likely overflow or get cut off when printed.\n\nTap OK to print anyway, or Cancel to go back and shorten a section (e.g. History, Course, Advice).`);
+  if(proceed) window.print();
+}
+
+/* ---------- PWA install ---------- */
+let deferredPrompt=null;
+window.addEventListener("beforeinstallprompt",(e)=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  const btn=document.getElementById("installBtn");
+  if(btn) btn.style.display="inline-block";
+});
+async function doInstall(){
+  if(!deferredPrompt){
+    toast("Use your browser menu → 'Add to Home screen' to install");
+    return;
+  }
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt=null;
+  document.getElementById("installBtn").style.display="none";
+}
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  });
+}
+
+/* live update on any form input */
+document.addEventListener("input",e=>{ if(e.target.closest("#invEditor"))return; render(); });
+
+/* ---------- persistence ---------- */
+const FIELDS=["college","address","dept","summaryType","name","age","sex","ipno","resides",
+  "doa","dos","dod","icuDuration","unitPrefix","unitCustom","referred","modeOfDischarge",
+  "diagnosis","icdCode","surgeryBrief","hopi","clinicalHistory",
+  "generalExam","vBP","vPR","vRR","vSpO2","vTemp","vGRBS","seCVS","seRS","sePA","seCNS",
+  "course","invOther","opinions","opNotes","condition","condExtra",
+  "diet","physicalActivity","otherNeeds","advice","emergencyContact","review","warning",
+  "preparedBy","chief","signDateTime"];
+const SELECT_FIELDS=["unitRoman"];
+const DEFAULT_FIELDS=["college","address","dept","summaryType","unitPrefix","unitRoman","chief","preparedBy","advice","review","warning"];
+const PATIENT_FIELDS=FIELDS.filter(f=>!DEFAULT_FIELDS.includes(f));
+const SEED={
+  advice:"Take medications as advised.\nAdequate rest and oral fluids.\nTake diet as advised.",
+  review:"Review in Medicine OPD after 1 week with reports (or earlier if needed).",
+  warning:"Fever not subsiding, breathlessness, chest pain, giddiness, reduced urine output, bleeding, or drowsiness — report to casualty immediately."
+};
+const store={
+  async get(k){try{if(!window.storage||!window.storage.get)return null;const r=await window.storage.get(k);return r&&r.value?r.value:null;}catch(e){return null;}},
+  async set(k,v){try{if(!window.storage||!window.storage.set)return;await window.storage.set(k,v,false);}catch(e){}}
+};
+function safeParse(s){try{return JSON.parse(s);}catch(e){return null;}}
+function setVal_(id,v){const el=document.getElementById(id);if(el)el.value=(v==null?"":v);}
+function onLogo(e){
+  const f=e.target.files&&e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{ logoData=r.result; render(); store.set("ds:logo",logoData); };
+  r.readAsDataURL(f);
+}
+
+let saveTimer;
+function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{store.set("ds:draft",JSON.stringify(collectDraft()));},600);}
+function collectDraft(){
+  const f={};FIELDS.forEach(id=>f[id]=document.getElementById(id).value);
+  SELECT_FIELDS.forEach(id=>f[id]=document.getElementById(id).value);
+  return {f,complaints,treatment,rxMeds,invDates,invParams,invSeq,pastHistory,comorbidities,rxHistory,ynState};
+}
+function restoreDraft(o){if(!o)return;
+  if(o.f){FIELDS.forEach(id=>{if(id in o.f)setVal_(id,o.f[id]);});SELECT_FIELDS.forEach(id=>{if(o.f[id]!=null)setVal_(id,o.f[id]);});}
+  complaints=o.complaints||[];treatment=o.treatment||[];rxMeds=o.rxMeds||[];
+  invDates=o.invDates||[];invParams=o.invParams||[];invSeq=o.invSeq||0;
+  pastHistory=o.pastHistory||[];comorbidities=o.comorbidities||[];rxHistory=o.rxHistory||[];
+  ynState=o.ynState||{physio:"",equip:"",dress:""};
+  renderComplaints();renderTx();renderRx();renderInvEditor();renderPast();renderComorbid();renderRxHistory();
+  ["physio","equip","dress"].forEach(k=>{ if(ynState[k]) setYNui(k,ynState[k]); });
+  if(!val("dod")) setVal_("dod",todayISO());
+  render();
+}
+function setYNui(key,v){
+  const map={physio:"ynPhysio",equip:"ynEquip",dress:"ynDress"};
+  const box=document.getElementById(map[key]);
+  if(box) [...box.children].forEach(b=>b.classList.toggle("sel", b.textContent===v));
+}
+
+function applyDefaults(d){if(!d)return;DEFAULT_FIELDS.forEach(id=>{if(id in d)setVal_(id,d[id]);});}
+async function saveDefaults(){const d={};DEFAULT_FIELDS.forEach(id=>d[id]=document.getElementById(id).value);
+  await store.set("ds:defaults",JSON.stringify(d));toast("Saved as your defaults");}
+
+async function newSummary(){
+  if(!confirm("Start a new patient? Patient details will be cleared. Your saved defaults are kept."))return;
+  PATIENT_FIELDS.forEach(id=>setVal_(id,""));
+  complaints=[];treatment=[];rxMeds=[];invDates=[];invParams=[];invSeq=0;
+  pastHistory=[];comorbidities=[];rxHistory=[];ynState={physio:"",equip:"",dress:""};
+  ["ynPhysio","ynEquip","ynDress"].forEach(id=>{const b=document.getElementById(id);if(b)[...b.children].forEach(c=>c.classList.remove("sel"));});
+  setVal_("dod",todayISO());
+  const d=safeParse(await store.get("ds:defaults"));
+  ["advice","review","warning"].forEach(id=>setVal_(id,(d&&d[id]!=null)?d[id]:SEED[id]));
+  renderComplaints();renderTx();renderRx();renderInvEditor();renderPast();renderComorbid();renderRxHistory();render();
+  await store.set("ds:draft",JSON.stringify(collectDraft()));
+  showTab("form");toast("New patient — defaults kept");
+}
+
+async function loadAll(){
+  const lg=await store.get("ds:logo"); if(lg)logoData=lg;
+  const def=safeParse(await store.get("ds:defaults"));
+  if(def)applyDefaults(def);
+  const draft=safeParse(await store.get("ds:draft"));
+  if(draft){ restoreDraft(draft); }
+  else { setVal_("dod",todayISO()); renderInvEditor(); render(); }
+}
+loadAll();
+</script>
+</body>
+</html>
