@@ -1,5 +1,6 @@
-const CACHE = "ds-builder-v1";
-const ASSETS = ["./discharge-summary-builder.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
+const CACHE = "ds-builder-v2";
+const ASSETS = ["./index.html", "./discharge-summary-builder.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./omandurar_footer.jpg"];
+
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).catch(()=>{}));

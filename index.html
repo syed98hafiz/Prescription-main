@@ -152,11 +152,11 @@
     width:210mm;
     min-height:297mm;
     box-sizing:border-box;
-    padding:16mm 14mm;
+    padding:10mm 14mm 16mm;
     margin:0 auto 20px;
     box-shadow:0 0 0 1px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
     border-radius:2px;
-    font-size:13px;
+    font-size:14px;
     color:#111;
     position:relative;
   }
@@ -164,7 +164,7 @@
   /* 1.7x enlarged emblem & header */
   .doc-head{
     position:relative;text-align:center;border-bottom:2px solid #111;
-    padding:0 8px 12px;margin-bottom:14px;min-height:112px;
+    padding:0 8px 10px;margin-bottom:10px;min-height:108px;
   }
   .logo-box{
     position:absolute;left:0;top:0;width:105px;height:105px;
@@ -172,20 +172,20 @@
   }
   .logo-box.empty{display:flex;align-items:center;justify-content:center;font-size:9px;color:#b0b0b0;letter-spacing:1px;border:1px solid #ccc}
   .head-text{padding:0 115px}
-  .doc-head .college{font-size:18px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;line-height:1.2}
-  .doc-head .addr{font-size:12px;margin-top:2px;text-transform:uppercase;letter-spacing:.3px}
-  .doc-head .dept{font-size:13px;font-weight:700;margin-top:4px;text-transform:uppercase}
+  .doc-head .college{font-size:20px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;line-height:1.2}
+  .doc-head .addr{font-size:14px;margin-top:2px;text-transform:uppercase;letter-spacing:.3px}
+  .doc-head .dept{font-size:15px;font-weight:700;margin-top:4px;text-transform:uppercase}
   .doc-head .kind{
-    display:inline-block;margin-top:6px;font-size:13px;font-weight:700;
+    display:inline-block;margin-top:6px;font-size:15px;font-weight:700;
     border:1.5px solid #111;padding:2px 14px;border-radius:3px;text-transform:uppercase;
   }
 
   .pt-grid{
     display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:5px 16px;margin:12px 0 6px;
-    font-size:13px;break-inside:avoid;page-break-inside:avoid;
+    font-size:14px;break-inside:avoid;page-break-inside:avoid;
   }
-  .pt-grid div{padding:2.5px 0;border-bottom:1px dotted #bbb;min-height:22px}
-  .pt-grid b{display:inline-block;min-width:64px;font-weight:700}
+  .pt-grid div{padding:2.5px 0;border-bottom:1px dotted #bbb;min-height:24px}
+  .pt-grid b{display:inline-block;min-width:68px;font-weight:700}
 
   /* Optimized space-occupying section styles */
   .sec{
@@ -194,20 +194,25 @@
     break-inside:auto;
   }
   .sec h3{
-    font-size:13px;font-weight:800;text-transform:uppercase;margin:0 0 4px;
+    font-size:14px;font-weight:800;text-transform:uppercase;margin:0 0 4px;
     border-bottom:1.5px solid #111;padding-bottom:1px;letter-spacing:.5px;display:inline-block;
     page-break-after:avoid;
     break-after:avoid;
   }
-  .sec .content{font-size:13px;line-height:1.4;white-space:pre-wrap}
+  .sec .content{font-size:14px;line-height:1.4;white-space:pre-wrap}
   .sec ul{margin:3px 0 0;padding-left:18px;page-break-inside:auto;break-inside:auto}
   .sec ul li{margin-bottom:1.5px;line-height:1.35;page-break-inside:avoid;break-inside:avoid}
   .empty{color:#999;font-style:italic}
 
+  /* Two-column layout for side-by-side sections (Past History + Rx History) */
+  .two-col{display:flex;gap:16px;margin-top:11px;page-break-inside:auto;break-inside:auto}
+  .two-col .col-half{flex:1;min-width:0}
+  .two-col .col-half .sec{margin-top:0}
+
   /* Investigation table that breaks & flows naturally across pages */
   .inv-table-wrap{overflow-x:auto;page-break-inside:auto;break-inside:auto}
   .prev-table{
-    width:100%;border-collapse:collapse;font-size:12px;margin-top:3px;
+    width:100%;border-collapse:collapse;font-size:13px;margin-top:3px;
     page-break-inside:auto;break-inside:auto;
   }
   .prev-table th,.prev-table td{border:1px solid #333;padding:3.5px 6px;text-align:center}
@@ -223,10 +228,10 @@
   .med-list li{margin-bottom:2px;page-break-inside:avoid;break-inside:avoid}
 
   .sign-row{
-    display:flex;justify-content:space-between;margin-top:24px;font-size:12.5px;
+    display:flex;justify-content:space-between;margin-top:36px;font-size:14px;
     page-break-inside:avoid;break-inside:avoid;
   }
-  .sign-row div{text-align:center;border-top:1px solid #111;padding-top:4px;min-width:180px}
+  .sign-row div{text-align:center;border-top:1px solid #111;padding-top:6px;min-width:210px;min-height:70px}
 
   /* Visual A4 page break indicator line on screen */
   .a4-page-guide{
@@ -289,6 +294,12 @@
     .sign-row{margin-top:24px;font-size:12px;gap:10px}
     .sign-row div{min-width:0;flex:1}
     .a4-page-guide{display:none !important}
+    /* two-col stacks on mobile paper preview */
+    .two-col{flex-direction:column;gap:6px}
+    /* menu dropdown opens to the left on mobile */
+    .menu-dropdown{right:0;left:auto;min-width:180px}
+    /* compact the template button on mobile */
+    #btnLocalTemplate{padding:7px 8px;font-size:12px}
   }
 
   /* ---------- new field types ---------- */
@@ -317,21 +328,21 @@
 
   /* ---------- Space-occupying compaction levels ---------- */
   .paper.relaxed .sec{margin-top:14px}
-  .paper.relaxed .sec h3{font-size:13.5px;margin-bottom:6px}
-  .paper.relaxed .content,.paper.relaxed li,.paper.relaxed .prev-table{font-size:13px;line-height:1.48}
-  .paper.relaxed .pt-grid{margin:14px 0 8px;font-size:13px;gap:5px 16px}
-  .paper.relaxed .sign-row{margin-top:36px}
+  .paper.relaxed .sec h3{font-size:14.5px;margin-bottom:6px}
+  .paper.relaxed .content,.paper.relaxed li,.paper.relaxed .prev-table{font-size:14px;line-height:1.48}
+  .paper.relaxed .pt-grid{margin:14px 0 8px;font-size:14px;gap:5px 16px}
+  .paper.relaxed .sign-row{margin-top:48px}
 
   .paper.compact .sec{margin-top:7px}
   .paper.compact .sec h3{font-size:12px;margin-bottom:2px}
   .paper.compact .content,.paper.compact li,.paper.compact .prev-table,.paper.compact .adv-item{font-size:11.5px;line-height:1.30}
   .paper.compact .prev-table th,.paper.compact .prev-table td{padding:2.5px 5px}
-  .paper.compact .doc-head{margin-bottom:8px;padding-bottom:6px;min-height:92px}
+  .paper.compact .doc-head{margin-bottom:6px;padding-bottom:6px;min-height:92px}
   .paper.compact .logo-box{width:88px;height:88px}
   .paper.compact .head-text{padding:0 92px}
-  .paper.compact .doc-head .college{font-size:16px}
+  .paper.compact .doc-head .college{font-size:18px}
   .paper.compact .pt-grid{margin:6px 0 3px;font-size:11.5px;gap:2.5px 12px}
-  .paper.compact .sign-row{margin-top:16px}
+  .paper.compact .sign-row{margin-top:24px}
 
   .paper.compact2 .sec{margin-top:5px}
   .paper.compact2 .sec h3{font-size:11px;margin-bottom:2px}
@@ -340,10 +351,40 @@
   .paper.compact2 .doc-head{margin-bottom:5px;padding-bottom:4px;min-height:76px}
   .paper.compact2 .logo-box{width:72px;height:72px}
   .paper.compact2 .head-text{padding:0 76px}
-  .paper.compact2 .doc-head .college{font-size:14px}
-  .paper.compact2 .doc-head .addr,.paper.compact2 .doc-head .dept{font-size:10px}
+  .paper.compact2 .doc-head .college{font-size:16px}
+  .paper.compact2 .doc-head .addr,.paper.compact2 .doc-head .dept{font-size:11px}
   .paper.compact2 .pt-grid{margin:4px 0 2px;font-size:10.5px;gap:2px 10px}
-  .paper.compact2 .sign-row{margin-top:12px;font-size:10px}
+  .paper.compact2 .sign-row{margin-top:16px;font-size:12px}
+  .paper.compact2 .two-col{gap:10px}
+  .paper.compact .two-col{gap:10px}
+
+  /* ---------- Menu dropdown ---------- */
+  .menu-wrap{position:relative}
+  .menu-btn{
+    border:0;background:rgba(255,255,255,.15);color:#fff;
+    padding:8px 12px;border-radius:6px;font-size:18px;font-weight:700;
+    cursor:pointer;line-height:1;letter-spacing:1px;
+  }
+  .menu-btn:hover{background:rgba(255,255,255,.28)}
+  .menu-dropdown{
+    display:none;position:absolute;right:0;top:calc(100% + 6px);
+    background:#fff;border:1px solid var(--line);border-radius:10px;
+    box-shadow:0 8px 24px rgba(0,0,0,.18);min-width:200px;z-index:200;
+    overflow:hidden;
+  }
+  .menu-dropdown.open{display:block}
+  .menu-dropdown button,.menu-dropdown a{
+    display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;
+    border:0;background:transparent;color:var(--ink);font-size:14px;
+    font-family:inherit;font-weight:600;cursor:pointer;text-decoration:none;
+    text-align:left;
+  }
+  .menu-dropdown button:hover,.menu-dropdown a:hover{background:var(--primary-soft);color:var(--primary)}
+  .menu-dropdown hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+  .menu-dropdown .menu-label{
+    padding:6px 16px 2px;font-size:11px;color:var(--muted);
+    font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  }
 
   /* ---------- PRINT ---------- */
   @media print{
@@ -359,7 +400,7 @@
       box-shadow:none !important;
       padding:0 !important;
       margin:0 !important;
-      font-size:12px;
+      font-size:13px;
     }
     .sec{page-break-inside:auto !important;break-inside:auto !important}
     .sec h3{page-break-after:avoid !important;break-after:avoid !important}
@@ -370,6 +411,7 @@
     .prev-table thead{display:table-header-group !important}
     .prev-table tr{page-break-inside:avoid !important;break-inside:avoid !important}
     .pt-grid,.sign-row{page-break-inside:avoid !important;break-inside:avoid !important}
+    .two-col{page-break-inside:auto !important;break-inside:auto !important}
     .adv-items-group,.med-list{page-break-inside:auto !important;break-inside:auto !important}
     .adv-item{page-break-inside:avoid !important;break-inside:avoid !important}
     @page{size:A4;margin:16mm 14mm}
@@ -391,8 +433,26 @@
     <div class="actions">
       <button class="ghost install-btn" id="installBtn" onclick="doInstall()">Install app</button>
       <button class="ghost" onclick="newSummary()">New patient</button>
+      <button class="ghost" id="btnLocalTemplate" onclick="doLocalTemplate()" title="Save or load a local template file">📁 Template</button>
       <button class="ghost" onclick="copyText()">Copy text</button>
       <button onclick="checkAndPrint()">Print / PDF</button>
+      <div class="menu-wrap">
+        <button class="menu-btn" id="menuBtn" onclick="toggleMenu()" title="More options">⋮</button>
+        <div class="menu-dropdown" id="menuDropdown">
+          <div class="menu-label">Template</div>
+          <button onclick="exportTemplate();closeMenu()">⬇ Export defaults</button>
+          <button onclick="importTemplate();closeMenu()">⬆ Import defaults</button>
+          <button onclick="doLocalTemplate();closeMenu()">📁 Local template</button>
+          <hr>
+          <div class="menu-label">Summary</div>
+          <button onclick="copyText();closeMenu()">📋 Copy text</button>
+          <button onclick="shareDoc();closeMenu()">↗ Share / Send PDF</button>
+          <hr>
+          <div class="menu-label">Manage</div>
+          <button onclick="newSummary();closeMenu()">🆕 New patient</button>
+          <a href="templates/" target="_blank">🗂 Template library</a>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -711,7 +771,7 @@ Take diet as advised.</textarea></div>
   </details>
 
   <p class="hint no-print" style="text-align:center;padding-bottom:20px">
-    Tip: switch to <b>View summary</b> to check spacing, then <b>Print / PDF</b>. Your entries stay only in this session.
+    Tip: switch to <b>View summary</b> to check spacing, then <b>Print / PDF</b>. Your entries are <b>auto-saved on this device</b> — closing the tab or app won't lose your work.
   </p>
 </div>
 
@@ -996,8 +1056,19 @@ function render(){
 
   h+=section("Presenting Complaints (Chief C/O)", complaints.length?ul(complaints):empty());
   if(val("hopi")) h+=section("HOPI", `<div class="content">${esc(val("hopi"))}</div>`);
-  if(pastHistory.length) h+=section("Past History", ul(pastHistory));
-  if(rxHistory.length) h+=section("Rx History", ul(rxHistory));
+  // Past History & Rx History — side by side
+  if(pastHistory.length || rxHistory.length){
+    if(pastHistory.length && rxHistory.length){
+      h+=`<div class="two-col">`;
+      h+=`<div class="col-half">${section("Past History", ul(pastHistory))}</div>`;
+      h+=`<div class="col-half">${section("Rx History (Pre-admission)", ul(rxHistory))}</div>`;
+      h+=`</div>`;
+    } else if(pastHistory.length){
+      h+=section("Past History", ul(pastHistory));
+    } else {
+      h+=section("Rx History (Pre-admission)", ul(rxHistory));
+    }
+  }
 
   const exam = examinationHTML();
   if(exam) h+=section("Examination", exam);
@@ -1005,7 +1076,19 @@ function render(){
   h+=section("Investigations", investigationsHTML());
   h+=section("Opinions", val("opinions")?`<div class="content">${esc(val("opinions"))}</div>`:empty());
   h+=section("Course in the Hospital", val("course")?`<div class="content">${esc(val("course"))}</div>`:empty());
-  h+=section("Treatment Given", treatment.length?ul(treatment):empty());
+  // Treatment Given — 2-col if short list (≤6 items), else full-width
+  if(treatment.length > 0 && treatment.length <= 6){
+    h+=`<div class="two-col">`;
+    const half=Math.ceil(treatment.length/2);
+    const col1=treatment.slice(0,half);
+    const col2=treatment.slice(half);
+    h+=`<div class="col-half">${section("Treatment Given", ul(col1))}</div>`;
+    if(col2.length) h+=`<div class="col-half"><div class="sec"><ul>${col2.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div></div>`;
+    else h+=`<div class="col-half"></div>`;
+    h+=`</div>`;
+  } else {
+    h+=section("Treatment Given", treatment.length?ul(treatment):empty());
+  }
   const cond=[val("condition"),val("condExtra")].filter(Boolean).join(" — ");
   h+=section("Condition at Discharge", cond?`<div class="content">${esc(cond)}</div>`:empty());
 
@@ -1249,8 +1332,102 @@ if("serviceWorker" in navigator){
   });
 }
 
+/* ---------- Menu ---------- */
+function toggleMenu(){
+  const d=document.getElementById("menuDropdown");
+  d.classList.toggle("open");
+}
+function closeMenu(){
+  document.getElementById("menuDropdown").classList.remove("open");
+}
+document.addEventListener("click",e=>{
+  if(!e.target.closest(".menu-wrap")) closeMenu();
+});
+
+/* ---------- Export defaults as JSON file ---------- */
+async function exportTemplate(){
+  const d=safeParse(await store.get("ds:defaults"))||{};
+  const blob=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="ds-defaults.json";
+  a.click();
+  toast("Defaults exported as ds-defaults.json");
+}
+
+/* ---------- Import defaults from JSON file ---------- */
+function importTemplate(){
+  const inp=document.createElement("input");
+  inp.type="file";inp.accept=".json,application/json";
+  inp.onchange=async()=>{
+    const f=inp.files[0]; if(!f)return;
+    const text=await f.text();
+    const d=safeParse(text);
+    if(!d||typeof d!=="object"){toast("Invalid template file");return;}
+    await store.set("ds:defaults",JSON.stringify(d));
+    applyDefaults(d);
+    toast("Template imported and applied as defaults ✓");
+  };
+  inp.click();
+}
+
+/* ---------- Local template: save or load full draft ---------- */
+function doLocalTemplate(){
+  const choice=confirm(
+    "LOCAL TEMPLATE\n\nOK = Save current form as a template file (.json)\nCancel = Load a previously saved template file"
+  );
+  if(choice){
+    // Save
+    const data={draft:collectDraft(),defaults:{}};
+    DEFAULT_FIELDS.forEach(id=>{data.defaults[id]=document.getElementById(id).value;});
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="ds-template-"+new Date().toISOString().slice(0,10)+".json";
+    a.click();
+    toast("Template saved locally ✓");
+  } else {
+    // Load
+    const inp=document.createElement("input");
+    inp.type="file";inp.accept=".json,application/json";
+    inp.onchange=async()=>{
+      const f=inp.files[0]; if(!f)return;
+      const text=await f.text();
+      const data=safeParse(text);
+      if(!data){toast("Invalid template file");return;}
+      if(data.defaults) applyDefaults(data.defaults);
+      if(data.draft) restoreDraft(data.draft);
+      await store.set("ds:draft",JSON.stringify(collectDraft()));
+      toast("Template loaded ✓");
+    };
+    inp.click();
+  }
+}
+
+/* ---------- Share / Send as PDF ---------- */
+async function shareDoc(){
+  if(typeof navigator.share==="undefined"){
+    toast("Share not supported — use Print / PDF instead");
+    checkAndPrint();
+    return;
+  }
+  // Build a plain-text version for sharing
+  render();
+  const text=document.getElementById("paper").innerText.replace(/\n{3,}/g,"\n\n");
+  const name=val("name")||"Patient";
+  const dod=fmtDate(val("dod"))||"";
+  try{
+    await navigator.share({
+      title:`Discharge Summary — ${name}${dod? " ("+dod+")":""}`,
+      text:text
+    });
+  } catch(e){
+    if(e.name!=="AbortError") toast("Could not share — try Print / PDF");
+  }
+}
+
 /* live update on any form input */
-document.addEventListener("input",e=>{ if(e.target.closest("#invEditor"))return; render(); });
+document.addEventListener("input",e=>{ if(e.target.closest("#invEditor"))return; render(); scheduleSave(); });
 
 /* ---------- persistence ---------- */
 const FIELDS=["college","address","dept","summaryType","name","age","sex","ipno",
@@ -1268,10 +1445,20 @@ const SEED={
   review:"Review in Medicine OPD after 1 week with reports (or earlier if needed).",
   warning:"Fever not subsiding, breathlessness, chest pain, giddiness, reduced urine output, bleeding, or drowsiness — report to casualty immediately."
 };
+
+/* ---------- localStorage-based store (works offline, no extensions needed) ---------- */
 const store={
-  async get(k){try{if(!window.storage||!window.storage.get)return null;const r=await window.storage.get(k);return r&&r.value?r.value:null;}catch(e){return null;}},
-  async set(k,v){try{if(!window.storage||!window.storage.set)return;await window.storage.set(k,v,false);}catch(e){}}
+  async get(k){
+    try{ return localStorage.getItem(k); }catch(e){ return null; }
+  },
+  async set(k,v){
+    try{ localStorage.setItem(k,v); }catch(e){}
+  },
+  async remove(k){
+    try{ localStorage.removeItem(k); }catch(e){}
+  }
 };
+
 function safeParse(s){try{return JSON.parse(s);}catch(e){return null;}}
 function setVal_(id,v){const el=document.getElementById(id);if(el)el.value=(v==null?"":v);}
 function onLogo(e){
