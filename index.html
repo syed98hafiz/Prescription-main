@@ -1,1048 +1,2060 @@
 <!DOCTYPE html>
 <html lang="en">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#14425f">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="DS Builder">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
-<link rel="icon" href="icon-192.png">
-<title>Discharge Summary Builder</title>
-<style>
-  :root{
-    --ink:#1b2733;
-    --muted:#5b6b7a;
-    --primary:#14425f;
-    --primary-soft:#e6eef4;
-    --line:#d3dce4;
-    --chip:#d9e8f2;
-    --chip-ink:#123a54;
-    --danger:#b0413a;
-    --paper:#ffffff;
-    --bg:#eaeef2;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    color:var(--ink);background:var(--bg);line-height:1.45;
-  }
-  .topbar{
-    position:sticky;top:0;z-index:10;background:var(--primary);color:#fff;
-    display:flex;align-items:center;justify-content:space-between;padding:9px 18px;gap:16px;
-    box-shadow:0 2px 6px rgba(0,0,0,.15);
-  }
-  .topbar-left{
-    display:flex;align-items:center;gap:14px;flex:0 0 auto;
-  }
-  .brand-title{
-    font-size:16px;margin:0;font-weight:700;letter-spacing:.3px;white-space:nowrap;
-  }
-  .btn-autofill{
-    border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;
-    padding:6px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;
-    display:inline-flex;align-items:center;gap:5px;transition:all .15s ease;
-  }
-  .btn-autofill:hover{background:#ffd166;color:#14425f;border-color:#ffd166}
-  .desktop-only{display:inline-flex}
-  @media (max-width:768px){
-    .desktop-only{display:none !important}
-    .btn-autofill{display:none !important}
-  }
-  .topbar-right{
-    display:flex;align-items:center;gap:12px;flex:0 0 auto;
-  }
-  .tabs{display:flex;background:rgba(255,255,255,.15);border-radius:8px;padding:3px}
-  .tabs button{
-    border:0;background:transparent;color:#fff;padding:7px 14px;border-radius:6px;
-    font-size:14px;font-weight:600;cursor:pointer;
-  }
-  .tabs button.active{background:#fff;color:var(--primary)}
-  .actions{display:flex;gap:8px}
-  .actions button{
-    border:0;background:#fff;color:var(--primary);padding:8px 12px;border-radius:6px;
-    font-size:13px;font-weight:600;cursor:pointer;
-  }
-  .actions button.ghost{background:rgba(255,255,255,.15);color:#fff}
-
-  .wrap{max-width:820px;margin:0 auto;padding:14px}
-
-  /* ---------- FORM ---------- */
-  .card{
-    background:#fff;border:1px solid var(--line);border-radius:10px;
-    margin-bottom:14px;overflow:hidden;
-  }
-  .card > summary{
-    list-style:none;cursor:pointer;padding:12px 14px;font-weight:700;font-size:14px;
-    color:var(--primary);background:var(--primary-soft);display:flex;align-items:center;gap:8px;
-  }
-  .card > summary::-webkit-details-marker{display:none}
-  .card > summary::before{content:"▸";font-size:12px;transition:transform .15s}
-  .card[open] > summary::before{transform:rotate(90deg)}
-  .card .body{padding:14px}
-
-  label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:0 0 4px}
-  input[type=text],input[type=date],textarea,select{
-    width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;
-    font-size:15px;font-family:inherit;color:var(--ink);background:#fff;
-  }
-  textarea{resize:vertical;min-height:70px}
-  input:focus,textarea:focus,select:focus{outline:2px solid var(--primary);outline-offset:-1px;border-color:var(--primary)}
-  .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-  .row > div{flex:1;min-width:130px}
-  .field{margin-bottom:12px}
-  .hint{font-size:11px;color:var(--muted);margin-top:4px}
-
-  .btn{
-    border:1px solid var(--primary);background:var(--primary);color:#fff;
-    padding:8px 12px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;
-  }
-  .btn.sm{padding:6px 10px;font-size:12px}
-  .btn.out{background:#fff;color:var(--primary)}
-  .btn.danger{border-color:var(--danger);background:#fff;color:var(--danger)}
-
-  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-  .chip{
-    border:1px solid var(--chip);background:var(--chip);color:var(--chip-ink);
-    padding:5px 10px;border-radius:20px;font-size:12px;cursor:pointer;font-weight:600;
-  }
-  .chip:active{transform:scale(.97)}
-
-  .list{list-style:none;margin:8px 0 0;padding:0}
-  .list li{
-    display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);
-    border-radius:7px;margin-bottom:6px;font-size:14px;background:#fafcfe;
-  }
-  .list li span{flex:1}
-  .list li button{
-    border:0;background:transparent;color:var(--danger);font-size:18px;line-height:1;
-    cursor:pointer;padding:0 4px;
-  }
-  .addrow{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
-  .addrow > div{flex:1;min-width:90px}
-
-  /* investigations editor */
-  .invtable{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
-  .invtable th,.invtable td{border:1px solid var(--line);padding:4px;text-align:center}
-  .invtable th{background:var(--primary-soft);color:var(--primary);font-weight:700}
-  .invtable input{padding:6px;font-size:13px;text-align:center;border-radius:5px}
-  .invtable .pname input{text-align:left;font-weight:600}
-  .invtable .xbtn{border:0;background:transparent;color:var(--danger);cursor:pointer;font-size:16px}
-  .inv-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-
-  /* ---------- PREVIEW & A4 FORMAT ---------- */
-  #summaryTab{
-    display:none;
-    background:#dfe5ec;
-    padding:20px 10px 40px;
-  }
-  #summaryTab .wrap{
-    max-width:none;
-    padding:0;
-    margin:0 auto;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-  }
-  .paper{
-    background:#ffffff;
-    width:210mm;
-    min-height:297mm;
-    box-sizing:border-box;
-    padding:10mm 14mm 16mm;
-    margin:0 auto 20px;
-    box-shadow:0 0 0 1px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
-    border-radius:2px;
-    font-size:14px;
-    color:#111;
-    position:relative;
-  }
-
-  /* 1.7x enlarged emblem & header */
-  .doc-head{
-    position:relative;text-align:center;border-bottom:2px solid #111;
-    padding:0 8px 10px;margin-bottom:10px;min-height:108px;
-  }
-  .logo-box{
-    position:absolute;left:0;top:0;width:105px;height:105px;
-    border:none;object-fit:contain;background:transparent;
-  }
-  .logo-box.empty{display:flex;align-items:center;justify-content:center;font-size:9px;color:#b0b0b0;letter-spacing:1px;border:1px solid #ccc}
-  .head-text{padding:0 115px}
-  .doc-head .college{font-size:20px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;line-height:1.2}
-  .doc-head .addr{font-size:14px;margin-top:2px;text-transform:uppercase;letter-spacing:.3px}
-  .doc-head .dept{font-size:15px;font-weight:700;margin-top:4px;text-transform:uppercase}
-  .doc-head .kind{
-    display:inline-block;margin-top:6px;font-size:15px;font-weight:700;
-    border:1.5px solid #111;padding:2px 14px;border-radius:3px;text-transform:uppercase;
-  }
-
-  .pt-grid{
-    display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:5px 16px;margin:12px 0 6px;
-    font-size:14px;break-inside:avoid;page-break-inside:avoid;
-  }
-  .pt-grid div{padding:2.5px 0;border-bottom:1px dotted #bbb;min-height:24px}
-  .pt-grid b{display:inline-block;min-width:68px;font-weight:700}
-
-  /* Optimized space-occupying section styles */
-  .sec{
-    margin-top:11px;
-    page-break-inside:auto;
-    break-inside:auto;
-  }
-  .sec h3{
-    font-size:14px;font-weight:800;text-transform:uppercase;margin:0 0 4px;
-    border-bottom:1.5px solid #111;padding-bottom:1px;letter-spacing:.5px;display:inline-block;
-    page-break-after:avoid;
-    break-after:avoid;
-  }
-  .sec .content{font-size:14px;line-height:1.4;white-space:pre-wrap}
-  .sec ul{margin:3px 0 0;padding-left:18px;page-break-inside:auto;break-inside:auto}
-  .sec ul li{margin-bottom:1.5px;line-height:1.35;page-break-inside:avoid;break-inside:avoid}
-  .empty{color:#999;font-style:italic}
-
-  /* Two-column layout for side-by-side sections (Past History + Rx History) */
-  .two-col{display:flex;gap:16px;margin-top:11px;page-break-inside:auto;break-inside:auto}
-  .two-col .col-half{flex:1;min-width:0}
-  .two-col .col-half .sec{margin-top:0}
-
-  /* Investigation table that breaks & flows naturally across pages */
-  .inv-table-wrap{overflow-x:auto;page-break-inside:auto;break-inside:auto}
-  .prev-table{
-    width:100%;border-collapse:collapse;font-size:13px;margin-top:3px;
-    page-break-inside:auto;break-inside:auto;
-  }
-  .prev-table th,.prev-table td{border:1px solid #333;padding:3.5px 6px;text-align:center}
-  .prev-table th{background:#f0f0f0;font-weight:700}
-  .prev-table td.pn{text-align:left;font-weight:600}
-  .prev-table thead{display:table-header-group}
-  .prev-table tr{page-break-inside:avoid;break-inside:avoid}
-
-  /* Sub-blocks in discharge advice that stay intact individually while letting the section break across pages */
-  .adv-items-group{page-break-inside:auto;break-inside:auto}
-  .adv-item{page-break-inside:avoid;break-inside:avoid;line-height:1.4}
-  .med-list{margin:3px 0 0;padding-left:18px;page-break-inside:auto;break-inside:auto}
-  .med-list li{margin-bottom:2px;page-break-inside:avoid;break-inside:avoid}
-
-  .sign-row{
-    display:flex;justify-content:space-between;margin-top:36px;font-size:14px;
-    page-break-inside:avoid;break-inside:avoid;
-  }
-  .sign-row div{text-align:center;border-top:1px solid #111;padding-top:6px;min-width:210px;min-height:70px}
-
-  /* Visual A4 page break indicator line on screen */
-  .a4-page-guide{
-    position:absolute;left:-14mm;right:-14mm;width:calc(100% + 28mm);
-    height:32px;background:#dfe5ec;
-    border-top:1px solid #c7d2dc;border-bottom:1px solid #c7d2dc;
-    box-shadow:inset 0 2px 4px rgba(0,0,0,0.06);
-    display:flex;align-items:center;justify-content:center;
-    pointer-events:none;z-index:10;
-  }
-  .a4-page-guide-badge{
-    background:#14425f;color:#fff;font-size:11px;font-weight:700;
-    padding:3px 14px;border-radius:12px;letter-spacing:.6px;
-    box-shadow:0 2px 6px rgba(0,0,0,0.18);text-transform:uppercase;
-  }
-
-  @media (max-width:620px){
-    .topbar{padding:8px 10px;gap:8px;flex-wrap:wrap}
-    .topbar-left{width:100%;justify-content:space-between}
-    .brand-title{font-size:15px}
-    .desktop-only,.btn-autofill{display:none !important}
-    .topbar-right{width:100%;display:flex;flex-direction:column;gap:6px}
-    .tabs{width:100%;display:flex}
-    .tabs button{flex:1;text-align:center;padding:7px 10px;font-size:13.5px}
-    .actions{width:100%;display:flex;justify-content:space-between;gap:6px}
-    .actions button{flex:1;padding:7px 4px;font-size:12px;text-align:center}
-
-    .wrap{padding:8px}
-    .card{margin-bottom:10px;border-radius:8px}
-    .card > summary{padding:10px 12px;font-size:13.5px}
-    .card .body{padding:10px}
-
-    .paper{
-      width:100%;min-height:auto;padding:14px 10px;
-      font-size:12.5px;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.12);
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#14425f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DS Builder">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" href="icon-192.png">
+  <title>Discharge Summary Builder</title>
+  <style>
+    :root {
+      --ink: #1b2733;
+      --muted: #5b6b7a;
+      --primary: #14425f;
+      --primary-soft: #e6eef4;
+      --line: #d3dce4;
+      --chip: #d9e8f2;
+      --chip-ink: #123a54;
+      --danger: #b0413a;
+      --paper: #ffffff;
+      --bg: #eaeef2;
     }
-    .doc-head{
-      display:flex;flex-direction:row;align-items:center;gap:12px;
-      text-align:left;padding:0 0 10px;margin-bottom:12px;min-height:auto;
+
+    * {
+      box-sizing: border-box
     }
-    .logo-box{position:static;width:75px;height:75px;flex:0 0 75px;border:none}
-    .head-text{padding:0;flex:1;min-width:0;text-align:left}
-    .doc-head .college{font-size:14px;line-height:1.2}
-    .doc-head .addr{font-size:11px}
-    .doc-head .dept{font-size:11.5px;margin-top:2px}
-    .doc-head .kind{font-size:11px;padding:2px 8px;margin-top:4px}
 
-    .pt-grid{grid-template-columns:1fr 1fr;gap:4px 8px;font-size:12px;margin:10px 0 4px}
-    .pt-grid div{min-height:22px;padding:2px 0}
-    .pt-grid b{min-width:54px}
-    .pt-grid div:last-child:nth-child(odd){grid-column:1 / -1}
-
-    .vitals-grid{grid-template-columns:repeat(2,1fr);gap:8px}
-    .addrow > div{min-width:calc(50% - 6px);flex:1}
-    .addrow > div[style*="flex:2"]{min-width:100%}
-    .addrow > div[style*="flex:0"]{min-width:100%;margin-top:4px}
-    .addrow > div[style*="flex:0"] button{width:100%;padding:8px;font-size:13px}
-
-    .chip{padding:6px 11px;font-size:12px}
-    .sign-row{margin-top:24px;font-size:12px;gap:10px}
-    .sign-row div{min-width:0;flex:1}
-    .a4-page-guide{display:none !important}
-    /* two-col stacks on mobile paper preview */
-    .two-col{flex-direction:column;gap:6px}
-    /* menu dropdown opens to the left on mobile */
-    .menu-dropdown{right:0;left:auto;min-width:180px}
-    /* compact the template button on mobile */
-    #btnLocalTemplate{padding:7px 8px;font-size:12px}
-  }
-
-  /* ---------- new field types ---------- */
-  .subhead{font-size:12.5px;font-weight:700;color:var(--primary);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.3px}
-  .subhead:first-child{margin-top:0}
-  .yn{display:flex;gap:8px;margin-bottom:2px}
-  .yn button{
-    flex:1;border:1px solid var(--line);background:#fff;color:var(--muted);
-    padding:8px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;
-  }
-  .yn button.sel{background:var(--primary);color:#fff;border-color:var(--primary)}
-  .vitals-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 10px;margin-bottom:12px}
-  .vitals-grid > div{min-width:0}
-  .unit-row{display:flex;gap:8px;align-items:flex-end}
-  .unit-row > div{flex:1;min-width:70px}
-  .inline-btn-field{display:flex;gap:6px;align-items:flex-end}
-  .inline-btn-field input{flex:1}
-  .inline-btn-field button{flex:0 0 auto}
-  .pagebanner{
-    display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:8px;
-    font-size:13px;font-weight:600;margin-bottom:14px;max-width:210mm;width:100%;box-sizing:border-box;
-  }
-  .pagebanner.ok{background:#e3f4ea;color:#1c6b3f}
-  .pagebanner.warn{background:#fdecea;color:#a4322a}
-  .install-btn{display:none}
-
-  /* ---------- Space-occupying compaction levels ---------- */
-  .paper.relaxed .sec{margin-top:14px}
-  .paper.relaxed .sec h3{font-size:14.5px;margin-bottom:6px}
-  .paper.relaxed .content,.paper.relaxed li,.paper.relaxed .prev-table{font-size:14px;line-height:1.48}
-  .paper.relaxed .pt-grid{margin:14px 0 8px;font-size:14px;gap:5px 16px}
-  .paper.relaxed .sign-row{margin-top:48px}
-
-  .paper.compact .sec{margin-top:7px}
-  .paper.compact .sec h3{font-size:12px;margin-bottom:2px}
-  .paper.compact .content,.paper.compact li,.paper.compact .prev-table,.paper.compact .adv-item{font-size:11.5px;line-height:1.30}
-  .paper.compact .prev-table th,.paper.compact .prev-table td{padding:2.5px 5px}
-  .paper.compact .doc-head{margin-bottom:6px;padding-bottom:6px;min-height:92px}
-  .paper.compact .logo-box{width:88px;height:88px}
-  .paper.compact .head-text{padding:0 92px}
-  .paper.compact .doc-head .college{font-size:18px}
-  .paper.compact .pt-grid{margin:6px 0 3px;font-size:11.5px;gap:2.5px 12px}
-  .paper.compact .sign-row{margin-top:24px}
-
-  .paper.compact2 .sec{margin-top:5px}
-  .paper.compact2 .sec h3{font-size:11px;margin-bottom:2px}
-  .paper.compact2 .content,.paper.compact2 li,.paper.compact2 .prev-table,.paper.compact2 .adv-item{font-size:10.5px;line-height:1.22}
-  .paper.compact2 .prev-table th,.paper.compact2 .prev-table td{padding:1.5px 4px}
-  .paper.compact2 .doc-head{margin-bottom:5px;padding-bottom:4px;min-height:76px}
-  .paper.compact2 .logo-box{width:72px;height:72px}
-  .paper.compact2 .head-text{padding:0 76px}
-  .paper.compact2 .doc-head .college{font-size:16px}
-  .paper.compact2 .doc-head .addr,.paper.compact2 .doc-head .dept{font-size:11px}
-  .paper.compact2 .pt-grid{margin:4px 0 2px;font-size:10.5px;gap:2px 10px}
-  .paper.compact2 .sign-row{margin-top:16px;font-size:12px}
-  .paper.compact2 .two-col{gap:10px}
-  .paper.compact .two-col{gap:10px}
-
-  /* ---------- Menu dropdown ---------- */
-  .menu-wrap{position:relative}
-  .menu-btn{
-    border:0;background:rgba(255,255,255,.15);color:#fff;
-    padding:8px 12px;border-radius:6px;font-size:18px;font-weight:700;
-    cursor:pointer;line-height:1;letter-spacing:1px;
-  }
-  .menu-btn:hover{background:rgba(255,255,255,.28)}
-  .menu-dropdown{
-    display:none;position:absolute;right:0;top:calc(100% + 6px);
-    background:#fff;border:1px solid var(--line);border-radius:10px;
-    box-shadow:0 8px 24px rgba(0,0,0,.18);min-width:200px;z-index:200;
-    overflow:hidden;
-  }
-  .menu-dropdown.open{display:block}
-  .menu-dropdown button,.menu-dropdown a{
-    display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;
-    border:0;background:transparent;color:var(--ink);font-size:14px;
-    font-family:inherit;font-weight:600;cursor:pointer;text-decoration:none;
-    text-align:left;
-  }
-  .menu-dropdown button:hover,.menu-dropdown a:hover{background:var(--primary-soft);color:var(--primary)}
-  .menu-dropdown hr{border:0;border-top:1px solid var(--line);margin:4px 0}
-  .menu-dropdown .menu-label{
-    padding:6px 16px 2px;font-size:11px;color:var(--muted);
-    font-weight:700;letter-spacing:.5px;text-transform:uppercase;
-  }
-
-  /* ---------- PRINT ---------- */
-  @media print{
-    .topbar,#formTab,.no-print,.a4-page-guide,.pagebanner{display:none !important}
-    #summaryTab{display:block !important;padding:0 !important;background:#fff !important}
-    body{background:#fff !important}
-    .wrap{max-width:none !important;padding:0 !important;margin:0 !important}
-    .paper{
-      width:auto !important;
-      min-height:0 !important;
-      border:0 !important;
-      border-radius:0 !important;
-      box-shadow:none !important;
-      padding:0 !important;
-      margin:0 !important;
-      font-size:13px;
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.45;
     }
-    .sec{page-break-inside:auto !important;break-inside:auto !important}
-    .sec h3{page-break-after:avoid !important;break-after:avoid !important}
-    .sec ul{page-break-inside:auto !important;break-inside:auto !important}
-    .sec ul li{page-break-inside:avoid !important;break-inside:avoid !important}
-    .inv-table-wrap{overflow:visible !important;page-break-inside:auto !important;break-inside:auto !important}
-    .prev-table{page-break-inside:auto !important;break-inside:auto !important}
-    .prev-table thead{display:table-header-group !important}
-    .prev-table tr{page-break-inside:avoid !important;break-inside:avoid !important}
-    .pt-grid,.sign-row{page-break-inside:avoid !important;break-inside:avoid !important}
-    .two-col{page-break-inside:auto !important;break-inside:auto !important}
-    .adv-items-group,.med-list{page-break-inside:auto !important;break-inside:auto !important}
-    .adv-item{page-break-inside:avoid !important;break-inside:avoid !important}
-    @page{size:A4;margin:16mm 14mm}
-  }
-</style>
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: calc(9px + env(safe-area-inset-top, 0px)) 18px 9px;
+      gap: 16px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .15);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex: 0 0 auto;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: .3px;
+      white-space: nowrap;
+    }
+
+    .btn-autofill {
+      border: 1px solid rgba(255, 255, 255, .35);
+      background: rgba(255, 255, 255, .14);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all .15s ease;
+    }
+
+    .btn-autofill:hover {
+      background: #ffd166;
+      color: #14425f;
+      border-color: #ffd166
+    }
+
+    .desktop-only {
+      display: inline-flex
+    }
+
+    @media (max-width:768px) {
+      .desktop-only {
+        display: none !important
+      }
+
+      .btn-autofill {
+        display: none !important
+      }
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 0 0 auto;
+    }
+
+    .tabs {
+      display: flex;
+      background: rgba(255, 255, 255, .15);
+      border-radius: 8px;
+      padding: 3px
+    }
+
+    .tabs button {
+      border: 0;
+      background: transparent;
+      color: #fff;
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .tabs button.active {
+      background: #fff;
+      color: var(--primary)
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px
+    }
+
+    .actions button {
+      border: 0;
+      background: #fff;
+      color: var(--primary);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .actions button.ghost {
+      background: rgba(255, 255, 255, .15);
+      color: #fff
+    }
+
+    .wrap {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 14px
+    }
+
+    /* ---------- FORM ---------- */
+    .card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .card>summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 12px 14px;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--primary);
+      background: var(--primary-soft);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card>summary::-webkit-details-marker {
+      display: none
+    }
+
+    .card>summary::before {
+      content: "▸";
+      font-size: 12px;
+      transition: transform .15s
+    }
+
+    .card[open]>summary::before {
+      transform: rotate(90deg)
+    }
+
+    .card .body {
+      padding: 14px
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      margin: 0 0 4px
+    }
+
+    input[type=text],
+    input[type=date],
+    textarea,
+    select {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 70px
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: -1px;
+      border-color: var(--primary)
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px
+    }
+
+    .row>div {
+      flex: 1;
+      min-width: 130px
+    }
+
+    .field {
+      margin-bottom: 12px
+    }
+
+    .hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px
+    }
+
+    .btn {
+      border: 1px solid var(--primary);
+      background: var(--primary);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn.sm {
+      padding: 6px 10px;
+      font-size: 12px
+    }
+
+    .btn.out {
+      background: #fff;
+      color: var(--primary)
+    }
+
+    .btn.danger {
+      border-color: var(--danger);
+      background: #fff;
+      color: var(--danger)
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px
+    }
+
+    .chip {
+      border: 1px solid var(--chip);
+      background: var(--chip);
+      color: var(--chip-ink);
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .chip:active {
+      transform: scale(.97)
+    }
+
+    .list {
+      list-style: none;
+      margin: 8px 0 0;
+      padding: 0
+    }
+
+    .list li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      margin-bottom: 6px;
+      font-size: 14px;
+      background: #fafcfe;
+    }
+
+    .list li span {
+      flex: 1
+    }
+
+    .list li button {
+      border: 0;
+      background: transparent;
+      color: var(--danger);
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 4px;
+    }
+
+    .addrow {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: flex-end
+    }
+
+    .addrow>div {
+      flex: 1;
+      min-width: 90px
+    }
+
+    /* investigations editor */
+    .invtable {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 6px
+    }
+
+    .invtable th,
+    .invtable td {
+      border: 1px solid var(--line);
+      padding: 4px;
+      text-align: center
+    }
+
+    .invtable th {
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 700
+    }
+
+    .invtable input {
+      padding: 6px;
+      font-size: 13px;
+      text-align: center;
+      border-radius: 5px
+    }
+
+    .invtable .pname input {
+      text-align: left;
+      font-weight: 600
+    }
+
+    .invtable .xbtn {
+      border: 0;
+      background: transparent;
+      color: var(--danger);
+      cursor: pointer;
+      font-size: 16px
+    }
+
+    .inv-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px
+    }
+
+    /* ---------- PREVIEW & A4 FORMAT ---------- */
+    #summaryTab {
+      display: none;
+      background: #dfe5ec;
+      padding: 20px 10px 40px;
+    }
+
+    #summaryTab .wrap {
+      max-width: none;
+      padding: 0;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .paper {
+      background: #ffffff;
+      width: 210mm;
+      min-height: 297mm;
+      box-sizing: border-box;
+      padding: 10mm 14mm 16mm;
+      margin: 0 auto 20px;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+      border-radius: 2px;
+      font-size: 14px;
+      color: #111;
+      position: relative;
+    }
+
+    /* 1.7x enlarged emblem & header */
+    .doc-head {
+      position: relative;
+      text-align: center;
+      border-bottom: 2px solid #111;
+      padding: 0 8px 10px;
+      margin-bottom: 10px;
+      min-height: 108px;
+    }
+
+    .logo-box {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 105px;
+      height: 105px;
+      border: none;
+      object-fit: contain;
+      background: transparent;
+    }
+
+    .logo-box.empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: #b0b0b0;
+      letter-spacing: 1px;
+      border: 1px solid #ccc
+    }
+
+    .head-text {
+      padding: 0 115px
+    }
+
+    .doc-head .college {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      line-height: 1.2
+    }
+
+    .doc-head .addr {
+      font-size: 14px;
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: .3px
+    }
+
+    .doc-head .dept {
+      font-size: 15px;
+      font-weight: 700;
+      margin-top: 4px;
+      text-transform: uppercase
+    }
+
+    .doc-head .kind {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 15px;
+      font-weight: 700;
+      border: 1.5px solid #111;
+      padding: 2px 14px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+
+    .pt-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr 1fr;
+      gap: 5px 16px;
+      margin: 12px 0 6px;
+      font-size: 14px;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .pt-grid div {
+      padding: 2.5px 0;
+      border-bottom: 1px dotted #bbb;
+      min-height: 24px
+    }
+
+    .pt-grid b {
+      display: inline-block;
+      min-width: 68px;
+      font-weight: 700
+    }
+
+    /* Optimized space-occupying section styles */
+    .sec {
+      margin-top: 11px;
+      page-break-inside: auto;
+      break-inside: auto;
+    }
+
+    .sec h3 {
+      font-size: 14px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin: 0 0 4px;
+      border-bottom: 1.5px solid #111;
+      padding-bottom: 1px;
+      letter-spacing: .5px;
+      display: inline-block;
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+
+    .sec .content {
+      font-size: 14px;
+      line-height: 1.4;
+      white-space: pre-wrap
+    }
+
+    .sec ul {
+      margin: 3px 0 0;
+      padding-left: 18px;
+      page-break-inside: auto;
+      break-inside: auto
+    }
+
+    .sec ul li {
+      margin-bottom: 1.5px;
+      line-height: 1.35;
+      page-break-inside: avoid;
+      break-inside: avoid
+    }
+
+    .empty {
+      color: #999;
+      font-style: italic
+    }
+
+    /* Two-column layout for side-by-side sections (Past History + Rx History) */
+    .two-col {
+      display: flex;
+      gap: 16px;
+      margin-top: 11px;
+      page-break-inside: auto;
+      break-inside: auto
+    }
+
+    .two-col .col-half {
+      flex: 1;
+      min-width: 0
+    }
+
+    .two-col .col-half .sec {
+      margin-top: 0
+    }
+
+    /* Investigation table that breaks & flows naturally across pages */
+    .inv-table-wrap {
+      overflow-x: auto;
+      page-break-inside: auto;
+      break-inside: auto
+    }
+
+    .prev-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 3px;
+      page-break-inside: auto;
+      break-inside: auto;
+    }
+
+    .prev-table th,
+    .prev-table td {
+      border: 1px solid #333;
+      padding: 3.5px 6px;
+      text-align: center
+    }
+
+    .prev-table th {
+      background: #f0f0f0;
+      font-weight: 700
+    }
+
+    .prev-table td.pn {
+      text-align: left;
+      font-weight: 600
+    }
+
+    .prev-table thead {
+      display: table-header-group
+    }
+
+    .prev-table tr {
+      page-break-inside: avoid;
+      break-inside: avoid
+    }
+
+    /* Sub-blocks in discharge advice that stay intact individually while letting the section break across pages */
+    .adv-items-group {
+      page-break-inside: auto;
+      break-inside: auto
+    }
+
+    .adv-item {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      line-height: 1.4
+    }
+
+    .med-list {
+      margin: 3px 0 0;
+      padding-left: 18px;
+      page-break-inside: auto;
+      break-inside: auto
+    }
+
+    .med-list li {
+      margin-bottom: 2px;
+      page-break-inside: avoid;
+      break-inside: avoid
+    }
+
+    .sign-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 36px;
+      font-size: 14px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    .sign-row div {
+      text-align: center;
+      border-top: 1px solid #111;
+      padding-top: 6px;
+      min-width: 210px;
+      min-height: 70px
+    }
+
+    /* Visual A4 page break indicator line on screen */
+    .a4-page-guide {
+      position: absolute;
+      left: -14mm;
+      right: -14mm;
+      width: calc(100% + 28mm);
+      height: 32px;
+      background: #dfe5ec;
+      border-top: 1px solid #c7d2dc;
+      border-bottom: 1px solid #c7d2dc;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .a4-page-guide-badge {
+      background: #14425f;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 14px;
+      border-radius: 12px;
+      letter-spacing: .6px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+      text-transform: uppercase;
+    }
+
+    @media (max-width:620px) {
+      .topbar {
+        padding: calc(8px + env(safe-area-inset-top, 0px)) 10px 8px;
+        gap: 8px;
+        flex-wrap: wrap
+      }
+
+      .topbar-left {
+        width: 100%;
+        justify-content: space-between
+      }
+
+      .brand-title {
+        font-size: 15px
+      }
+
+      .desktop-only,
+      .btn-autofill {
+        display: none !important
+      }
+
+      .topbar-right {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 6px
+      }
+
+      .tabs {
+        width: 100%;
+        display: flex
+      }
+
+      .tabs button {
+        flex: 1;
+        text-align: center;
+        padding: 7px 10px;
+        font-size: 13.5px
+      }
+
+      .actions {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        gap: 6px
+      }
+
+      .actions button {
+        flex: 1;
+        padding: 7px 4px;
+        font-size: 12px;
+        text-align: center
+      }
+
+      .wrap {
+        padding: 8px
+      }
+
+      .card {
+        margin-bottom: 10px;
+        border-radius: 8px
+      }
+
+      .card>summary {
+        padding: 10px 12px;
+        font-size: 13.5px
+      }
+
+      .card .body {
+        padding: 10px
+      }
+
+      .paper {
+        width: 100%;
+        min-height: auto;
+        padding: 14px 10px;
+        font-size: 12.5px;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      }
+
+      .doc-head {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+        text-align: left;
+        padding: 0 0 10px;
+        margin-bottom: 12px;
+        min-height: auto;
+      }
+
+      .logo-box {
+        position: static;
+        width: 75px;
+        height: 75px;
+        flex: 0 0 75px;
+        border: none
+      }
+
+      .head-text {
+        padding: 0;
+        flex: 1;
+        min-width: 0;
+        text-align: left
+      }
+
+      .doc-head .college {
+        font-size: 14px;
+        line-height: 1.2
+      }
+
+      .doc-head .addr {
+        font-size: 11px
+      }
+
+      .doc-head .dept {
+        font-size: 11.5px;
+        margin-top: 2px
+      }
+
+      .doc-head .kind {
+        font-size: 11px;
+        padding: 2px 8px;
+        margin-top: 4px
+      }
+
+      .pt-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 4px 8px;
+        font-size: 12px;
+        margin: 10px 0 4px
+      }
+
+      .pt-grid div {
+        min-height: 22px;
+        padding: 2px 0
+      }
+
+      .pt-grid b {
+        min-width: 54px
+      }
+
+      .pt-grid div:last-child:nth-child(odd) {
+        grid-column: 1 / -1
+      }
+
+      .vitals-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px
+      }
+
+      .addrow>div {
+        min-width: calc(50% - 6px);
+        flex: 1
+      }
+
+      .addrow>div[style*="flex:2"] {
+        min-width: 100%
+      }
+
+      .addrow>div[style*="flex:0"] {
+        min-width: 100%;
+        margin-top: 4px
+      }
+
+      .addrow>div[style*="flex:0"] button {
+        width: 100%;
+        padding: 8px;
+        font-size: 13px
+      }
+
+      .chip {
+        padding: 6px 11px;
+        font-size: 12px
+      }
+
+      .sign-row {
+        margin-top: 24px;
+        font-size: 12px;
+        gap: 10px
+      }
+
+      .sign-row div {
+        min-width: 0;
+        flex: 1
+      }
+
+      .a4-page-guide {
+        display: none !important
+      }
+
+      /* two-col stacks on mobile paper preview */
+      .two-col {
+        flex-direction: column;
+        gap: 6px
+      }
+
+      /* menu dropdown opens to the left on mobile */
+      .menu-dropdown {
+        right: 0;
+        left: auto;
+        min-width: 180px
+      }
+
+      /* compact the template button on mobile */
+      #btnLocalTemplate {
+        padding: 7px 8px;
+        font-size: 12px
+      }
+    }
+
+    /* ---------- new field types ---------- */
+    .subhead {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--primary);
+      margin: 14px 0 6px;
+      text-transform: uppercase;
+      letter-spacing: .3px
+    }
+
+    .subhead:first-child {
+      margin-top: 0
+    }
+
+    .yn {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 2px
+    }
+
+    .yn button {
+      flex: 1;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      padding: 8px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .yn button.sel {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary)
+    }
+
+    .vitals-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px 10px;
+      margin-bottom: 12px
+    }
+
+    .vitals-grid>div {
+      min-width: 0
+    }
+
+    .unit-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end
+    }
+
+    .unit-row>div {
+      flex: 1;
+      min-width: 70px
+    }
+
+    .inline-btn-field {
+      display: flex;
+      gap: 6px;
+      align-items: flex-end
+    }
+
+    .inline-btn-field input {
+      flex: 1
+    }
+
+    .inline-btn-field button {
+      flex: 0 0 auto
+    }
+
+    .pagebanner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      max-width: 210mm;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .pagebanner.ok {
+      background: #e3f4ea;
+      color: #1c6b3f
+    }
+
+    .pagebanner.warn {
+      background: #fdecea;
+      color: #a4322a
+    }
+
+    .install-btn {
+      display: none
+    }
+
+    /* ---------- Space-occupying compaction levels ---------- */
+    .paper.relaxed .sec {
+      margin-top: 14px
+    }
+
+    .paper.relaxed .sec h3 {
+      font-size: 14.5px;
+      margin-bottom: 6px
+    }
+
+    .paper.relaxed .content,
+    .paper.relaxed li,
+    .paper.relaxed .prev-table {
+      font-size: 14px;
+      line-height: 1.48
+    }
+
+    .paper.relaxed .pt-grid {
+      margin: 14px 0 8px;
+      font-size: 14px;
+      gap: 5px 16px
+    }
+
+    .paper.relaxed .sign-row {
+      margin-top: 48px
+    }
+
+    .paper.compact .sec {
+      margin-top: 7px
+    }
+
+    .paper.compact .sec h3 {
+      font-size: 12px;
+      margin-bottom: 2px
+    }
+
+    .paper.compact .content,
+    .paper.compact li,
+    .paper.compact .prev-table,
+    .paper.compact .adv-item {
+      font-size: 11.5px;
+      line-height: 1.30
+    }
+
+    .paper.compact .prev-table th,
+    .paper.compact .prev-table td {
+      padding: 2.5px 5px
+    }
+
+    .paper.compact .doc-head {
+      margin-bottom: 6px;
+      padding-bottom: 6px;
+      min-height: 92px
+    }
+
+    .paper.compact .logo-box {
+      width: 88px;
+      height: 88px
+    }
+
+    .paper.compact .head-text {
+      padding: 0 92px
+    }
+
+    .paper.compact .doc-head .college {
+      font-size: 18px
+    }
+
+    .paper.compact .pt-grid {
+      margin: 6px 0 3px;
+      font-size: 11.5px;
+      gap: 2.5px 12px
+    }
+
+    .paper.compact .sign-row {
+      margin-top: 24px
+    }
+
+    .paper.compact2 .sec {
+      margin-top: 5px
+    }
+
+    .paper.compact2 .sec h3 {
+      font-size: 11px;
+      margin-bottom: 2px
+    }
+
+    .paper.compact2 .content,
+    .paper.compact2 li,
+    .paper.compact2 .prev-table,
+    .paper.compact2 .adv-item {
+      font-size: 10.5px;
+      line-height: 1.22
+    }
+
+    .paper.compact2 .prev-table th,
+    .paper.compact2 .prev-table td {
+      padding: 1.5px 4px
+    }
+
+    .paper.compact2 .doc-head {
+      margin-bottom: 5px;
+      padding-bottom: 4px;
+      min-height: 76px
+    }
+
+    .paper.compact2 .logo-box {
+      width: 72px;
+      height: 72px
+    }
+
+    .paper.compact2 .head-text {
+      padding: 0 76px
+    }
+
+    .paper.compact2 .doc-head .college {
+      font-size: 16px
+    }
+
+    .paper.compact2 .doc-head .addr,
+    .paper.compact2 .doc-head .dept {
+      font-size: 11px
+    }
+
+    .paper.compact2 .pt-grid {
+      margin: 4px 0 2px;
+      font-size: 10.5px;
+      gap: 2px 10px
+    }
+
+    .paper.compact2 .sign-row {
+      margin-top: 16px;
+      font-size: 12px
+    }
+
+    .paper.compact2 .two-col {
+      gap: 10px
+    }
+
+    .paper.compact .two-col {
+      gap: 10px
+    }
+
+    /* ---------- Menu dropdown ---------- */
+    .menu-wrap {
+      position: relative
+    }
+
+    .menu-btn {
+      border: 0;
+      background: rgba(255, 255, 255, .15);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1;
+      letter-spacing: 1px;
+    }
+
+    .menu-btn:hover {
+      background: rgba(255, 255, 255, .28)
+    }
+
+    .menu-dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
+      min-width: 200px;
+      z-index: 200;
+      overflow: hidden;
+    }
+
+    .menu-dropdown.open {
+      display: block
+    }
+
+    .menu-dropdown button,
+    .menu-dropdown a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 16px;
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: left;
+    }
+
+    .menu-dropdown button:hover,
+    .menu-dropdown a:hover {
+      background: var(--primary-soft);
+      color: var(--primary)
+    }
+
+    .menu-dropdown hr {
+      border: 0;
+      border-top: 1px solid var(--line);
+      margin: 4px 0
+    }
+
+    .menu-dropdown .menu-label {
+      padding: 6px 16px 2px;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    /* ---------- PRINT ---------- */
+    @media print {
+
+      .topbar,
+      #formTab,
+      .no-print,
+      .a4-page-guide,
+      .pagebanner {
+        display: none !important
+      }
+
+      #summaryTab {
+        display: block !important;
+        padding: 0 !important;
+        background: #fff !important
+      }
+
+      body {
+        background: #fff !important
+      }
+
+      .wrap {
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important
+      }
+
+      .paper {
+        width: auto !important;
+        min-height: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        font-size: 13px;
+      }
+
+      .sec {
+        page-break-inside: auto !important;
+        break-inside: auto !important
+      }
+
+      .sec h3 {
+        page-break-after: avoid !important;
+        break-after: avoid !important
+      }
+
+      .sec ul {
+        page-break-inside: auto !important;
+        break-inside: auto !important
+      }
+
+      .sec ul li {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important
+      }
+
+      .inv-table-wrap {
+        overflow: visible !important;
+        page-break-inside: auto !important;
+        break-inside: auto !important
+      }
+
+      .prev-table {
+        page-break-inside: auto !important;
+        break-inside: auto !important
+      }
+
+      .prev-table thead {
+        display: table-header-group !important
+      }
+
+      .prev-table tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important
+      }
+
+      .pt-grid,
+      .sign-row {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important
+      }
+
+      .two-col {
+        page-break-inside: auto !important;
+        break-inside: auto !important
+      }
+
+      .adv-items-group,
+      .med-list {
+        page-break-inside: auto !important;
+        break-inside: auto !important
+      }
+
+      .adv-item {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important
+      }
+
+      @page {
+        size: A4;
+        margin: 16mm 14mm
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<div class="topbar">
-  <div class="topbar-left">
-    <h1 class="brand-title">Discharge Summary Builder</h1>
-    <button id="btnAutofill" type="button" class="btn-autofill desktop-only" onclick="autofillTest()" title="Autofill sample patient data for testing (Desktop only)">⚡ Autofill (test)</button>
-  </div>
-  <div class="topbar-right">
-    <div class="tabs">
-      <button id="tabForm" class="active" onclick="showTab('form')">Fill form</button>
-      <button id="tabSummary" onclick="showTab('summary')">View summary</button>
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1 class="brand-title">Discharge Summary Builder</h1>
+      <button id="btnAutofill" type="button" class="btn-autofill desktop-only" onclick="autofillTest()"
+        title="Autofill sample patient data for testing (Desktop only)">⚡ Autofill (test)</button>
     </div>
-    <div class="actions">
-      <button class="ghost install-btn" id="installBtn" onclick="doInstall()">Install app</button>
-      <button class="ghost" onclick="newSummary()">New patient</button>
-      <button class="ghost" id="btnLocalTemplate" onclick="doLocalTemplate()" title="Save or load a local template file">📁 Template</button>
-      <button class="ghost" onclick="copyText()">Copy text</button>
-      <button onclick="checkAndPrint()">Print / PDF</button>
-      <div class="menu-wrap">
-        <button class="menu-btn" id="menuBtn" onclick="toggleMenu()" title="More options">⋮</button>
-        <div class="menu-dropdown" id="menuDropdown">
-          <div class="menu-label">Template</div>
-          <button onclick="exportTemplate();closeMenu()">⬇ Export defaults</button>
-          <button onclick="importTemplate();closeMenu()">⬆ Import defaults</button>
-          <button onclick="doLocalTemplate();closeMenu()">📁 Local template</button>
-          <hr>
-          <div class="menu-label">Summary</div>
-          <button onclick="copyText();closeMenu()">📋 Copy text</button>
-          <button onclick="shareDoc();closeMenu()">↗ Share / Send PDF</button>
-          <hr>
-          <div class="menu-label">Manage</div>
-          <button onclick="newSummary();closeMenu()">🆕 New patient</button>
-          <a href="templates/" target="_blank">🗂 Template library</a>
-        </div>
+    <div class="topbar-right">
+      <div class="tabs">
+        <button id="tabForm" class="active" onclick="showTab('form')">Fill form</button>
+        <button id="tabSummary" onclick="showTab('summary')">View summary</button>
       </div>
-    </div>
-  </div>
-</div>
+      <div class="actions">
+        <button class="ghost" onclick="newSummary()">New patient</button>
+        <button class="ghost" onclick="copyText()">Copy text</button>
+        <button onclick="checkAndPrint()">Print / PDF</button>
+        <div class="menu-wrap">
+          <button class="menu-btn" id="menuBtn" onclick="toggleMenu()" title="More options">⋮</button>
+          <div class="menu-dropdown" id="menuDropdown">
 
-<!-- ================= FORM ================= -->
-<div class="wrap" id="formTab">
-
-  <details class="card">
-    <summary>Setup &amp; defaults</summary>
-    <div class="body">
-      <p class="hint" style="margin-top:0">Fill your <b>college, unit, chief</b> and the standard <b>advice / warning / review</b> lines once, then tap <b>Save as my defaults</b>. They auto-fill every new summary and survive a refresh. Everything you type also auto-saves as a draft.</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn" onclick="saveDefaults()">Save as my defaults</button>
-        <button class="btn out" onclick="newSummary()">New patient (keep defaults)</button>
-      </div>
-      <p class="hint">Defaults kept: college, address, department, summary type, unit, chief, prepared-by, and the advice / warning / review templates. Set unit &amp; chief in the sections below, then save.</p>
-    </div>
-  </details>
-
-  <details class="card">
-    <summary>Institution header</summary>
-    <div class="body">
-      <div class="field"><label>College / Hospital</label>
-        <input type="text" id="college" value="Government Medical College Hospital"></div>
-      <div class="field"><label>Address line</label>
-        <input type="text" id="address" value="Omandurar Government Estate, Chennai - 02"></div>
-      <div class="field"><label>Department</label>
-        <input type="text" id="dept" value="Department of General Medicine"></div>
-      <div class="field"><label>College logo / emblem (optional)</label>
-        <input type="file" id="logoFile" accept="image/*" onchange="onLogo(event)">
-        <p class="hint">Shows top-left of the summary. Saved with your defaults. Leave empty for a plain box.</p>
-      </div>
-      <div class="field"><label>Summary type</label>
-        <select id="summaryType">
-          <option>Discharge Summary</option>
-          <option>Discharge Summary (At Request)</option>
-          <option>Discharge Summary (AMA)</option>
-        </select>
-      </div>
-    </div>
-  </details>
-
-  <details class="card" open>
-    <summary>Patient details</summary>
-    <div class="body">
-      <div class="field"><label>Name</label><input type="text" id="name"></div>
-      <div class="row">
-        <div><label>Age</label><input type="text" id="age" placeholder="e.g. 45"></div>
-        <div><label>Sex</label>
-          <select id="sex"><option value=""></option><option>M</option><option>F</option><option>Other</option></select>
-        </div>
-        <div><label>IP No.</label><input type="text" id="ipno"></div>
-      </div>
-      <div class="row">
-        <div><label>Date of Admission (DOA)</label><input type="date" id="doa"></div>
-        <div>
-          <label>Date of Discharge (DOD)</label>
-          <div class="inline-btn-field">
-            <input type="date" id="dod">
-            <button class="btn sm out" onclick="clearDOD()" title="Clear DOD">Clear</button>
+            <div class="menu-label">Template</div>
+            <button onclick="exportTemplate();closeMenu()">⬇ Export defaults</button>
+            <button onclick="importTemplate();closeMenu()">⬆ Import defaults</button>
+            <button onclick="doLocalTemplate();closeMenu()">📁 Local template</button>
+            <hr>
+            <div class="menu-label">Summary</div>
+            <button class="install-btn" id="installBtn" onclick="doInstall();closeMenu()">📲 Install app</button>
+            <button onclick="copyText();closeMenu()">📋 Copy text</button>
+            <button onclick="shareDoc();closeMenu()">↗ Share / Send PDF</button>
+            <hr>
+            <div class="menu-label">Manage</div>
+            <button onclick="newSummary();closeMenu()">🆕 New patient</button>
+            <a href="templates/" target="_blank">🗂 Template library</a>
           </div>
-          <p class="hint">Defaults to today — edit or clear as needed.</p>
         </div>
       </div>
-      <div class="subhead">Unit</div>
-      <div class="unit-row">
-        <div><label>Prefix</label><input type="text" id="unitPrefix" value="M-"></div>
-        <div><label>Roman numeral</label>
-          <select id="unitRoman">
-            <option>I</option><option>II</option><option>III</option><option selected>IV</option>
-            <option>V</option><option>VI</option><option>VII</option><option>VIII</option><option>IX</option><option>X</option>
+    </div>
+  </div>
+
+  <!-- ================= FORM ================= -->
+  <div class="wrap" id="formTab">
+
+    <details class="card">
+      <summary>Setup &amp; defaults</summary>
+      <div class="body">
+        <p class="hint" style="margin-top:0">Fill your <b>college, unit, chief</b> and the standard <b>advice / warning
+            / review</b> lines once, then tap <b>Save as my defaults</b>. They auto-fill every new summary and survive a
+          refresh. Everything you type also auto-saves as a draft.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" onclick="saveDefaults()">Save as my defaults</button>
+          <button class="btn out" onclick="newSummary()">New patient (keep defaults)</button>
+        </div>
+        <p class="hint">Defaults kept: college, address, department, summary type, unit, chief, prepared-by, and the
+          advice / warning / review templates. Set unit &amp; chief in the sections below, then save.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary>Institution header</summary>
+      <div class="body">
+        <div class="field"><label>College / Hospital</label>
+          <input type="text" id="college" value="Government Medical College Hospital">
+        </div>
+        <div class="field"><label>Address line</label>
+          <input type="text" id="address" value="Omandurar Government Estate, Chennai - 02">
+        </div>
+        <div class="field"><label>Department</label>
+          <input type="text" id="dept" value="Department of General Medicine">
+        </div>
+        <div class="field"><label>College logo / emblem (optional)</label>
+          <input type="file" id="logoFile" accept="image/*" onchange="onLogo(event)">
+          <p class="hint">Shows top-left of the summary. Saved with your defaults. Leave empty for a plain box.</p>
+        </div>
+        <div class="field"><label>Summary type</label>
+          <select id="summaryType">
+            <option>Discharge Summary</option>
+            <option>Discharge Summary (At Request)</option>
+            <option>Discharge Summary (AMA)</option>
           </select>
         </div>
       </div>
-      <div class="field" style="margin-top:12px">
-        <label>Mode of Discharge</label>
-        <select id="modeOfDischarge">
-          <option>Discharge</option>
-          <option>At Request Discharge</option>
-          <option>LAMA</option>
-          <option>Absconded</option>
-          <option>Death</option>
-        </select>
-      </div>
-    </div>
-  </details>
+    </details>
 
-  <details class="card" open>
-    <summary>Diagnosis</summary>
-    <div class="body">
-      <label>Diagnosis (one per line)</label>
-      <textarea id="diagnosis" placeholder="e.g.&#10;Dengue fever with warning signs&#10;Thrombocytopenia"></textarea>
-    </div>
-  </details>
-
-  <details class="card" open>
-    <summary>Chief complaints (Presenting Complaints)</summary>
-    <div class="body">
-      <div class="chips" id="ccChips"></div>
-      <div class="addrow">
-        <div style="flex:2"><label>Complaint</label>
-          <input type="text" id="ccText" list="ccList" placeholder="breathlessness">
-          <datalist id="ccList"></datalist>
+    <details class="card" open>
+      <summary>Patient details</summary>
+      <div class="body">
+        <div class="field"><label>Name</label><input type="text" id="name"></div>
+        <div class="row">
+          <div><label>Age</label><input type="text" id="age" placeholder="e.g. 45"></div>
+          <div><label>Sex</label>
+            <select id="sex">
+              <option value=""></option>
+              <option>M</option>
+              <option>F</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div><label>IP No.</label><input type="text" id="ipno"></div>
         </div>
-        <div style="max-width:80px"><label>For</label><input type="text" id="ccDur" placeholder="4"></div>
-        <div style="max-width:100px"><label>Unit</label>
-          <select id="ccUnit"><option>days</option><option>weeks</option><option>months</option><option>hours</option><option>year</option></select>
-        </div>
-        <div style="flex:0"><button class="btn sm" onclick="addComplaint()">Add</button></div>
-      </div>
-      <p class="hint">Tap a common complaint above, or type your own. Adds as “H/o breathlessness for 4 days”.</p>
-      <ul class="list" id="ccListOut"></ul>
-    </div>
-  </details>
-
-  <details class="card">
-    <summary>History (HOPI, Past History, Rx Hx)</summary>
-    <div class="body">
-      <div class="subhead">History of Present Illness (HOPI)</div>
-      <textarea id="hopi" placeholder="The patient was apparently normal [__] back, then developed..."></textarea>
-
-      <div class="subhead">Past History</div>
-      <div class="chips" id="pastChips"></div>
-      <div class="addrow">
-        <div style="flex:1"><input type="text" id="pastText" placeholder="e.g. K/C/O T2DM x 8 years on medication"></div>
-        <div style="flex:0"><button class="btn sm" onclick="addPast()">Add</button></div>
-      </div>
-      <ul class="list" id="pastListOut"></ul>
-
-      <div class="subhead">Rx History (home medications before admission)</div>
-      <div class="addrow">
-        <div style="flex:2"><input type="text" id="rxhName" list="drugList" placeholder="Tab. Metformin"></div>
-        <div style="max-width:80px"><input type="text" id="rxhDose" placeholder="500 mg"></div>
-        <div style="max-width:80px">
-          <select id="rxhFreq"><option value=""></option><option>OD</option><option>BD</option><option>TDS</option><option>QID</option><option>HS</option><option>SOS</option></select>
-        </div>
-        <div style="flex:0"><button class="btn sm" onclick="addRxHistory()">Add</button></div>
-      </div>
-      <ul class="list" id="rxhListOut"></ul>
-    </div>
-  </details>
-
-  <details class="card">
-    <summary>Examination</summary>
-    <div class="body">
-      <div class="subhead">General Examination</div>
-      <div class="chips"><span class="chip" onclick="insertGeneralExam()">+ Standard PICCLE findings</span></div>
-      <textarea id="generalExam" placeholder="Patient conscious, oriented, afebrile..."></textarea>
-
-      <div class="subhead">Vitals</div>
-      <div class="vitals-grid">
-        <div><label>BP (mmHg)</label><input type="text" id="vBP" placeholder="120/80"></div>
-        <div><label>PR (/min)</label><input type="text" id="vPR" placeholder="80"></div>
-        <div><label>RR (/min)</label><input type="text" id="vRR" placeholder="18"></div>
-        <div><label>SpO2 (%)</label><input type="text" id="vSpO2" placeholder="98% RA"></div>
-        <div><label>Temp</label><input type="text" id="vTemp" placeholder="Afebrile"></div>
-        <div><label>GRBS</label><input type="text" id="vGRBS" placeholder="optional"></div>
-      </div>
-
-      <div class="subhead">Systemic Examination</div>
-      <div class="row">
-        <div><label>CVS</label><input type="text" id="seCVS" placeholder="S1S2+, no murmurs">
-          <span class="hint" style="cursor:pointer;color:var(--primary)" onclick="document.getElementById('seCVS').value='S1S2+, no murmurs';render()">use normal</span></div>
-        <div><label>RS</label><input type="text" id="seRS" placeholder="BAE+, NVBS">
-          <span class="hint" style="cursor:pointer;color:var(--primary)" onclick="document.getElementById('seRS').value='BAE+, NVBS';render()">use normal</span></div>
-      </div>
-      <div class="row">
-        <div><label>P/A</label><input type="text" id="sePA" placeholder="Soft, non-tender">
-          <span class="hint" style="cursor:pointer;color:var(--primary)" onclick="document.getElementById('sePA').value='Soft, non-tender';render()">use normal</span></div>
-        <div><label>CNS</label><input type="text" id="seCNS" placeholder="NFND">
-          <span class="hint" style="cursor:pointer;color:var(--primary)" onclick="document.getElementById('seCNS').value='NFND';render()">use normal</span></div>
-      </div>
-    </div>
-  </details>
-
-  <details class="card">
-    <summary>Investigations</summary>
-    <div class="body">
-      <div class="inv-controls">
-        <button class="btn sm" onclick="addInvDate()">+ Add date</button>
-        <button class="btn sm out" onclick="addInvParam('')">+ Add row</button>
-      </div>
-      <div class="chips" id="invPanels"></div>
-      <div style="overflow-x:auto"><div id="invEditor"></div></div>
-      <datalist id="labList"></datalist>
-      <div class="field" style="margin-top:14px">
-        <label>Other investigations / imaging (free text)</label>
-        <textarea id="invOther" placeholder="ECG: sinus tachycardia&#10;CXR: normal study&#10;USG abdomen: mild hepatomegaly"></textarea>
-      </div>
-    </div>
-  </details>
-
-  <details class="card">
-    <summary>Opinions</summary>
-    <div class="body">
-      <label>Consultations / opinions obtained</label>
-      <textarea id="opinions" placeholder="Cardiology opinion obtained — advised…&#10;Nephrology opinion obtained — advised…"></textarea>
-    </div>
-  </details>
-
-  <details class="card">
-    <summary>Course in the hospital</summary>
-    <div class="body">
-      <label>Insert a template (tap to drop in, then edit the blanks)</label>
-      <div class="chips" id="courseTpl"></div>
-      <label>Narrative</label>
-      <textarea id="course" style="min-height:150px" placeholder="Patient admitted with above complaints. Evaluated and managed as detailed. Responded to treatment…"></textarea>
-      <p class="hint">Tapping a template appends to whatever's already in the box. Fill the [ ] blanks.</p>
-    </div>
-  </details>
-
-  <details class="card">
-    <summary>Treatment given (in hospital)</summary>
-    <div class="body">
-      <label>Quick bundles (tap to add the usual set, then edit)</label>
-      <div class="chips" id="txBundles"></div>
-      <div class="addrow">
-        <div style="flex:2"><label>Drug</label>
-          <input type="text" id="txName" list="drugList" placeholder="Inj. Ceftriaxone">
-          <datalist id="drugList"></datalist>
-        </div>
-        <div style="max-width:90px"><label>Dose</label><input type="text" id="txDose" placeholder="1 g"></div>
-        <div style="max-width:90px"><label>Route</label>
-          <select id="txRoute"><option value=""></option><option>IV</option><option>IM</option><option>PO</option><option>SC</option><option>Neb</option><option>PR</option><option>SL</option></select>
-        </div>
-        <div style="max-width:90px"><label>Freq</label>
-          <select id="txFreq"><option value=""></option><option>OD</option><option>BD</option><option>TDS</option><option>QID</option><option>HS</option><option>Q6H</option><option>Q8H</option><option>Q12H</option><option>SOS</option><option>Stat</option></select>
-        </div>
-        <div style="flex:0"><button class="btn sm" onclick="addTx()">Add</button></div>
-      </div>
-      <ul class="list" id="txListOut"></ul>
-    </div>
-  </details>
-
-  <details class="card" open>
-    <summary>Condition at discharge</summary>
-    <div class="body">
-      <div class="chips" id="condChips"></div>
-      <div class="field"><label>Condition</label><input type="text" id="condition" placeholder="Stable / Improved"></div>
-      <div class="field"><label>Additional note (optional)</label><input type="text" id="condExtra" placeholder="Afebrile, vitals stable, tolerating orals"></div>
-    </div>
-  </details>
-
-  <details class="card" open>
-    <summary>Discharge advice (Rx)</summary>
-    <div class="body">
-      <div class="subhead">Advice on Discharge</div>
-      <div class="row">
-        <div><label>1. Diet</label><input type="text" id="diet" placeholder="e.g. Diabetic diet"></div>
-        <div><label>2. Physical Activity</label><input type="text" id="physicalActivity" placeholder="e.g. Ambulant, avoid strenuous activity"></div>
-      </div>
-      <div class="row">
-        <div>
-          <label>3. Physiotherapy needed at home?</label>
-          <div class="yn" id="ynPhysio">
-            <button type="button" onclick="setYN('physio','Yes')">Yes</button>
-            <button type="button" onclick="setYN('physio','No')">No</button>
+        <div class="row">
+          <div><label>Date of Admission (DOA)</label><input type="date" id="doa"></div>
+          <div>
+            <label>Date of Discharge (DOD)</label>
+            <div class="inline-btn-field">
+              <input type="date" id="dod">
+              <button class="btn sm out" onclick="clearDOD()" title="Clear DOD">Clear</button>
+            </div>
+            <p class="hint">Defaults to today — edit or clear as needed.</p>
           </div>
         </div>
-        <div>
-          <label>4. Home medical equipment needed?</label>
-          <div class="yn" id="ynEquip">
-            <button type="button" onclick="setYN('equip','Yes')">Yes</button>
-            <button type="button" onclick="setYN('equip','No')">No</button>
+        <div class="subhead">Unit</div>
+        <div class="unit-row">
+          <div><label>Prefix</label><input type="text" id="unitPrefix" value="M-"></div>
+          <div><label>Roman numeral</label>
+            <select id="unitRoman">
+              <option>I</option>
+              <option>II</option>
+              <option>III</option>
+              <option selected>IV</option>
+              <option>V</option>
+              <option>VI</option>
+              <option>VII</option>
+              <option>VIII</option>
+              <option>IX</option>
+              <option>X</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-top:12px">
+          <label>Mode of Discharge</label>
+          <select id="modeOfDischarge">
+            <option>Discharge</option>
+            <option>At Request Discharge</option>
+            <option>LAMA</option>
+            <option>Absconded</option>
+            <option>Death</option>
+          </select>
+        </div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary>Diagnosis</summary>
+      <div class="body">
+        <label>Diagnosis (one per line)</label>
+        <textarea id="diagnosis" placeholder="e.g.&#10;Dengue fever with warning signs&#10;Thrombocytopenia"></textarea>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary>Chief complaints (Presenting Complaints)</summary>
+      <div class="body">
+        <div class="chips" id="ccChips"></div>
+        <div class="addrow">
+          <div style="flex:2"><label>Complaint</label>
+            <input type="text" id="ccText" list="ccList" placeholder="breathlessness">
+            <datalist id="ccList"></datalist>
+          </div>
+          <div style="max-width:80px"><label>For</label><input type="text" id="ccDur" placeholder="4"></div>
+          <div style="max-width:100px"><label>Unit</label>
+            <select id="ccUnit">
+              <option>days</option>
+              <option>weeks</option>
+              <option>months</option>
+              <option>hours</option>
+              <option>year</option>
+            </select>
+          </div>
+          <div style="flex:0"><button class="btn sm" onclick="addComplaint()">Add</button></div>
+        </div>
+        <p class="hint">Tap a common complaint above, or type your own. Adds as “H/o breathlessness for 4 days”.</p>
+        <ul class="list" id="ccListOut"></ul>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary>History (HOPI, Past History, Rx Hx)</summary>
+      <div class="body">
+        <div class="subhead">History of Present Illness (HOPI)</div>
+        <textarea id="hopi" placeholder="The patient was apparently normal [__] back, then developed..."></textarea>
+
+        <div class="subhead">Past History</div>
+        <div class="chips" id="pastChips"></div>
+        <div class="addrow">
+          <div style="flex:1"><input type="text" id="pastText" placeholder="e.g. K/C/O T2DM x 8 years on medication">
+          </div>
+          <div style="flex:0"><button class="btn sm" onclick="addPast()">Add</button></div>
+        </div>
+        <ul class="list" id="pastListOut"></ul>
+
+        <div class="subhead">Rx History (home medications before admission)</div>
+        <div class="addrow">
+          <div style="flex:2"><input type="text" id="rxhName" list="drugList" placeholder="Tab. Metformin"></div>
+          <div style="max-width:80px"><input type="text" id="rxhDose" placeholder="500 mg"></div>
+          <div style="max-width:80px">
+            <select id="rxhFreq">
+              <option value=""></option>
+              <option>OD</option>
+              <option>BD</option>
+              <option>TDS</option>
+              <option>QID</option>
+              <option>HS</option>
+              <option>SOS</option>
+            </select>
+          </div>
+          <div style="flex:0"><button class="btn sm" onclick="addRxHistory()">Add</button></div>
+        </div>
+        <ul class="list" id="rxhListOut"></ul>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary>Examination</summary>
+      <div class="body">
+        <div class="subhead">General Examination</div>
+        <div class="chips"><span class="chip" onclick="insertGeneralExam()">+ Standard PICCLE findings</span></div>
+        <textarea id="generalExam" placeholder="Patient conscious, oriented, afebrile..."></textarea>
+
+        <div class="subhead">Vitals</div>
+        <div class="vitals-grid">
+          <div><label>BP (mmHg)</label><input type="text" id="vBP" placeholder="120/80"></div>
+          <div><label>PR (/min)</label><input type="text" id="vPR" placeholder="80"></div>
+          <div><label>RR (/min)</label><input type="text" id="vRR" placeholder="18"></div>
+          <div><label>SpO2 (%)</label><input type="text" id="vSpO2" placeholder="98% RA"></div>
+          <div><label>Temp</label><input type="text" id="vTemp" placeholder="Afebrile"></div>
+          <div><label>GRBS</label><input type="text" id="vGRBS" placeholder="optional"></div>
+        </div>
+
+        <div class="subhead">Systemic Examination</div>
+        <div class="row">
+          <div><label>CVS</label><input type="text" id="seCVS" placeholder="S1S2+, no murmurs">
+            <span class="hint" style="cursor:pointer;color:var(--primary)"
+              onclick="document.getElementById('seCVS').value='S1S2+, no murmurs';render()">use normal</span>
+          </div>
+          <div><label>RS</label><input type="text" id="seRS" placeholder="BAE+, NVBS">
+            <span class="hint" style="cursor:pointer;color:var(--primary)"
+              onclick="document.getElementById('seRS').value='BAE+, NVBS';render()">use normal</span>
+          </div>
+        </div>
+        <div class="row">
+          <div><label>P/A</label><input type="text" id="sePA" placeholder="Soft, non-tender">
+            <span class="hint" style="cursor:pointer;color:var(--primary)"
+              onclick="document.getElementById('sePA').value='Soft, non-tender';render()">use normal</span>
+          </div>
+          <div><label>CNS</label><input type="text" id="seCNS" placeholder="NFND">
+            <span class="hint" style="cursor:pointer;color:var(--primary)"
+              onclick="document.getElementById('seCNS').value='NFND';render()">use normal</span>
           </div>
         </div>
       </div>
-      <div class="row">
-        <div>
-          <label>5. Dressing needs at home anticipated?</label>
-          <div class="yn" id="ynDress">
-            <button type="button" onclick="setYN('dress','Yes')">Yes</button>
-            <button type="button" onclick="setYN('dress','No')">No</button>
+    </details>
+
+    <details class="card">
+      <summary>Investigations</summary>
+      <div class="body">
+        <div class="inv-controls">
+          <button class="btn sm" onclick="addInvDate()">+ Add date</button>
+          <button class="btn sm out" onclick="addInvParam('')">+ Add row</button>
+        </div>
+        <div class="chips" id="invPanels"></div>
+        <div style="overflow-x:auto">
+          <div id="invEditor"></div>
+        </div>
+        <datalist id="labList"></datalist>
+        <div class="field" style="margin-top:14px">
+          <label>Other investigations / imaging (free text)</label>
+          <textarea id="invOther"
+            placeholder="ECG: sinus tachycardia&#10;CXR: normal study&#10;USG abdomen: mild hepatomegaly"></textarea>
+        </div>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary>Opinions</summary>
+      <div class="body">
+        <label>Consultations / opinions obtained</label>
+        <textarea id="opinions"
+          placeholder="Cardiology opinion obtained — advised…&#10;Nephrology opinion obtained — advised…"></textarea>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary>Course in the hospital</summary>
+      <div class="body">
+        <label>Insert a template (tap to drop in, then edit the blanks)</label>
+        <div class="chips" id="courseTpl"></div>
+        <label>Narrative</label>
+        <textarea id="course" style="min-height:150px"
+          placeholder="Patient admitted with above complaints. Evaluated and managed as detailed. Responded to treatment…"></textarea>
+        <p class="hint">Tapping a template appends to whatever's already in the box. Fill the [ ] blanks.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary>Treatment given (in hospital)</summary>
+      <div class="body">
+        <label>Quick bundles (tap to add the usual set, then edit)</label>
+        <div class="chips" id="txBundles"></div>
+        <div class="addrow">
+          <div style="flex:2"><label>Drug</label>
+            <input type="text" id="txName" list="drugList" placeholder="Inj. Ceftriaxone">
+            <datalist id="drugList"></datalist>
+          </div>
+          <div style="max-width:90px"><label>Dose</label><input type="text" id="txDose" placeholder="1 g"></div>
+          <div style="max-width:90px"><label>Route</label>
+            <select id="txRoute">
+              <option value=""></option>
+              <option>IV</option>
+              <option>IM</option>
+              <option>PO</option>
+              <option>SC</option>
+              <option>Neb</option>
+              <option>PR</option>
+              <option>SL</option>
+            </select>
+          </div>
+          <div style="max-width:90px"><label>Freq</label>
+            <select id="txFreq">
+              <option value=""></option>
+              <option>OD</option>
+              <option>BD</option>
+              <option>TDS</option>
+              <option>QID</option>
+              <option>HS</option>
+              <option>Q6H</option>
+              <option>Q8H</option>
+              <option>Q12H</option>
+              <option>SOS</option>
+              <option>Stat</option>
+            </select>
+          </div>
+          <div style="flex:0"><button class="btn sm" onclick="addTx()">Add</button></div>
+        </div>
+        <ul class="list" id="txListOut"></ul>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary>Condition at discharge</summary>
+      <div class="body">
+        <div class="chips" id="condChips"></div>
+        <div class="field"><label>Condition</label><input type="text" id="condition" placeholder="Stable / Improved">
+        </div>
+        <div class="field"><label>Additional note (optional)</label><input type="text" id="condExtra"
+            placeholder="Afebrile, vitals stable, tolerating orals"></div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary>Discharge advice (Rx)</summary>
+      <div class="body">
+        <div class="subhead">Advice on Discharge</div>
+        <div class="row">
+          <div><label>1. Diet</label><input type="text" id="diet" placeholder="e.g. Diabetic diet"></div>
+          <div><label>2. Physical Activity</label><input type="text" id="physicalActivity"
+              placeholder="e.g. Ambulant, avoid strenuous activity"></div>
+        </div>
+        <div class="row">
+          <div>
+            <label>3. Physiotherapy needed at home?</label>
+            <div class="yn" id="ynPhysio">
+              <button type="button" onclick="setYN('physio','Yes')">Yes</button>
+              <button type="button" onclick="setYN('physio','No')">No</button>
+            </div>
+          </div>
+          <div>
+            <label>4. Home medical equipment needed?</label>
+            <div class="yn" id="ynEquip">
+              <button type="button" onclick="setYN('equip','Yes')">Yes</button>
+              <button type="button" onclick="setYN('equip','No')">No</button>
+            </div>
           </div>
         </div>
-        <div><label>6. Any other needs</label><input type="text" id="otherNeeds" placeholder="optional"></div>
-      </div>
-
-      <div class="subhead">7. Medication</div>
-      <label style="margin-bottom:6px">Discharge medications</label>
-      <div class="chips" id="rxBundles"></div>
-      <div class="addrow">
-        <div style="flex:2"><input type="text" id="rxName" list="drugList" placeholder="Tab. Paracetamol"></div>
-        <div style="max-width:80px"><input type="text" id="rxDose" placeholder="650 mg"></div>
-        <div style="max-width:80px">
-          <select id="rxFreq"><option value=""></option><option>OD</option><option>BD</option><option>TDS</option><option>QID</option><option>HS</option><option>SOS</option></select>
+        <div class="row">
+          <div>
+            <label>5. Dressing needs at home anticipated?</label>
+            <div class="yn" id="ynDress">
+              <button type="button" onclick="setYN('dress','Yes')">Yes</button>
+              <button type="button" onclick="setYN('dress','No')">No</button>
+            </div>
+          </div>
+          <div><label>6. Any other needs</label><input type="text" id="otherNeeds" placeholder="optional"></div>
         </div>
-        <div style="max-width:90px"><input type="text" id="rxDur" placeholder="× 5 days"></div>
-        <div style="flex:0"><button class="btn sm" onclick="addRx()">Add</button></div>
-      </div>
-      <ul class="list" id="rxListOut"></ul>
 
-      <div class="field" style="margin-top:14px"><label>General advice</label>
-        <textarea id="advice" placeholder="Take rest. Adequate oral fluids.">Take medications as advised.
+        <div class="subhead">7. Medication</div>
+        <label style="margin-bottom:6px">Discharge medications</label>
+        <div class="chips" id="rxBundles"></div>
+        <div class="addrow">
+          <div style="flex:2"><input type="text" id="rxName" list="drugList" placeholder="Tab. Paracetamol"></div>
+          <div style="max-width:80px"><input type="text" id="rxDose" placeholder="650 mg"></div>
+          <div style="max-width:80px">
+            <select id="rxFreq">
+              <option value=""></option>
+              <option>OD</option>
+              <option>BD</option>
+              <option>TDS</option>
+              <option>QID</option>
+              <option>HS</option>
+              <option>SOS</option>
+            </select>
+          </div>
+          <div style="max-width:90px"><input type="text" id="rxDur" placeholder="× 5 days"></div>
+          <div style="flex:0"><button class="btn sm" onclick="addRx()">Add</button></div>
+        </div>
+        <ul class="list" id="rxListOut"></ul>
+
+        <div class="field" style="margin-top:14px"><label>General advice</label>
+          <textarea id="advice" placeholder="Take rest. Adequate oral fluids.">Take medications as advised.
 Adequate rest and oral fluids.
-Take diet as advised.</textarea></div>
-      <div class="field"><label>8. In case of Emergency, contact no.</label>
-        <input type="text" id="emergencyContact" placeholder="e.g. Casualty: 044-XXXXXXX"></div>
-      <div class="field"><label>9. Follow-Up / Review</label>
-        <input type="text" id="review" value="Review in Medicine OPD after 1 week with reports (or earlier if needed)."></div>
-      <div class="field"><label>Warning signs — return immediately if (optional)</label>
-        <textarea id="warning" placeholder="bleeding, breathlessness, giddiness…">Fever not subsiding, breathlessness, chest pain, giddiness, reduced urine output, bleeding, or drowsiness — report to casualty immediately.</textarea></div>
-    </div>
-  </details>
-
-  <details class="card">
-    <summary>Signatures</summary>
-    <div class="body">
-      <div class="row">
-        <div><label>Prepared by</label><input type="text" id="preparedBy" placeholder="____ (JR)"></div>
-        <div><label>Medical Officer / Unit Chief</label><input type="text" id="chief" placeholder="____"></div>
+Take diet as advised.</textarea>
+        </div>
+        <div class="field"><label>8. In case of Emergency, contact no.</label>
+          <input type="text" id="emergencyContact" placeholder="e.g. Casualty: 044-XXXXXXX">
+        </div>
+        <div class="field"><label>9. Follow-Up / Review</label>
+          <input type="text" id="review"
+            value="Review in Medicine OPD after 1 week with reports (or earlier if needed).">
+        </div>
+        <div class="field"><label>Warning signs — return immediately if (optional)</label>
+          <textarea id="warning"
+            placeholder="bleeding, breathlessness, giddiness…">Fever not subsiding, breathlessness, chest pain, giddiness, reduced urine output, bleeding, or drowsiness — report to casualty immediately.</textarea>
+        </div>
       </div>
-      <div class="field"><label>Date &amp; Time (of signing)</label><input type="text" id="signDateTime" placeholder="e.g. 21/06/26, 4:30 PM"></div>
-      <p class="hint">"Dr." is added automatically in the printed summary — just type the name.</p>
-    </div>
-  </details>
+    </details>
 
-  <p class="hint no-print" style="text-align:center;padding-bottom:20px">
-    Tip: switch to <b>View summary</b> to check spacing, then <b>Print / PDF</b>. Your entries are <b>auto-saved on this device</b> — closing the tab or app won't lose your work.
-  </p>
-</div>
+    <details class="card">
+      <summary>Signatures</summary>
+      <div class="body">
+        <div class="row">
+          <div><label>Prepared by</label><input type="text" id="preparedBy" placeholder="____ (JR)"></div>
+          <div><label>Medical Officer / Unit Chief</label><input type="text" id="chief" placeholder="____"></div>
+        </div>
+        <div class="field"><label>Date &amp; Time (of signing)</label><input type="text" id="signDateTime"
+            placeholder="e.g. 21/06/26, 4:30 PM"></div>
+        <p class="hint">"Dr." is added automatically in the printed summary — just type the name.</p>
+      </div>
+    </details>
 
-<!-- ================= SUMMARY ================= -->
-<div class="wrap" id="summaryTab">
-  <div class="pagebanner no-print" id="pageBanner" style="display:none"></div>
-  <div class="paper" id="paper"></div>
-</div>
+    <p class="hint no-print" style="text-align:center;padding-bottom:20px">
+      Tip: switch to <b>View summary</b> to check spacing, then <b>Print / PDF</b>. Your entries are <b>auto-saved on
+        this device</b> — closing the tab or app won't lose your work.
+    </p>
+  </div>
 
-<script>
-/* ---------- data ---------- */
-const COMMON_CC = ["fever","breathlessness","cough","chest pain","palpitations",
-  "abdominal pain","vomiting","loose stools","decreased urine output","pedal edema",
-  "giddiness","headache","altered sensorium","seizures","loss of consciousness",
-  "weakness of limbs","yellowish discolouration of eyes","decreased appetite",
-  "hematemesis","melena","burning micturition"];
-const COMMON_LABS = ["Hb","TC","DC","Platelet","PCV","ESR","Urea","Creatinine","Na","K",
-  "Cl","HCO3","RBS","FBS","PPBS","HbA1c","T.Bilirubin","D.Bilirubin","SGOT","SGPT","ALP",
-  "T.Protein","Albumin","PT","INR","aPTT","TSH","Ca","PO4","Mg","CRP","Troponin"];
-const PANELS = {
-  "CBC":["Hb","TC","DC","Platelet","PCV"],
-  "RFT":["Urea","Creatinine","Na","K","Cl"],
-  "LFT":["T.Bilirubin","D.Bilirubin","SGOT","SGPT","ALP","T.Protein","Albumin"],
-  "Coagulation":["PT","INR","aPTT"],
-  "Sugar":["RBS","HbA1c"]
-};
-const COMMON_DRUGS = ["Inj. Ceftriaxone","Inj. Piperacillin-Tazobactam","Inj. Meropenem",
-  "Inj. Doxycycline","Tab. Doxycycline","Tab. Azithromycin","Inj. Pantoprazole","Tab. Pantoprazole",
-  "Inj. Ondansetron","Inj. Paracetamol","Tab. Paracetamol","Inj. Metronidazole","Tab. Metformin",
-  "Inj. Insulin (HAI)","Inj. Furosemide","Tab. Furosemide","Tab. Aspirin","Tab. Atorvastatin",
-  "Tab. Clopidogrel","Tab. Amlodipine","Tab. Telmisartan","Inj. Hydrocortisone","Neb. Ipravent",
-  "Neb. Budecort","Inj. Vitamin K","Inj. Thiamine","Tab. Ecosprin","Tab. Pan 40"];
-const COMMON_COND = ["Stable","Improved","Symptomatically better","Hemodynamically stable",
-  "Afebrile and stable","Discharged at request","Discharged against medical advice"];
-const COMMON_PAST = ["K/C/O T2DM on medication","K/C/O Systemic Hypertension on medication",
-  "K/C/O CAD","K/C/O CVA","K/C/O Epilepsy","K/C/O Bronchial Asthma/COPD","K/C/O CKD",
-  "K/C/O Koch's disease (TB) — treated","K/C/O Chronic Liver Disease","K/C/O Hypothyroidism",
-  "No significant past history"];
+  <!-- ================= SUMMARY ================= -->
+  <div class="wrap" id="summaryTab">
+    <div class="pagebanner no-print" id="pageBanner" style="display:none"></div>
+    <div class="paper" id="paper"></div>
+  </div>
 
-const RX_BUNDLES={
- "CAD":["Tab. Aspirin 75 mg OD (continue)","Tab. Clopidogrel 75 mg OD × 12 months","Tab. Atorvastatin 40 mg HS (continue)","Tab. Metoprolol 25 mg BD (continue)","Tab. Ramipril 2.5 mg OD (continue)","Tab. Sorbitrate 5 mg SL SOS (for chest pain)"],
- "HFrEF":["Tab. Furosemide 40 mg BD (continue)","Tab. Sacubitril-Valsartan 50 mg BD (continue)","Tab. Carvedilol 3.125 mg BD (continue)","Tab. Spironolactone 25 mg OD (continue)","Tab. Dapagliflozin 10 mg OD (continue)"],
- "COPD":["MDI Budesonide-Formoterol 1 puff BD (continue)","MDI Tiotropium 1 puff OD (continue)","Tab. Prednisolone 40 mg OD × 5 days","Tab. Pantoprazole 40 mg OD × 5 days"],
- "CAP":["Tab. Cefpodoxime 200 mg BD × 5 days","Tab. Azithromycin 500 mg OD × 3 days","Tab. Paracetamol 650 mg TDS SOS × 3 days","Tab. Pantoprazole 40 mg OD × 5 days"],
- "T2DM":["Tab. Metformin 500 mg BD (continue)","Tab. Glimepiride 1 mg OD before breakfast (continue)","GRBS monitoring + diabetic diet"],
- "SHTN":["Tab. Amlodipine 5 mg OD (continue)","Tab. Telmisartan 40 mg OD (continue)","Tab. Chlorthalidone 12.5 mg OD (continue)","Home BP monitoring"]
-};
+  <script>
+    /* ---------- data ---------- */
+    const COMMON_CC = ["fever", "breathlessness", "cough", "chest pain", "palpitations",
+      "abdominal pain", "vomiting", "loose stools", "decreased urine output", "pedal edema",
+      "giddiness", "headache", "altered sensorium", "seizures", "loss of consciousness",
+      "weakness of limbs", "yellowish discolouration of eyes", "decreased appetite",
+      "hematemesis", "melena", "burning micturition"];
+    const COMMON_LABS = ["Hb", "TC", "DC", "Platelet", "PCV", "ESR", "Urea", "Creatinine", "Na", "K",
+      "Cl", "HCO3", "RBS", "FBS", "PPBS", "HbA1c", "T.Bilirubin", "D.Bilirubin", "SGOT", "SGPT", "ALP",
+      "T.Protein", "Albumin", "PT", "INR", "aPTT", "TSH", "Ca", "PO4", "Mg", "CRP", "Troponin"];
+    const PANELS = {
+      "CBC": ["Hb", "TC", "DC", "Platelet", "PCV"],
+      "RFT": ["Urea", "Creatinine", "Na", "K", "Cl"],
+      "LFT": ["T.Bilirubin", "D.Bilirubin", "SGOT", "SGPT", "ALP", "T.Protein", "Albumin"],
+      "Coagulation": ["PT", "INR", "aPTT"],
+      "Sugar": ["RBS", "HbA1c"]
+    };
+    const COMMON_DRUGS = ["Inj. Ceftriaxone", "Inj. Piperacillin-Tazobactam", "Inj. Meropenem",
+      "Inj. Doxycycline", "Tab. Doxycycline", "Tab. Azithromycin", "Inj. Pantoprazole", "Tab. Pantoprazole",
+      "Inj. Ondansetron", "Inj. Paracetamol", "Tab. Paracetamol", "Inj. Metronidazole", "Tab. Metformin",
+      "Inj. Insulin (HAI)", "Inj. Furosemide", "Tab. Furosemide", "Tab. Aspirin", "Tab. Atorvastatin",
+      "Tab. Clopidogrel", "Tab. Amlodipine", "Tab. Telmisartan", "Inj. Hydrocortisone", "Neb. Ipravent",
+      "Neb. Budecort", "Inj. Vitamin K", "Inj. Thiamine", "Tab. Ecosprin", "Tab. Pan 40"];
+    const COMMON_COND = ["Stable", "Improved", "Symptomatically better", "Hemodynamically stable",
+      "Afebrile and stable", "Discharged at request", "Discharged against medical advice"];
+    const COMMON_PAST = ["K/C/O T2DM on medication", "K/C/O Systemic Hypertension on medication",
+      "K/C/O CAD", "K/C/O CVA", "K/C/O Epilepsy", "K/C/O Bronchial Asthma/COPD", "K/C/O CKD",
+      "K/C/O Koch's disease (TB) — treated", "K/C/O Chronic Liver Disease", "K/C/O Hypothyroidism",
+      "No significant past history"];
 
-const TX_BUNDLES={
- "CAD":["Tab. Aspirin 75 mg PO OD","Tab. Clopidogrel 75 mg PO OD","Tab. Atorvastatin 40 mg PO HS","Tab. Metoprolol 25 mg PO BD","Tab. Ramipril 2.5 mg PO OD","Inj. Enoxaparin 0.6 mL SC BD","Tab. Nitroglycerin 0.5 mg SL SOS"],
- "HFrEF":["Inj. Furosemide 40 mg IV BD","Tab. Sacubitril-Valsartan 50 mg PO BD","Tab. Carvedilol 3.125 mg PO BD","Tab. Spironolactone 25 mg PO OD","Tab. Dapagliflozin 10 mg PO OD"],
- "COPD":["Neb. Ipratropium-Salbutamol Q6H","Neb. Budesonide BD","Inj. Hydrocortisone 100 mg IV Q8H","Inj. Ceftriaxone 1 g IV BD","Tab. Pantoprazole 40 mg PO OD","Controlled O2 to target SpO2 88–92%"],
- "CAP":["Inj. Ceftriaxone 1 g IV BD","Tab. Azithromycin 500 mg PO OD","Inj. Paracetamol 1 g IV SOS","Tab. Pantoprazole 40 mg PO OD"],
- "T2DM":["Inj. Insulin (HAI) SC TDS (pre-meal / sliding scale)","Tab. Metformin 500 mg PO BD","GRBS monitoring QID"],
- "SHTN":["Tab. Amlodipine 5 mg PO OD","Tab. Telmisartan 40 mg PO OD","Tab. Chlorthalidone 12.5 mg PO OD","BP monitoring"]
-};
+    const RX_BUNDLES = {
+      "CAD": ["Tab. Aspirin 75 mg OD (continue)", "Tab. Clopidogrel 75 mg OD × 12 months", "Tab. Atorvastatin 40 mg HS (continue)", "Tab. Metoprolol 25 mg BD (continue)", "Tab. Ramipril 2.5 mg OD (continue)", "Tab. Sorbitrate 5 mg SL SOS (for chest pain)"],
+      "HFrEF": ["Tab. Furosemide 40 mg BD (continue)", "Tab. Sacubitril-Valsartan 50 mg BD (continue)", "Tab. Carvedilol 3.125 mg BD (continue)", "Tab. Spironolactone 25 mg OD (continue)", "Tab. Dapagliflozin 10 mg OD (continue)"],
+      "COPD": ["MDI Budesonide-Formoterol 1 puff BD (continue)", "MDI Tiotropium 1 puff OD (continue)", "Tab. Prednisolone 40 mg OD × 5 days", "Tab. Pantoprazole 40 mg OD × 5 days"],
+      "CAP": ["Tab. Cefpodoxime 200 mg BD × 5 days", "Tab. Azithromycin 500 mg OD × 3 days", "Tab. Paracetamol 650 mg TDS SOS × 3 days", "Tab. Pantoprazole 40 mg OD × 5 days"],
+      "T2DM": ["Tab. Metformin 500 mg BD (continue)", "Tab. Glimepiride 1 mg OD before breakfast (continue)", "GRBS monitoring + diabetic diet"],
+      "SHTN": ["Tab. Amlodipine 5 mg OD (continue)", "Tab. Telmisartan 40 mg OD (continue)", "Tab. Chlorthalidone 12.5 mg OD (continue)", "Home BP monitoring"]
+    };
 
-const COURSE_TEMPLATES=[
- {label:"Dengue",text:`Patient admitted with above complaints. On evaluation found to have thrombocytopenia with [NS1/IgM] positivity, suggestive of Dengue fever [with/without warning signs]. Managed with IV fluids as per dengue protocol, antipyretics and serial platelet monitoring. Platelet count reached a nadir of [___] on [__/__] and subsequently improved. Patient remained hemodynamically stable, became afebrile with improving counts, and is being discharged in a stable condition.`},
- {label:"LRTI / CAP",text:`Patient admitted with above complaints. Clinically and radiologically diagnosed as Community-acquired pneumonia (LRTI). Started on IV antibiotics, nebulisation, antipyretics and supportive care. Saturation monitored and maintained [on room air / with O2 support]. Symptomatically improved — afebrile, breathlessness settled, maintaining saturation on room air — and is being discharged in a stable condition with oral antibiotics to complete the course.`},
- {label:"AGE w/ dehydration",text:`Patient admitted with above complaints with features of [mild/moderate] dehydration, diagnosed as Acute gastroenteritis with dehydration. Rehydrated with IV fluids, given antiemetics, [antibiotics] and supportive care. Electrolytes monitored and corrected. Stool frequency reduced, tolerating orals well, and is being discharged in a stable condition.`},
- {label:"CKD",text:`Patient admitted with above complaints. [Known/Newly detected] Chronic kidney disease (Stage [__]). Evaluated with RFT, electrolytes, urine analysis and USG abdomen. Managed with fluid and salt restriction, [diuretics], correction of electrolyte and acid-base derangements and supportive care. [Nephrology opinion obtained.] Symptomatically improved, hemodynamically stable, and is being discharged in a stable condition with renal diet advice and follow-up.`},
- {label:"Tropical fever",text:`Patient admitted with above complaints. Evaluated for acute febrile illness — septic screen, dengue / leptospira / scrub typhus serology and peripheral smear sent. Started on empirical [doxycycline/ceftriaxone] with antipyretics and supportive care. [Scrub typhus/leptospirosis] [confirmed/considered clinically]. Became afebrile with treatment, remained hemodynamically stable, and is being discharged in a stable condition.`},
- {label:"COPD exac.",text:`Patient, a known case of COPD, admitted with acute exacerbation. Managed with nebulised bronchodilators, systemic steroids, antibiotics, controlled oxygen and [NIV / BiPAP support]. Breathlessness improved, maintaining saturation on room air, and is being discharged in a stable condition with inhaler technique advice.`},
- {label:"DKA",text:`Patient admitted with above complaints, found to have hyperglycemia with ketosis and metabolic acidosis suggestive of Diabetic ketoacidosis. Managed with IV fluids, insulin infusion and potassium monitoring as per DKA protocol. Blood sugars and anion gap normalised; transitioned to subcutaneous insulin. Tolerating orals, stable, and is being discharged with insulin / OHA and diabetic diet advice.`},
- {label:"ACS",text:`Patient admitted with above complaints. ECG and cardiac markers suggestive of [STEMI / NSTEMI / Unstable angina]. Managed as Acute coronary syndrome with antiplatelets, statin, anticoagulation and supportive care. Cardiology opinion obtained; [thrombolysed / advised coronary angiogram]. Hemodynamically stable, chest pain settled, and is being discharged in a stable condition on cardiac medications.`},
- {label:"CVA / Stroke",text:`Patient admitted with above complaints. CT / MRI brain suggestive of [ischemic / hemorrhagic] stroke. Managed with [antiplatelets / anti-edema measures], physiotherapy and supportive care. Neurology opinion obtained. Vitals stable, [neurological deficit improving], and is being discharged in a stable condition with physiotherapy and follow-up advice.`},
- {label:"UTI / Pyelo",text:`Patient admitted with above complaints. Urine analysis and culture suggestive of [urinary tract infection / pyelonephritis]. Started on IV antibiotics [as per sensitivity], antipyretics and adequate hydration. Became afebrile with treatment, symptomatically improved, and is being discharged in a stable condition with oral antibiotics to complete the course.`},
- {label:"ALD / Hepatitis",text:`Patient, [chronic alcoholic], admitted with above complaints. Evaluated with LFT, USG abdomen and coagulation profile suggestive of [alcoholic hepatitis / decompensated chronic liver disease]. Managed with [diuretics for ascites], hepatoprotective measures, vitamin supplementation, [lactulose] and supportive care. Alcohol abstinence counselling given. Symptomatically improved, stable, and is being discharged with follow-up advice.`},
- {label:"Cellulitis",text:`Patient admitted with above complaints suggestive of cellulitis of [site]. Managed with IV antibiotics, limb elevation, analgesics and wound care. [Blood sugars optimised.] Local signs of inflammation reduced, became afebrile, and is being discharged in a stable condition with oral antibiotics.`},
- {label:"Seizure / GTCS",text:`Patient admitted following [new-onset / breakthrough] generalised tonic-clonic seizures. Evaluated with CT / MRI brain, EEG and metabolic workup. [Started on / optimised] anti-epileptic drugs. Neurology opinion obtained. No further seizure episodes during the stay, conscious and oriented, and is being discharged in a stable condition on AEDs with advice.`}
-];
+    const TX_BUNDLES = {
+      "CAD": ["Tab. Aspirin 75 mg PO OD", "Tab. Clopidogrel 75 mg PO OD", "Tab. Atorvastatin 40 mg PO HS", "Tab. Metoprolol 25 mg PO BD", "Tab. Ramipril 2.5 mg PO OD", "Inj. Enoxaparin 0.6 mL SC BD", "Tab. Nitroglycerin 0.5 mg SL SOS"],
+      "HFrEF": ["Inj. Furosemide 40 mg IV BD", "Tab. Sacubitril-Valsartan 50 mg PO BD", "Tab. Carvedilol 3.125 mg PO BD", "Tab. Spironolactone 25 mg PO OD", "Tab. Dapagliflozin 10 mg PO OD"],
+      "COPD": ["Neb. Ipratropium-Salbutamol Q6H", "Neb. Budesonide BD", "Inj. Hydrocortisone 100 mg IV Q8H", "Inj. Ceftriaxone 1 g IV BD", "Tab. Pantoprazole 40 mg PO OD", "Controlled O2 to target SpO2 88–92%"],
+      "CAP": ["Inj. Ceftriaxone 1 g IV BD", "Tab. Azithromycin 500 mg PO OD", "Inj. Paracetamol 1 g IV SOS", "Tab. Pantoprazole 40 mg PO OD"],
+      "T2DM": ["Inj. Insulin (HAI) SC TDS (pre-meal / sliding scale)", "Tab. Metformin 500 mg PO BD", "GRBS monitoring QID"],
+      "SHTN": ["Tab. Amlodipine 5 mg PO OD", "Tab. Telmisartan 40 mg PO OD", "Tab. Chlorthalidone 12.5 mg PO OD", "BP monitoring"]
+    };
 
-/* ---------- state ---------- */
-let complaints=[], treatment=[], rxMeds=[];
-let invDates=[], invParams=[], invSeq=0;
-let logoData="omandurar_footer.jpg";
-let pastHistory=[], rxHistory=[];
-let ynState={physio:"",equip:"",dress:""};
+    const COURSE_TEMPLATES = [
+      { label: "Dengue", text: `Patient admitted with above complaints. On evaluation found to have thrombocytopenia with [NS1/IgM] positivity, suggestive of Dengue fever [with/without warning signs]. Managed with IV fluids as per dengue protocol, antipyretics and serial platelet monitoring. Platelet count reached a nadir of [___] on [__/__] and subsequently improved. Patient remained hemodynamically stable, became afebrile with improving counts, and is being discharged in a stable condition.` },
+      { label: "LRTI / CAP", text: `Patient admitted with above complaints. Clinically and radiologically diagnosed as Community-acquired pneumonia (LRTI). Started on IV antibiotics, nebulisation, antipyretics and supportive care. Saturation monitored and maintained [on room air / with O2 support]. Symptomatically improved — afebrile, breathlessness settled, maintaining saturation on room air — and is being discharged in a stable condition with oral antibiotics to complete the course.` },
+      { label: "AGE w/ dehydration", text: `Patient admitted with above complaints with features of [mild/moderate] dehydration, diagnosed as Acute gastroenteritis with dehydration. Rehydrated with IV fluids, given antiemetics, [antibiotics] and supportive care. Electrolytes monitored and corrected. Stool frequency reduced, tolerating orals well, and is being discharged in a stable condition.` },
+      { label: "CKD", text: `Patient admitted with above complaints. [Known/Newly detected] Chronic kidney disease (Stage [__]). Evaluated with RFT, electrolytes, urine analysis and USG abdomen. Managed with fluid and salt restriction, [diuretics], correction of electrolyte and acid-base derangements and supportive care. [Nephrology opinion obtained.] Symptomatically improved, hemodynamically stable, and is being discharged in a stable condition with renal diet advice and follow-up.` },
+      { label: "Tropical fever", text: `Patient admitted with above complaints. Evaluated for acute febrile illness — septic screen, dengue / leptospira / scrub typhus serology and peripheral smear sent. Started on empirical [doxycycline/ceftriaxone] with antipyretics and supportive care. [Scrub typhus/leptospirosis] [confirmed/considered clinically]. Became afebrile with treatment, remained hemodynamically stable, and is being discharged in a stable condition.` },
+      { label: "COPD exac.", text: `Patient, a known case of COPD, admitted with acute exacerbation. Managed with nebulised bronchodilators, systemic steroids, antibiotics, controlled oxygen and [NIV / BiPAP support]. Breathlessness improved, maintaining saturation on room air, and is being discharged in a stable condition with inhaler technique advice.` },
+      { label: "DKA", text: `Patient admitted with above complaints, found to have hyperglycemia with ketosis and metabolic acidosis suggestive of Diabetic ketoacidosis. Managed with IV fluids, insulin infusion and potassium monitoring as per DKA protocol. Blood sugars and anion gap normalised; transitioned to subcutaneous insulin. Tolerating orals, stable, and is being discharged with insulin / OHA and diabetic diet advice.` },
+      { label: "ACS", text: `Patient admitted with above complaints. ECG and cardiac markers suggestive of [STEMI / NSTEMI / Unstable angina]. Managed as Acute coronary syndrome with antiplatelets, statin, anticoagulation and supportive care. Cardiology opinion obtained; [thrombolysed / advised coronary angiogram]. Hemodynamically stable, chest pain settled, and is being discharged in a stable condition on cardiac medications.` },
+      { label: "CVA / Stroke", text: `Patient admitted with above complaints. CT / MRI brain suggestive of [ischemic / hemorrhagic] stroke. Managed with [antiplatelets / anti-edema measures], physiotherapy and supportive care. Neurology opinion obtained. Vitals stable, [neurological deficit improving], and is being discharged in a stable condition with physiotherapy and follow-up advice.` },
+      { label: "UTI / Pyelo", text: `Patient admitted with above complaints. Urine analysis and culture suggestive of [urinary tract infection / pyelonephritis]. Started on IV antibiotics [as per sensitivity], antipyretics and adequate hydration. Became afebrile with treatment, symptomatically improved, and is being discharged in a stable condition with oral antibiotics to complete the course.` },
+      { label: "ALD / Hepatitis", text: `Patient, [chronic alcoholic], admitted with above complaints. Evaluated with LFT, USG abdomen and coagulation profile suggestive of [alcoholic hepatitis / decompensated chronic liver disease]. Managed with [diuretics for ascites], hepatoprotective measures, vitamin supplementation, [lactulose] and supportive care. Alcohol abstinence counselling given. Symptomatically improved, stable, and is being discharged with follow-up advice.` },
+      { label: "Cellulitis", text: `Patient admitted with above complaints suggestive of cellulitis of [site]. Managed with IV antibiotics, limb elevation, analgesics and wound care. [Blood sugars optimised.] Local signs of inflammation reduced, became afebrile, and is being discharged in a stable condition with oral antibiotics.` },
+      { label: "Seizure / GTCS", text: `Patient admitted following [new-onset / breakthrough] generalised tonic-clonic seizures. Evaluated with CT / MRI brain, EEG and metabolic workup. [Started on / optimised] anti-epileptic drugs. Neurology opinion obtained. No further seizure episodes during the stay, conscious and oriented, and is being discharged in a stable condition on AEDs with advice.` }
+    ];
 
-/* ---------- init datalists & chips ---------- */
-function fillDatalist(id,arr){document.getElementById(id).innerHTML=arr.map(x=>`<option value="${x}">`).join("");}
-fillDatalist("ccList",COMMON_CC);
-fillDatalist("labList",COMMON_LABS);
-fillDatalist("drugList",COMMON_DRUGS);
+    /* ---------- state ---------- */
+    let complaints = [], treatment = [], rxMeds = [];
+    let invDates = [], invParams = [], invSeq = 0;
+    let logoData = "omandurar_footer.jpg";
+    let pastHistory = [], rxHistory = [];
+    let ynState = { physio: "", equip: "", dress: "" };
 
-document.getElementById("ccChips").innerHTML =
-  COMMON_CC.slice(0,12).map(c=>`<span class="chip" onclick="document.getElementById('ccText').value='${c}';document.getElementById('ccDur').focus()">${c}</span>`).join("");
-document.getElementById("condChips").innerHTML =
-  COMMON_COND.map(c=>`<span class="chip" onclick="document.getElementById('condition').value='${c}';render()">${c}</span>`).join("");
-document.getElementById("pastChips").innerHTML =
-  COMMON_PAST.map(c=>`<span class="chip" onclick="document.getElementById('pastText').value=${JSON.stringify(c)};addPast()">${c}</span>`).join("");
-document.getElementById("invPanels").innerHTML =
-  Object.keys(PANELS).map(p=>`<span class="chip" onclick="addPanel('${p}')">+ ${p}</span>`).join("");
-document.getElementById("courseTpl").innerHTML =
-  COURSE_TEMPLATES.map((t,i)=>`<span class="chip" onclick="insertCourse(${i})">${t.label}</span>`).join("");
-document.getElementById("txBundles").innerHTML =
-  Object.keys(TX_BUNDLES).map(k=>`<span class="chip" onclick="addBundle('${k}')">+ ${k}</span>`).join("");
-document.getElementById("rxBundles").innerHTML =
-  Object.keys(RX_BUNDLES).map(k=>`<span class="chip" onclick="addRxBundle('${k}')">+ ${k}</span>`).join("");
+    /* ---------- init datalists & chips ---------- */
+    function fillDatalist(id, arr) { document.getElementById(id).innerHTML = arr.map(x => `<option value="${x}">`).join(""); }
+    fillDatalist("ccList", COMMON_CC);
+    fillDatalist("labList", COMMON_LABS);
+    fillDatalist("drugList", COMMON_DRUGS);
 
-function addBundle(k){
-  (TX_BUNDLES[k]||[]).forEach(d=>{ if(!treatment.includes(d)) treatment.push(d); });
-  renderTx();render();
-}
-function addRxBundle(k){
-  (RX_BUNDLES[k]||[]).forEach(d=>{ if(!rxMeds.includes(d)) rxMeds.push(d); });
-  renderRx();render();
-}
+    document.getElementById("ccChips").innerHTML =
+      COMMON_CC.slice(0, 12).map(c => `<span class="chip" onclick="document.getElementById('ccText').value='${c}';document.getElementById('ccDur').focus()">${c}</span>`).join("");
+    document.getElementById("condChips").innerHTML =
+      COMMON_COND.map(c => `<span class="chip" onclick="document.getElementById('condition').value='${c}';render()">${c}</span>`).join("");
+    document.getElementById("pastChips").innerHTML =
+      COMMON_PAST.map(c => `<span class="chip" onclick="document.getElementById('pastText').value=${JSON.stringify(c)};addPast()">${c}</span>`).join("");
+    document.getElementById("invPanels").innerHTML =
+      Object.keys(PANELS).map(p => `<span class="chip" onclick="addPanel('${p}')">+ ${p}</span>`).join("");
+    document.getElementById("courseTpl").innerHTML =
+      COURSE_TEMPLATES.map((t, i) => `<span class="chip" onclick="insertCourse(${i})">${t.label}</span>`).join("");
+    document.getElementById("txBundles").innerHTML =
+      Object.keys(TX_BUNDLES).map(k => `<span class="chip" onclick="addBundle('${k}')">+ ${k}</span>`).join("");
+    document.getElementById("rxBundles").innerHTML =
+      Object.keys(RX_BUNDLES).map(k => `<span class="chip" onclick="addRxBundle('${k}')">+ ${k}</span>`).join("");
 
-function insertCourse(i){
-  const el=document.getElementById("course");
-  const t=COURSE_TEMPLATES[i].text;
-  el.value = el.value.trim() ? el.value.trim()+"\n\n"+t : t;
-  render();
-}
+    function addBundle(k) {
+      (TX_BUNDLES[k] || []).forEach(d => { if (!treatment.includes(d)) treatment.push(d); });
+      renderTx(); render();
+    }
+    function addRxBundle(k) {
+      (RX_BUNDLES[k] || []).forEach(d => { if (!rxMeds.includes(d)) rxMeds.push(d); });
+      renderRx(); render();
+    }
 
-/* ---------- complaints ---------- */
-function addComplaint(){
-  const t=document.getElementById("ccText").value.trim();
-  if(!t)return;
-  const d=document.getElementById("ccDur").value.trim();
-  const u=document.getElementById("ccUnit").value;
-  complaints.push(d ? `H/o ${t} for ${d} ${u}` : `H/o ${t}`);
-  document.getElementById("ccText").value="";document.getElementById("ccDur").value="";
-  renderComplaints();render();
-}
-function renderComplaints(){
-  document.getElementById("ccListOut").innerHTML = complaints.map((c,i)=>
-    `<li><span>${esc(c)}</span><button onclick="complaints.splice(${i},1);renderComplaints();render()">×</button></li>`).join("");
-}
+    function insertCourse(i) {
+      const el = document.getElementById("course");
+      const t = COURSE_TEMPLATES[i].text;
+      el.value = el.value.trim() ? el.value.trim() + "\n\n" + t : t;
+      render();
+    }
 
-/* ---------- past history / rx history ---------- */
-function addPast(){
-  const t=document.getElementById("pastText").value.trim(); if(!t)return;
-  pastHistory.push(t); document.getElementById("pastText").value="";
-  renderPast();render();
-}
-function renderPast(){
-  document.getElementById("pastListOut").innerHTML = pastHistory.map((c,i)=>
-    `<li><span>${esc(c)}</span><button onclick="pastHistory.splice(${i},1);renderPast();render()">×</button></li>`).join("");
-}
-function addRxHistory(){
-  const n=document.getElementById("rxhName").value.trim(); if(!n)return;
-  const parts=[n,document.getElementById("rxhDose").value.trim(),document.getElementById("rxhFreq").value].filter(Boolean);
-  rxHistory.push(parts.join(" "));
-  ["rxhName","rxhDose"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("rxhFreq").value="";
-  renderRxHistory();render();
-}
-function renderRxHistory(){
-  document.getElementById("rxhListOut").innerHTML = rxHistory.map((t,i)=>
-    `<li><span>${esc(t)}</span><button onclick="rxHistory.splice(${i},1);renderRxHistory();render()">×</button></li>`).join("");
-}
+    /* ---------- complaints ---------- */
+    function addComplaint() {
+      const t = document.getElementById("ccText").value.trim();
+      if (!t) return;
+      const d = document.getElementById("ccDur").value.trim();
+      const u = document.getElementById("ccUnit").value;
+      complaints.push(d ? `H/o ${t} for ${d} ${u}` : `H/o ${t}`);
+      document.getElementById("ccText").value = ""; document.getElementById("ccDur").value = "";
+      renderComplaints(); render();
+    }
+    function renderComplaints() {
+      document.getElementById("ccListOut").innerHTML = complaints.map((c, i) =>
+        `<li><span>${esc(c)}</span><button onclick="complaints.splice(${i},1);renderComplaints();render()">×</button></li>`).join("");
+    }
 
-/* ---------- examination helpers ---------- */
-function insertGeneralExam(){
-  const el=document.getElementById("generalExam");
-  const t="Patient conscious, oriented, afebrile, not pale / icteric / cyanosed / clubbed, no lymphadenopathy, no pedal edema.";
-  el.value = el.value.trim() ? el.value.trim()+"\n"+t : t;
-  render();
-}
+    /* ---------- past history / rx history ---------- */
+    function addPast() {
+      const t = document.getElementById("pastText").value.trim(); if (!t) return;
+      pastHistory.push(t); document.getElementById("pastText").value = "";
+      renderPast(); render();
+    }
+    function renderPast() {
+      document.getElementById("pastListOut").innerHTML = pastHistory.map((c, i) =>
+        `<li><span>${esc(c)}</span><button onclick="pastHistory.splice(${i},1);renderPast();render()">×</button></li>`).join("");
+    }
+    function addRxHistory() {
+      const n = document.getElementById("rxhName").value.trim(); if (!n) return;
+      const parts = [n, document.getElementById("rxhDose").value.trim(), document.getElementById("rxhFreq").value].filter(Boolean);
+      rxHistory.push(parts.join(" "));
+      ["rxhName", "rxhDose"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("rxhFreq").value = "";
+      renderRxHistory(); render();
+    }
+    function renderRxHistory() {
+      document.getElementById("rxhListOut").innerHTML = rxHistory.map((t, i) =>
+        `<li><span>${esc(t)}</span><button onclick="rxHistory.splice(${i},1);renderRxHistory();render()">×</button></li>`).join("");
+    }
 
-/* ---------- yes/no toggles ---------- */
-function setYN(key,val_){
-  ynState[key]=val_;
-  const map={physio:"ynPhysio",equip:"ynEquip",dress:"ynDress"};
-  const box=document.getElementById(map[key]);
-  if(box) [...box.children].forEach(b=>b.classList.toggle("sel", b.textContent===val_));
-  render();
-}
+    /* ---------- examination helpers ---------- */
+    function insertGeneralExam() {
+      const el = document.getElementById("generalExam");
+      const t = "Patient conscious, oriented, afebrile, not pale / icteric / cyanosed / clubbed, no lymphadenopathy, no pedal edema.";
+      el.value = el.value.trim() ? el.value.trim() + "\n" + t : t;
+      render();
+    }
 
-/* ---------- unit & honorific helpers ---------- */
-function getUnit(){
-  return (val("unitPrefix")||"")+(document.getElementById("unitRoman").value||"");
-}
-function ensureDr(name){
-  const n=(name||"").trim();
-  if(!n) return "";
-  return /^dr\.?\s/i.test(n) ? n : "Dr. "+n;
-}
-function todayISO(){
-  const d=new Date(); const local=new Date(d.getTime()-d.getTimezoneOffset()*60000);
-  return local.toISOString().slice(0,10);
-}
-function clearDOD(){ document.getElementById("dod").value=""; render(); }
+    /* ---------- yes/no toggles ---------- */
+    function setYN(key, val_) {
+      ynState[key] = val_;
+      const map = { physio: "ynPhysio", equip: "ynEquip", dress: "ynDress" };
+      const box = document.getElementById(map[key]);
+      if (box) [...box.children].forEach(b => b.classList.toggle("sel", b.textContent === val_));
+      render();
+    }
 
-/* ---------- treatment ---------- */
-function addTx(){
-  const n=document.getElementById("txName").value.trim();if(!n)return;
-  const parts=[n,document.getElementById("txDose").value.trim(),
-    document.getElementById("txRoute").value,document.getElementById("txFreq").value].filter(Boolean);
-  treatment.push(parts.join(" "));
-  ["txName","txDose"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("txRoute").value="";document.getElementById("txFreq").value="";
-  renderTx();render();
-}
-function renderTx(){
-  document.getElementById("txListOut").innerHTML = treatment.map((t,i)=>
-    `<li><span>${esc(t)}</span><button onclick="treatment.splice(${i},1);renderTx();render()">×</button></li>`).join("");
-}
+    /* ---------- unit & honorific helpers ---------- */
+    function getUnit() {
+      return (val("unitPrefix") || "") + (document.getElementById("unitRoman").value || "");
+    }
+    function ensureDr(name) {
+      const n = (name || "").trim();
+      if (!n) return "";
+      return /^dr\.?\s/i.test(n) ? n : "Dr. " + n;
+    }
+    function todayISO() {
+      const d = new Date(); const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+      return local.toISOString().slice(0, 10);
+    }
+    function clearDOD() { document.getElementById("dod").value = ""; render(); }
 
-/* ---------- discharge meds ---------- */
-function addRx(){
-  const n=document.getElementById("rxName").value.trim();if(!n)return;
-  const parts=[n,document.getElementById("rxDose").value.trim(),
-    document.getElementById("rxFreq").value,document.getElementById("rxDur").value.trim()].filter(Boolean);
-  rxMeds.push(parts.join(" "));
-  ["rxName","rxDose","rxDur"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("rxFreq").value="";
-  renderRx();render();
-}
-function renderRx(){
-  document.getElementById("rxListOut").innerHTML = rxMeds.map((t,i)=>
-    `<li><span>${esc(t)}</span><button onclick="rxMeds.splice(${i},1);renderRx();render()">×</button></li>`).join("");
-}
+    /* ---------- treatment ---------- */
+    function addTx() {
+      const n = document.getElementById("txName").value.trim(); if (!n) return;
+      const parts = [n, document.getElementById("txDose").value.trim(),
+        document.getElementById("txRoute").value, document.getElementById("txFreq").value].filter(Boolean);
+      treatment.push(parts.join(" "));
+      ["txName", "txDose"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("txRoute").value = ""; document.getElementById("txFreq").value = "";
+      renderTx(); render();
+    }
+    function renderTx() {
+      document.getElementById("txListOut").innerHTML = treatment.map((t, i) =>
+        `<li><span>${esc(t)}</span><button onclick="treatment.splice(${i},1);renderTx();render()">×</button></li>`).join("");
+    }
 
-/* ---------- investigations editor ---------- */
-function addInvDate(){invDates.push({id:++invSeq,date:""});renderInvEditor();render();}
-function addInvParam(name){invParams.push({id:++invSeq,name:name,values:{}});renderInvEditor();render();}
-function addPanel(p){PANELS[p].forEach(n=>invParams.push({id:++invSeq,name:n,values:{}}));
-  if(invDates.length===0)addInvDate();else{renderInvEditor();render();}}
-function delInvDate(id){invDates=invDates.filter(d=>d.id!==id);renderInvEditor();render();}
-function delInvParam(id){invParams=invParams.filter(p=>p.id!==id);renderInvEditor();render();}
+    /* ---------- discharge meds ---------- */
+    function addRx() {
+      const n = document.getElementById("rxName").value.trim(); if (!n) return;
+      const parts = [n, document.getElementById("rxDose").value.trim(),
+        document.getElementById("rxFreq").value, document.getElementById("rxDur").value.trim()].filter(Boolean);
+      rxMeds.push(parts.join(" "));
+      ["rxName", "rxDose", "rxDur"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("rxFreq").value = "";
+      renderRx(); render();
+    }
+    function renderRx() {
+      document.getElementById("rxListOut").innerHTML = rxMeds.map((t, i) =>
+        `<li><span>${esc(t)}</span><button onclick="rxMeds.splice(${i},1);renderRx();render()">×</button></li>`).join("");
+    }
 
-function renderInvEditor(){
-  const box=document.getElementById("invEditor");
-  if(invDates.length===0 && invParams.length===0){
-    box.innerHTML=`<p class="hint">Add a date column, then add lab rows (or tap a panel like CBC / RFT above).</p>`;return;
-  }
-  let h='<table class="invtable"><thead><tr><th style="min-width:120px">Investigation</th>';
-  invDates.forEach(d=>{h+=`<th><input type="date" value="${d.date}" onchange="setDate(${d.id},this.value)"><button class="xbtn" title="remove date" onclick="delInvDate(${d.id})">×</button></th>`;});
-  h+='<th></th></tr></thead><tbody>';
-  invParams.forEach(p=>{
-    h+=`<tr><td class="pname"><input type="text" list="labList" value="${esc(p.name)}" placeholder="parameter" oninput="setPName(${p.id},this.value)"></td>`;
-    invDates.forEach(d=>{h+=`<td><input type="text" value="${esc(p.values[d.id]||'')}" oninput="setVal(${p.id},${d.id},this.value)"></td>`;});
-    h+=`<td><button class="xbtn" onclick="delInvParam(${p.id})">×</button></td></tr>`;
-  });
-  h+='</tbody></table>';
-  box.innerHTML=h;
-}
-function setDate(id,v){const d=invDates.find(x=>x.id===id);if(d){d.date=v;render();}}
-function setPName(id,v){const p=invParams.find(x=>x.id===id);if(p){p.name=v;render();}}
-function setVal(pid,did,v){const p=invParams.find(x=>x.id===pid);if(p){p.values[did]=v;render();}}
+    /* ---------- investigations editor ---------- */
+    function addInvDate() { invDates.push({ id: ++invSeq, date: "" }); renderInvEditor(); render(); }
+    function addInvParam(name) { invParams.push({ id: ++invSeq, name: name, values: {} }); renderInvEditor(); render(); }
+    function addPanel(p) {
+      PANELS[p].forEach(n => invParams.push({ id: ++invSeq, name: n, values: {} }));
+      if (invDates.length === 0) addInvDate(); else { renderInvEditor(); render(); }
+    }
+    function delInvDate(id) { invDates = invDates.filter(d => d.id !== id); renderInvEditor(); render(); }
+    function delInvParam(id) { invParams = invParams.filter(p => p.id !== id); renderInvEditor(); render(); }
 
-/* ---------- helpers ---------- */
-function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-function val(id){return document.getElementById(id).value.trim();}
-function fmtDate(v){if(!v)return"";const[y,m,d]=v.split("-");return `${d}/${m}/${y}`;}
-function fmtDateShort(v){if(!v)return"";const[y,m,d]=v.split("-");return `${d}/${m}`;}
-function lines(t){return t.split("\n").map(s=>s.trim()).filter(Boolean);}
+    function renderInvEditor() {
+      const box = document.getElementById("invEditor");
+      if (invDates.length === 0 && invParams.length === 0) {
+        box.innerHTML = `<p class="hint">Add a date column, then add lab rows (or tap a panel like CBC / RFT above).</p>`; return;
+      }
+      let h = '<table class="invtable"><thead><tr><th style="min-width:120px">Investigation</th>';
+      invDates.forEach(d => { h += `<th><input type="date" value="${d.date}" onchange="setDate(${d.id},this.value)"><button class="xbtn" title="remove date" onclick="delInvDate(${d.id})">×</button></th>`; });
+      h += '<th></th></tr></thead><tbody>';
+      invParams.forEach(p => {
+        h += `<tr><td class="pname"><input type="text" list="labList" value="${esc(p.name)}" placeholder="parameter" oninput="setPName(${p.id},this.value)"></td>`;
+        invDates.forEach(d => { h += `<td><input type="text" value="${esc(p.values[d.id] || '')}" oninput="setVal(${p.id},${d.id},this.value)"></td>`; });
+        h += `<td><button class="xbtn" onclick="delInvParam(${p.id})">×</button></td></tr>`;
+      });
+      h += '</tbody></table>';
+      box.innerHTML = h;
+    }
+    function setDate(id, v) { const d = invDates.find(x => x.id === id); if (d) { d.date = v; render(); } }
+    function setPName(id, v) { const p = invParams.find(x => x.id === id); if (p) { p.name = v; render(); } }
+    function setVal(pid, did, v) { const p = invParams.find(x => x.id === pid); if (p) { p.values[did] = v; render(); } }
 
-/* ---------- render preview ---------- */
-function render(){
-  const kind = val("summaryType").toUpperCase();
-  const logoHTML = logoData
-    ? `<img class="logo-box" src="${logoData}" alt="logo">`
-    : `<img class="logo-box" src="omandurar_footer.jpg" alt="logo">`;
-  let h="";
-  h+=`<div class="doc-head">
+    /* ---------- helpers ---------- */
+    function esc(s) { return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+    function val(id) { return document.getElementById(id).value.trim(); }
+    function fmtDate(v) { if (!v) return ""; const [y, m, d] = v.split("-"); return `${d}/${m}/${y}`; }
+    function fmtDateShort(v) { if (!v) return ""; const [y, m, d] = v.split("-"); return `${d}/${m}`; }
+    function lines(t) { return t.split("\n").map(s => s.trim()).filter(Boolean); }
+
+    /* ---------- render preview ---------- */
+    function render() {
+      const kind = val("summaryType").toUpperCase();
+      const logoHTML = logoData
+        ? `<img class="logo-box" src="${logoData}" alt="logo">`
+        : `<img class="logo-box" src="omandurar_footer.jpg" alt="logo">`;
+      let h = "";
+      h += `<div class="doc-head">
     ${logoHTML}
     <div class="head-text">
       <div class="college">${esc(val("college"))}</div>
-      ${val("address")?`<div class="addr">${esc(val("address"))}</div>`:""}
+      ${val("address") ? `<div class="addr">${esc(val("address"))}</div>` : ""}
       <div class="dept">${esc(val("dept"))}</div>
       <div class="kind">${esc(kind)}</div>
     </div>
   </div>`;
 
-  const ageSex=[val("age"),val("sex")].filter(Boolean).join(" / ");
-  h+=`<div class="pt-grid">
+      const ageSex = [val("age"), val("sex")].filter(Boolean).join(" / ");
+      h += `<div class="pt-grid">
     <div><b>Name</b> : ${esc(val("name"))}</div>
     <div><b>Age/Sex</b> : ${esc(ageSex)}</div>
     <div><b>IP No.</b> : ${esc(val("ipno"))}</div>
@@ -1052,596 +2064,626 @@ function render(){
     <div><b>Mode of D/C</b> : ${esc(val("modeOfDischarge"))}</div>
   </div>`;
 
-  h+=section("Diagnosis", listOrText(val("diagnosis")));
+      h += section("Diagnosis", listOrText(val("diagnosis")));
 
-  h+=section("Presenting Complaints (Chief C/O)", complaints.length?ul(complaints):empty());
-  if(val("hopi")) h+=section("HOPI", `<div class="content">${esc(val("hopi"))}</div>`);
-  // Past History & Rx History — side by side
-  if(pastHistory.length || rxHistory.length){
-    if(pastHistory.length && rxHistory.length){
-      h+=`<div class="two-col">`;
-      h+=`<div class="col-half">${section("Past History", ul(pastHistory))}</div>`;
-      h+=`<div class="col-half">${section("Rx History (Pre-admission)", ul(rxHistory))}</div>`;
-      h+=`</div>`;
-    } else if(pastHistory.length){
-      h+=section("Past History", ul(pastHistory));
-    } else {
-      h+=section("Rx History (Pre-admission)", ul(rxHistory));
-    }
-  }
+      h += section("Presenting Complaints (Chief C/O)", complaints.length ? ul(complaints) : empty());
+      if (val("hopi")) h += section("HOPI", `<div class="content">${esc(val("hopi"))}</div>`);
+      // Past History & Rx History — side by side
+      if (pastHistory.length || rxHistory.length) {
+        if (pastHistory.length && rxHistory.length) {
+          h += `<div class="two-col">`;
+          h += `<div class="col-half">${section("Past History", ul(pastHistory))}</div>`;
+          h += `<div class="col-half">${section("Rx History (Pre-admission)", ul(rxHistory))}</div>`;
+          h += `</div>`;
+        } else if (pastHistory.length) {
+          h += section("Past History", ul(pastHistory));
+        } else {
+          h += section("Rx History (Pre-admission)", ul(rxHistory));
+        }
+      }
 
-  const exam = examinationHTML();
-  if(exam) h+=section("Examination", exam);
+      const exam = examinationHTML();
+      if (exam) h += section("Examination", exam);
 
-  h+=section("Investigations", investigationsHTML());
-  h+=section("Opinions", val("opinions")?`<div class="content">${esc(val("opinions"))}</div>`:empty());
-  h+=section("Course in the Hospital", val("course")?`<div class="content">${esc(val("course"))}</div>`:empty());
-  // Treatment Given — 2-col if short list (≤6 items), else full-width
-  if(treatment.length > 0 && treatment.length <= 6){
-    h+=`<div class="two-col">`;
-    const half=Math.ceil(treatment.length/2);
-    const col1=treatment.slice(0,half);
-    const col2=treatment.slice(half);
-    h+=`<div class="col-half">${section("Treatment Given", ul(col1))}</div>`;
-    if(col2.length) h+=`<div class="col-half"><div class="sec"><ul>${col2.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div></div>`;
-    else h+=`<div class="col-half"></div>`;
-    h+=`</div>`;
-  } else {
-    h+=section("Treatment Given", treatment.length?ul(treatment):empty());
-  }
-  const cond=[val("condition"),val("condExtra")].filter(Boolean).join(" — ");
-  h+=section("Condition at Discharge", cond?`<div class="content">${esc(cond)}</div>`:empty());
+      h += section("Investigations", investigationsHTML());
+      h += section("Opinions", val("opinions") ? `<div class="content">${esc(val("opinions"))}</div>` : empty());
+      h += section("Course in the Hospital", val("course") ? `<div class="content">${esc(val("course"))}</div>` : empty());
+      // Treatment Given — 2-col if short list (≤6 items), else full-width
+      if (treatment.length > 0 && treatment.length <= 6) {
+        h += `<div class="two-col">`;
+        const half = Math.ceil(treatment.length / 2);
+        const col1 = treatment.slice(0, half);
+        const col2 = treatment.slice(half);
+        h += `<div class="col-half">${section("Treatment Given", ul(col1))}</div>`;
+        if (col2.length) h += `<div class="col-half"><div class="sec"><ul>${col2.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div></div>`;
+        else h += `<div class="col-half"></div>`;
+        h += `</div>`;
+      } else {
+        h += section("Treatment Given", treatment.length ? ul(treatment) : empty());
+      }
+      const cond = [val("condition"), val("condExtra")].filter(Boolean).join(" — ");
+      h += section("Condition at Discharge", cond ? `<div class="content">${esc(cond)}</div>` : empty());
 
-  // discharge advice block
-  let adv="";
-  const advBits=[];
-  if(val("diet")) advBits.push(`<div class="adv-item"><b>Diet:</b> ${esc(val("diet"))}</div>`);
-  if(val("physicalActivity")) advBits.push(`<div class="adv-item"><b>Physical Activity:</b> ${esc(val("physicalActivity"))}</div>`);
-  if(ynState.physio) advBits.push(`<div class="adv-item"><b>Physiotherapy at home:</b> ${ynState.physio}</div>`);
-  if(ynState.equip) advBits.push(`<div class="adv-item"><b>Home medical equipment needed:</b> ${ynState.equip}</div>`);
-  if(ynState.dress) advBits.push(`<div class="adv-item"><b>Dressing needs at home:</b> ${ynState.dress}</div>`);
-  if(val("otherNeeds")) advBits.push(`<div class="adv-item"><b>Other needs:</b> ${esc(val("otherNeeds"))}</div>`);
-  if(advBits.length) adv+=`<div class="adv-items-group">${advBits.join("")}</div>`;
-  if(rxMeds.length) {
-    adv+=`<div class="adv-item" style="font-weight:700;margin-top:6px;margin-bottom:2px">Medications:</div>`;
-    adv+=`<ul class="med-list">${rxMeds.map(m=>`<li class="adv-item">${esc(m)}</li>`).join("")}</ul>`;
-  }
-  if(val("advice")) adv+=`<div class="content adv-item" style="margin-top:5px">${esc(val("advice"))}</div>`;
-  if(val("emergencyContact")) adv+=`<div class="content adv-item" style="margin-top:5px"><b>Emergency contact:</b> ${esc(val("emergencyContact"))}</div>`;
-  if(val("review")) adv+=`<div class="content adv-item" style="margin-top:5px"><b>Follow-Up:</b> ${esc(val("review"))}</div>`;
-  if(val("warning")) adv+=`<div class="content adv-item" style="margin-top:5px"><b>Return immediately if:</b> ${esc(val("warning"))}</div>`;
-  h+=section("Advice on Discharge (Rx)", adv||empty());
+      // discharge advice block
+      let adv = "";
+      const advBits = [];
+      if (val("diet")) advBits.push(`<div class="adv-item"><b>Diet:</b> ${esc(val("diet"))}</div>`);
+      if (val("physicalActivity")) advBits.push(`<div class="adv-item"><b>Physical Activity:</b> ${esc(val("physicalActivity"))}</div>`);
+      if (ynState.physio) advBits.push(`<div class="adv-item"><b>Physiotherapy at home:</b> ${ynState.physio}</div>`);
+      if (ynState.equip) advBits.push(`<div class="adv-item"><b>Home medical equipment needed:</b> ${ynState.equip}</div>`);
+      if (ynState.dress) advBits.push(`<div class="adv-item"><b>Dressing needs at home:</b> ${ynState.dress}</div>`);
+      if (val("otherNeeds")) advBits.push(`<div class="adv-item"><b>Other needs:</b> ${esc(val("otherNeeds"))}</div>`);
+      if (advBits.length) adv += `<div class="adv-items-group">${advBits.join("")}</div>`;
+      if (rxMeds.length) {
+        adv += `<div class="adv-item" style="font-weight:700;margin-top:6px;margin-bottom:2px">Medications:</div>`;
+        adv += `<ul class="med-list">${rxMeds.map(m => `<li class="adv-item">${esc(m)}</li>`).join("")}</ul>`;
+      }
+      if (val("advice")) adv += `<div class="content adv-item" style="margin-top:5px">${esc(val("advice"))}</div>`;
+      if (val("emergencyContact")) adv += `<div class="content adv-item" style="margin-top:5px"><b>Emergency contact:</b> ${esc(val("emergencyContact"))}</div>`;
+      if (val("review")) adv += `<div class="content adv-item" style="margin-top:5px"><b>Follow-Up:</b> ${esc(val("review"))}</div>`;
+      if (val("warning")) adv += `<div class="content adv-item" style="margin-top:5px"><b>Return immediately if:</b> ${esc(val("warning"))}</div>`;
+      h += section("Advice on Discharge (Rx)", adv || empty());
 
-  const prep=ensureDr(val("preparedBy")), chf=ensureDr(val("chief"));
-  if(prep||chf||val("signDateTime")){
-    h+=`<div class="sign-row">
+      const prep = ensureDr(val("preparedBy")), chf = ensureDr(val("chief"));
+      if (prep || chf || val("signDateTime")) {
+        h += `<div class="sign-row">
       <div>${esc(prep)}<br><small>Prepared by</small></div>
-      <div>${esc(chf)}<br><small>Medical Officer (Name &amp; Seal)</small>${val("signDateTime")?`<br><small>${esc(val("signDateTime"))}</small>`:""}</div>
+      <div>${esc(chf)}<br><small>Medical Officer (Name &amp; Seal)</small>${val("signDateTime") ? `<br><small>${esc(val("signDateTime"))}</small>` : ""}</div>
     </div>`;
-  }
-  document.getElementById("paper").innerHTML=h;
-  scheduleSave();
-  clearTimeout(pageCheckTimer);
-  pageCheckTimer=setTimeout(autoOptimizeSpacing,100);
-}
-function section(title,content){return `<div class="sec"><h3>${title}</h3>${content}</div>`;}
-function empty(){return `<div class="empty">—</div>`;}
-function ul(arr){return `<ul>${arr.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;}
-function listOrText(t){const l=lines(t);if(!l.length)return empty();return l.length>1?ul(l):`<div class="content">${esc(l[0])}</div>`;}
-function listOrTextRaw(t){const l=lines(t);return l.join(", ");}
+      }
+      document.getElementById("paper").innerHTML = h;
+      scheduleSave();
+      clearTimeout(pageCheckTimer);
+      pageCheckTimer = setTimeout(autoOptimizeSpacing, 100);
+    }
+    function section(title, content) { return `<div class="sec"><h3>${title}</h3>${content}</div>`; }
+    function empty() { return `<div class="empty">—</div>`; }
+    function ul(arr) { return `<ul>${arr.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`; }
+    function listOrText(t) { const l = lines(t); if (!l.length) return empty(); return l.length > 1 ? ul(l) : `<div class="content">${esc(l[0])}</div>`; }
+    function listOrTextRaw(t) { const l = lines(t); return l.join(", "); }
 
-function examinationHTML(){
-  let parts=[];
-  if(val("generalExam")) parts.push(`<div class="content">${esc(val("generalExam"))}</div>`);
-  const vit=[["BP",val("vBP")],["PR",val("vPR")],["RR",val("vRR")],["SpO2",val("vSpO2")],["Temp",val("vTemp")],["GRBS",val("vGRBS")]]
-    .filter(([,v])=>v);
-  if(vit.length) parts.push(`<div class="content" style="margin-top:4px"><b>Vitals:</b> ${vit.map(([k,v])=>`${k} - ${esc(v)}`).join(", ")}</div>`);
-  const se=[["CVS",val("seCVS")],["RS",val("seRS")],["P/A",val("sePA")],["CNS",val("seCNS")]].filter(([,v])=>v);
-  if(se.length) parts.push(`<div class="content" style="margin-top:4px"><b>Systemic Examination:</b> ${se.map(([k,v])=>`${k} - ${esc(v)}`).join("; ")}</div>`);
-  return parts.join("");
-}
+    function examinationHTML() {
+      let parts = [];
+      if (val("generalExam")) parts.push(`<div class="content">${esc(val("generalExam"))}</div>`);
+      const vit = [["BP", val("vBP")], ["PR", val("vPR")], ["RR", val("vRR")], ["SpO2", val("vSpO2")], ["Temp", val("vTemp")], ["GRBS", val("vGRBS")]]
+        .filter(([, v]) => v);
+      if (vit.length) parts.push(`<div class="content" style="margin-top:4px"><b>Vitals:</b> ${vit.map(([k, v]) => `${k} - ${esc(v)}`).join(", ")}</div>`);
+      const se = [["CVS", val("seCVS")], ["RS", val("seRS")], ["P/A", val("sePA")], ["CNS", val("seCNS")]].filter(([, v]) => v);
+      if (se.length) parts.push(`<div class="content" style="margin-top:4px"><b>Systemic Examination:</b> ${se.map(([k, v]) => `${k} - ${esc(v)}`).join("; ")}</div>`);
+      return parts.join("");
+    }
 
-function investigationsHTML(){
-  let out="";
-  const hasTable = invDates.length && invParams.some(p=>p.name.trim());
-  if(hasTable){
-    let h=`<div class="inv-table-wrap"><table class="prev-table"><thead><tr><th>Investigation</th>`;
-    invDates.forEach(d=>{h+=`<th>${d.date?fmtDateShort(d.date):"—"}</th>`;});
-    h+=`</tr></thead><tbody>`;
-    invParams.forEach(p=>{
-      if(!p.name.trim())return;
-      h+=`<tr><td class="pn">${esc(p.name)}</td>`;
-      invDates.forEach(d=>{h+=`<td>${esc(p.values[d.id]||"")}</td>`;});
-      h+=`</tr>`;
-    });
-    h+=`</tbody></table></div>`;out+=h;
-  }
-  if(val("invOther")) out+=`<div class="content" style="margin-top:6px">${esc(val("invOther"))}</div>`;
-  return out||empty();
-}
+    function investigationsHTML() {
+      let out = "";
+      const hasTable = invDates.length && invParams.some(p => p.name.trim());
+      if (hasTable) {
+        let h = `<div class="inv-table-wrap"><table class="prev-table"><thead><tr><th>Investigation</th>`;
+        invDates.forEach(d => { h += `<th>${d.date ? fmtDateShort(d.date) : "—"}</th>`; });
+        h += `</tr></thead><tbody>`;
+        invParams.forEach(p => {
+          if (!p.name.trim()) return;
+          h += `<tr><td class="pn">${esc(p.name)}</td>`;
+          invDates.forEach(d => { h += `<td>${esc(p.values[d.id] || "")}</td>`; });
+          h += `</tr>`;
+        });
+        h += `</tbody></table></div>`; out += h;
+      }
+      if (val("invOther")) out += `<div class="content" style="margin-top:6px">${esc(val("invOther"))}</div>`;
+      return out || empty();
+    }
 
-/* ---------- tabs / copy ---------- */
-function showTab(t){
-  const form=t==="form";
-  document.getElementById("formTab").style.display=form?"block":"none";
-  document.getElementById("summaryTab").style.display=form?"none":"block";
-  document.getElementById("tabForm").classList.toggle("active",form);
-  document.getElementById("tabSummary").classList.toggle("active",!form);
-  if(!form){render();window.scrollTo(0,0);setTimeout(autoOptimizeSpacing,60);}
-}
-function copyText(){
-  render();
-  const t=document.getElementById("paper").innerText.replace(/\n{3,}/g,"\n\n");
-  navigator.clipboard.writeText(t).then(
-    ()=>toast("Summary copied to clipboard"),
-    ()=>toast("Copy failed — long-press to select in View summary")
-  );
-}
-function toast(msg){
-  let el=document.createElement("div");
-  el.textContent=msg;
-  el.style.cssText="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#14425f;color:#fff;padding:10px 18px;border-radius:8px;font-size:14px;z-index:99;box-shadow:0 3px 10px rgba(0,0,0,.25)";
-  document.body.appendChild(el);setTimeout(()=>el.remove(),2200);
-}
+    /* ---------- tabs / copy ---------- */
+    function showTab(t) {
+      const form = t === "form";
+      document.getElementById("formTab").style.display = form ? "block" : "none";
+      document.getElementById("summaryTab").style.display = form ? "none" : "block";
+      document.getElementById("tabForm").classList.toggle("active", form);
+      document.getElementById("tabSummary").classList.toggle("active", !form);
+      if (!form) { render(); window.scrollTo(0, 0); setTimeout(autoOptimizeSpacing, 60); }
+    }
+    function copyText() {
+      render();
+      const t = document.getElementById("paper").innerText.replace(/\n{3,}/g, "\n\n");
+      navigator.clipboard.writeText(t).then(
+        () => toast("Summary copied to clipboard"),
+        () => toast("Copy failed — long-press to select in View summary")
+      );
+    }
+    function toast(msg) {
+      let el = document.createElement("div");
+      el.textContent = msg;
+      el.style.cssText = "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#14425f;color:#fff;padding:10px 18px;border-radius:8px;font-size:14px;z-index:99;box-shadow:0 3px 10px rgba(0,0,0,.25)";
+      document.body.appendChild(el); setTimeout(() => el.remove(), 2200);
+    }
 
-/* ---------- A4 page-count measurement, auto-fit & print ---------- */
-let pageCheckTimer;
-const PAGE_PX_HEIGHT=1000; // approx A4 printable height in px after 16mm top/bottom margins
-const PAGE_PX_WIDTH=688;   // approx A4 printable width in px after 14mm left/right margins
+    /* ---------- A4 page-count measurement, auto-fit & print ---------- */
+    let pageCheckTimer;
+    const PAGE_PX_HEIGHT = 1000; // approx A4 printable height in px after 16mm top/bottom margins
+    const PAGE_PX_WIDTH = 688;   // approx A4 printable width in px after 14mm left/right margins
 
-function measurePagesFor(compactClass){
-  const src=document.getElementById("paper");
-  if(!src) return {height: 0, pages: 1};
-  const clone=document.createElement("div");
-  clone.className="paper"+(compactClass?" "+compactClass:"");
-  clone.style.cssText=`position:absolute;left:-9999px;top:0;width:${PAGE_PX_WIDTH}px;padding:0;border:0;box-sizing:border-box;`;
-  clone.innerHTML=src.innerHTML.replace(/<div class="a4-page-guide[^"]*"[^>]*><\/div>/g,"");
-  document.body.appendChild(clone);
-  const hgt=clone.scrollHeight;
-  document.body.removeChild(clone);
-  return {height:hgt, pages: hgt/PAGE_PX_HEIGHT};
-}
+    function measurePagesFor(compactClass) {
+      const src = document.getElementById("paper");
+      if (!src) return { height: 0, pages: 1 };
+      const clone = document.createElement("div");
+      clone.className = "paper" + (compactClass ? " " + compactClass : "");
+      clone.style.cssText = `position:absolute;left:-9999px;top:0;width:${PAGE_PX_WIDTH}px;padding:0;border:0;box-sizing:border-box;`;
+      clone.innerHTML = src.innerHTML.replace(/<div class="a4-page-guide[^"]*"[^>]*><\/div>/g, "");
+      document.body.appendChild(clone);
+      const hgt = clone.scrollHeight;
+      document.body.removeChild(clone);
+      return { height: hgt, pages: hgt / PAGE_PX_HEIGHT };
+    }
 
-function autoOptimizeSpacing(){
-  const paper=document.getElementById("paper");
-  if(!paper) return;
+    function autoOptimizeSpacing() {
+      const paper = document.getElementById("paper");
+      if (!paper) return;
 
-  // Clear previous compaction classes
-  paper.classList.remove("relaxed","compact","compact2");
+      // Clear previous compaction classes
+      paper.classList.remove("relaxed", "compact", "compact2");
 
-  // Step 1: Measure standard density
-  let r=measurePagesFor("");
+      // Step 1: Measure standard density
+      let r = measurePagesFor("");
 
-  // Space-occupying auto-fit algorithm:
-  // Case 1: Very short content (< 0.65 pages) -> relaxed spacing fills the page pleasantly
-  if(r.pages < 0.65){
-    paper.classList.add("relaxed");
-  }
-  // Case 2: Slight overflow beyond 1 page (up to 1.25 pages) -> compact brings it to exactly 1 page
-  else if(r.pages > 1.00 && r.pages <= 1.25){
-    paper.classList.add("compact");
-    let r1=measurePagesFor("compact");
-    if(r1.pages > 1.01 && r.pages <= 1.30){
-      paper.classList.remove("compact");
-      paper.classList.add("compact2");
-      let r2=measurePagesFor("compact2");
-      if(r2.pages > 1.02){
-        // Overflows even with compact2 -> prefer comfortable natural 2-page layout
-        paper.classList.remove("compact2");
+      // Space-occupying auto-fit algorithm:
+      // Case 1: Very short content (< 0.65 pages) -> relaxed spacing fills the page pleasantly
+      if (r.pages < 0.65) {
+        paper.classList.add("relaxed");
+      }
+      // Case 2: Slight overflow beyond 1 page (up to 1.25 pages) -> compact brings it to exactly 1 page
+      else if (r.pages > 1.00 && r.pages <= 1.25) {
+        paper.classList.add("compact");
+        let r1 = measurePagesFor("compact");
+        if (r1.pages > 1.01 && r.pages <= 1.30) {
+          paper.classList.remove("compact");
+          paper.classList.add("compact2");
+          let r2 = measurePagesFor("compact2");
+          if (r2.pages > 1.02) {
+            // Overflows even with compact2 -> prefer comfortable natural 2-page layout
+            paper.classList.remove("compact2");
+          }
+        }
+      }
+      // Case 3: Slight overflow beyond 2 pages (up to 2.30 pages) -> compact maintains 2 pages
+      else if (r.pages > 2.00 && r.pages <= 2.30) {
+        paper.classList.add("compact");
+        let r1 = measurePagesFor("compact");
+        if (r1.pages > 2.01) {
+          paper.classList.remove("compact");
+          paper.classList.add("compact2");
+        }
+      }
+
+      // Draw authentic A4 page boundary dividers on screen in View summary
+      renderA4PageGuides();
+      updatePageBanner();
+    }
+
+    function renderA4PageGuides() {
+      const paper = document.getElementById("paper");
+      if (!paper) return;
+      paper.querySelectorAll(".a4-page-guide").forEach(el => el.remove());
+
+      // A4 sheet height in screen preview is 297mm (approx 1123px at 96 DPI)
+      const fullHeight = paper.scrollHeight;
+      const A4_SHEET_PX = 1123;
+      if (fullHeight > A4_SHEET_PX + 30) {
+        const g1 = document.createElement("div");
+        g1.className = "a4-page-guide no-print";
+        g1.style.top = `${A4_SHEET_PX}px`;
+        g1.innerHTML = `<span class="a4-page-guide-badge">PAGE 1 ENDS (A4) · PAGE 2 CONTINUES</span>`;
+        paper.appendChild(g1);
+      }
+      if (fullHeight > A4_SHEET_PX * 2 + 30) {
+        const g2 = document.createElement("div");
+        g2.className = "a4-page-guide no-print";
+        g2.style.top = `${A4_SHEET_PX * 2}px`;
+        g2.innerHTML = `<span class="a4-page-guide-badge">PAGE 2 ENDS (A4) · PAGE 3 CONTINUES</span>`;
+        paper.appendChild(g2);
       }
     }
-  }
-  // Case 3: Slight overflow beyond 2 pages (up to 2.30 pages) -> compact maintains 2 pages
-  else if(r.pages > 2.00 && r.pages <= 2.30){
-    paper.classList.add("compact");
-    let r1=measurePagesFor("compact");
-    if(r1.pages > 2.01){
-      paper.classList.remove("compact");
-      paper.classList.add("compact2");
+
+    function updatePageBanner() {
+      const banner = document.getElementById("pageBanner");
+      if (!banner) return;
+      const paper = document.getElementById("paper");
+      const isCompact2 = paper.classList.contains("compact2");
+      const isCompact = paper.classList.contains("compact");
+      const isRelaxed = paper.classList.contains("relaxed");
+      const cls = isCompact2 ? "compact compact2" : (isCompact ? "compact" : (isRelaxed ? "relaxed" : ""));
+      const r = measurePagesFor(cls);
+      const pages = Math.max(1, Math.ceil(r.pages));
+      let note = "";
+      if (isCompact2) note = " · Auto-optimized (Level 2 compact)";
+      else if (isCompact) note = " · Auto-optimized (Compact fit)";
+      else if (isRelaxed) note = " · Relaxed spacing";
+
+      if (r.pages <= 2.05) {
+        banner.style.display = "flex";
+        banner.className = "pagebanner no-print ok";
+        banner.innerHTML = `<span>📄 <b>A4 Format</b>: Content fits on <b>${pages} page${pages > 1 ? "s" : ""}</b>${note}. Spacing optimally filled.</span>`;
+      } else {
+        banner.style.display = "flex";
+        banner.className = "pagebanner no-print warn";
+        banner.innerHTML = `<span>⚠ <b>A4 Format</b>: Content spans ~<b>${pages} pages</b>${note}. Shorten lengthy narrative if fewer pages desired.</span>`;
+      }
     }
-  }
 
-  // Draw authentic A4 page boundary dividers on screen in View summary
-  renderA4PageGuides();
-  updatePageBanner();
-}
+    function checkAndPrint() {
+      render();
+      autoOptimizeSpacing();
+      const paper = document.getElementById("paper");
+      const cls = paper.classList.contains("compact2") ? "compact compact2" : (paper.classList.contains("compact") ? "compact" : "");
+      let r = measurePagesFor(cls);
+      if (r.pages <= 2.05) { window.print(); return; }
+      const pages = Math.ceil(r.pages);
+      const proceed = confirm(`⚠ Content spans ~${pages} A4 pages after automatic space optimization.\n\nTap OK to proceed with Print / PDF, or Cancel to shorten any narrative.`);
+      if (proceed) window.print();
+    }
 
-function renderA4PageGuides(){
-  const paper=document.getElementById("paper");
-  if(!paper) return;
-  paper.querySelectorAll(".a4-page-guide").forEach(el=>el.remove());
-
-  // A4 sheet height in screen preview is 297mm (approx 1123px at 96 DPI)
-  const fullHeight=paper.scrollHeight;
-  const A4_SHEET_PX = 1123;
-  if(fullHeight > A4_SHEET_PX + 30){
-    const g1=document.createElement("div");
-    g1.className="a4-page-guide no-print";
-    g1.style.top = `${A4_SHEET_PX}px`;
-    g1.innerHTML = `<span class="a4-page-guide-badge">PAGE 1 ENDS (A4) · PAGE 2 CONTINUES</span>`;
-    paper.appendChild(g1);
-  }
-  if(fullHeight > A4_SHEET_PX * 2 + 30){
-    const g2=document.createElement("div");
-    g2.className="a4-page-guide no-print";
-    g2.style.top = `${A4_SHEET_PX * 2}px`;
-    g2.innerHTML = `<span class="a4-page-guide-badge">PAGE 2 ENDS (A4) · PAGE 3 CONTINUES</span>`;
-    paper.appendChild(g2);
-  }
-}
-
-function updatePageBanner(){
-  const banner=document.getElementById("pageBanner");
-  if(!banner) return;
-  const paper=document.getElementById("paper");
-  const isCompact2 = paper.classList.contains("compact2");
-  const isCompact = paper.classList.contains("compact");
-  const isRelaxed = paper.classList.contains("relaxed");
-  const cls = isCompact2 ? "compact compact2" : (isCompact ? "compact" : (isRelaxed ? "relaxed" : ""));
-  const r=measurePagesFor(cls);
-  const pages=Math.max(1,Math.ceil(r.pages));
-  let note = "";
-  if(isCompact2) note = " · Auto-optimized (Level 2 compact)";
-  else if(isCompact) note = " · Auto-optimized (Compact fit)";
-  else if(isRelaxed) note = " · Relaxed spacing";
-
-  if(r.pages<=2.05){
-    banner.style.display="flex";
-    banner.className="pagebanner no-print ok";
-    banner.innerHTML=`<span>📄 <b>A4 Format</b>: Content fits on <b>${pages} page${pages>1?"s":""}</b>${note}. Spacing optimally filled.</span>`;
-  } else {
-    banner.style.display="flex";
-    banner.className="pagebanner no-print warn";
-    banner.innerHTML=`<span>⚠ <b>A4 Format</b>: Content spans ~<b>${pages} pages</b>${note}. Shorten lengthy narrative if fewer pages desired.</span>`;
-  }
-}
-
-function checkAndPrint(){
-  render();
-  autoOptimizeSpacing();
-  const paper=document.getElementById("paper");
-  const cls = paper.classList.contains("compact2") ? "compact compact2" : (paper.classList.contains("compact") ? "compact" : "");
-  let r=measurePagesFor(cls);
-  if(r.pages<=2.05){ window.print(); return; }
-  const pages=Math.ceil(r.pages);
-  const proceed=confirm(`⚠ Content spans ~${pages} A4 pages after automatic space optimization.\n\nTap OK to proceed with Print / PDF, or Cancel to shorten any narrative.`);
-  if(proceed) window.print();
-}
-
-/* ---------- PWA install ---------- */
-let deferredPrompt=null;
-window.addEventListener("beforeinstallprompt",(e)=>{
-  e.preventDefault();
-  deferredPrompt=e;
-  const btn=document.getElementById("installBtn");
-  if(btn) btn.style.display="inline-block";
-});
-async function doInstall(){
-  if(!deferredPrompt){
-    toast("Use your browser menu → 'Add to Home screen' to install");
-    return;
-  }
-  deferredPrompt.prompt();
-  await deferredPrompt.userChoice;
-  deferredPrompt=null;
-  document.getElementById("installBtn").style.display="none";
-}
-if("serviceWorker" in navigator){
-  window.addEventListener("load",()=>{
-    navigator.serviceWorker.register("sw.js").catch(()=>{});
-  });
-}
-
-/* ---------- Menu ---------- */
-function toggleMenu(){
-  const d=document.getElementById("menuDropdown");
-  d.classList.toggle("open");
-}
-function closeMenu(){
-  document.getElementById("menuDropdown").classList.remove("open");
-}
-document.addEventListener("click",e=>{
-  if(!e.target.closest(".menu-wrap")) closeMenu();
-});
-
-/* ---------- Export defaults as JSON file ---------- */
-async function exportTemplate(){
-  const d=safeParse(await store.get("ds:defaults"))||{};
-  const blob=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="ds-defaults.json";
-  a.click();
-  toast("Defaults exported as ds-defaults.json");
-}
-
-/* ---------- Import defaults from JSON file ---------- */
-function importTemplate(){
-  const inp=document.createElement("input");
-  inp.type="file";inp.accept=".json,application/json";
-  inp.onchange=async()=>{
-    const f=inp.files[0]; if(!f)return;
-    const text=await f.text();
-    const d=safeParse(text);
-    if(!d||typeof d!=="object"){toast("Invalid template file");return;}
-    await store.set("ds:defaults",JSON.stringify(d));
-    applyDefaults(d);
-    toast("Template imported and applied as defaults ✓");
-  };
-  inp.click();
-}
-
-/* ---------- Local template: save or load full draft ---------- */
-function doLocalTemplate(){
-  const choice=confirm(
-    "LOCAL TEMPLATE\n\nOK = Save current form as a template file (.json)\nCancel = Load a previously saved template file"
-  );
-  if(choice){
-    // Save
-    const data={draft:collectDraft(),defaults:{}};
-    DEFAULT_FIELDS.forEach(id=>{data.defaults[id]=document.getElementById(id).value;});
-    const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
-    const a=document.createElement("a");
-    a.href=URL.createObjectURL(blob);
-    a.download="ds-template-"+new Date().toISOString().slice(0,10)+".json";
-    a.click();
-    toast("Template saved locally ✓");
-  } else {
-    // Load
-    const inp=document.createElement("input");
-    inp.type="file";inp.accept=".json,application/json";
-    inp.onchange=async()=>{
-      const f=inp.files[0]; if(!f)return;
-      const text=await f.text();
-      const data=safeParse(text);
-      if(!data){toast("Invalid template file");return;}
-      if(data.defaults) applyDefaults(data.defaults);
-      if(data.draft) restoreDraft(data.draft);
-      await store.set("ds:draft",JSON.stringify(collectDraft()));
-      toast("Template loaded ✓");
-    };
-    inp.click();
-  }
-}
-
-/* ---------- Share / Send as PDF ---------- */
-async function shareDoc(){
-  if(typeof navigator.share==="undefined"){
-    toast("Share not supported — use Print / PDF instead");
-    checkAndPrint();
-    return;
-  }
-  // Build a plain-text version for sharing
-  render();
-  const text=document.getElementById("paper").innerText.replace(/\n{3,}/g,"\n\n");
-  const name=val("name")||"Patient";
-  const dod=fmtDate(val("dod"))||"";
-  try{
-    await navigator.share({
-      title:`Discharge Summary — ${name}${dod? " ("+dod+")":""}`,
-      text:text
+    /* ---------- PWA install ---------- */
+    let deferredPrompt = null;
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById("installBtn");
+      if (btn) btn.style.display = "flex";
     });
-  } catch(e){
-    if(e.name!=="AbortError") toast("Could not share — try Print / PDF");
-  }
-}
+    async function doInstall() {
+      if (!deferredPrompt) {
+        toast("Use your browser menu → 'Add to Home screen' to install");
+        return;
+      }
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      document.getElementById("installBtn").style.display = "none";
+    }
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js").catch(() => { });
+      });
+    }
 
-/* live update on any form input */
-document.addEventListener("input",e=>{ if(e.target.closest("#invEditor"))return; render(); scheduleSave(); });
+    /* ---------- Menu ---------- */
+    function toggleMenu() {
+      const d = document.getElementById("menuDropdown");
+      d.classList.toggle("open");
+    }
+    function closeMenu() {
+      document.getElementById("menuDropdown").classList.remove("open");
+    }
+    document.addEventListener("click", e => {
+      if (!e.target.closest(".menu-wrap")) closeMenu();
+    });
 
-/* ---------- persistence ---------- */
-const FIELDS=["college","address","dept","summaryType","name","age","sex","ipno",
-  "doa","dod","unitPrefix","modeOfDischarge",
-  "diagnosis","hopi",
-  "generalExam","vBP","vPR","vRR","vSpO2","vTemp","vGRBS","seCVS","seRS","sePA","seCNS",
-  "invOther","opinions","course","condition","condExtra",
-  "diet","physicalActivity","otherNeeds","advice","emergencyContact","review","warning",
-  "preparedBy","chief","signDateTime"];
-const SELECT_FIELDS=["unitRoman"];
-const DEFAULT_FIELDS=["college","address","dept","summaryType","unitPrefix","unitRoman","chief","preparedBy","advice","review","warning"];
-const PATIENT_FIELDS=FIELDS.filter(f=>!DEFAULT_FIELDS.includes(f));
-const SEED={
-  advice:"Take medications as advised.\nAdequate rest and oral fluids.\nTake diet as advised.",
-  review:"Review in Medicine OPD after 1 week with reports (or earlier if needed).",
-  warning:"Fever not subsiding, breathlessness, chest pain, giddiness, reduced urine output, bleeding, or drowsiness — report to casualty immediately."
-};
+    /* ---------- Export defaults as JSON file ---------- */
+    async function exportTemplate() {
+      const d = safeParse(await store.get("ds:defaults")) || {};
+      const blob = new Blob([JSON.stringify(d, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "ds-defaults.json";
+      a.click();
+      toast("Defaults exported as ds-defaults.json");
+    }
 
-/* ---------- localStorage-based store (works offline, no extensions needed) ---------- */
-const store={
-  async get(k){
-    try{ return localStorage.getItem(k); }catch(e){ return null; }
-  },
-  async set(k,v){
-    try{ localStorage.setItem(k,v); }catch(e){}
-  },
-  async remove(k){
-    try{ localStorage.removeItem(k); }catch(e){}
-  }
-};
+    /* ---------- Import defaults from JSON file ---------- */
+    function importTemplate() {
+      const inp = document.createElement("input");
+      inp.type = "file"; inp.accept = ".json,application/json";
+      inp.onchange = async () => {
+        const f = inp.files[0]; if (!f) return;
+        const text = await f.text();
+        const d = safeParse(text);
+        if (!d || typeof d !== "object") { toast("Invalid template file"); return; }
+        await store.set("ds:defaults", JSON.stringify(d));
+        applyDefaults(d);
+        toast("Template imported and applied as defaults ✓");
+      };
+      inp.click();
+    }
 
-function safeParse(s){try{return JSON.parse(s);}catch(e){return null;}}
-function setVal_(id,v){const el=document.getElementById(id);if(el)el.value=(v==null?"":v);}
-function onLogo(e){
-  const f=e.target.files&&e.target.files[0]; if(!f)return;
-  const r=new FileReader();
-  r.onload=()=>{ logoData=r.result; render(); store.set("ds:logo",logoData); };
-  r.readAsDataURL(f);
-}
+    /* ---------- Local template: save or load full draft ---------- */
+    function doLocalTemplate() {
+      const choice = confirm(
+        "LOCAL TEMPLATE\n\nOK = Save current form as a template file (.json)\nCancel = Load a previously saved template file"
+      );
+      if (choice) {
+        // Save
+        const data = { draft: collectDraft(), defaults: {} };
+        DEFAULT_FIELDS.forEach(id => { data.defaults[id] = document.getElementById(id).value; });
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "ds-template-" + new Date().toISOString().slice(0, 10) + ".json";
+        a.click();
+        toast("Template saved locally ✓");
+      } else {
+        // Load
+        const inp = document.createElement("input");
+        inp.type = "file"; inp.accept = ".json,application/json";
+        inp.onchange = async () => {
+          const f = inp.files[0]; if (!f) return;
+          const text = await f.text();
+          const data = safeParse(text);
+          if (!data) { toast("Invalid template file"); return; }
+          if (data.defaults) applyDefaults(data.defaults);
+          if (data.draft) restoreDraft(data.draft);
+          await store.set("ds:draft", JSON.stringify(collectDraft()));
+          toast("Template loaded ✓");
+        };
+        inp.click();
+      }
+    }
 
-let saveTimer;
-function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{store.set("ds:draft",JSON.stringify(collectDraft()));},600);}
-function collectDraft(){
-  const f={};FIELDS.forEach(id=>f[id]=document.getElementById(id).value);
-  SELECT_FIELDS.forEach(id=>f[id]=document.getElementById(id).value);
-  return {f,complaints,treatment,rxMeds,invDates,invParams,invSeq,pastHistory,rxHistory,ynState};
-}
-function restoreDraft(o){if(!o)return;
-  if(o.f){FIELDS.forEach(id=>{if(id in o.f)setVal_(id,o.f[id]);});SELECT_FIELDS.forEach(id=>{if(o.f[id]!=null)setVal_(id,o.f[id]);});}
-  complaints=o.complaints||[];treatment=o.treatment||[];rxMeds=o.rxMeds||[];
-  invDates=o.invDates||[];invParams=o.invParams||[];invSeq=o.invSeq||0;
-  pastHistory=o.pastHistory||[];rxHistory=o.rxHistory||[];
-  ynState=o.ynState||{physio:"",equip:"",dress:""};
-  renderComplaints();renderTx();renderRx();renderInvEditor();renderPast();renderRxHistory();
-  ["physio","equip","dress"].forEach(k=>{ if(ynState[k]) setYNui(k,ynState[k]); });
-  if(!val("dod")) setVal_("dod",todayISO());
-  render();
-}
-function setYNui(key,v){
-  const map={physio:"ynPhysio",equip:"ynEquip",dress:"ynDress"};
-  const box=document.getElementById(map[key]);
-  if(box) [...box.children].forEach(b=>b.classList.toggle("sel", b.textContent===v));
-}
+    /* ---------- Share / Send as PDF ---------- */
+    async function shareDoc() {
+      render();
+      const paper = document.getElementById("paper");
+      const name = val("name") || "Patient";
+      const cleanName = name.replace(/[^a-zA-Z0-9]/g, "_");
+      const fileName = `Discharge_Summary_${cleanName}.pdf`;
 
-function applyDefaults(d){if(!d)return;DEFAULT_FIELDS.forEach(id=>{if(id in d)setVal_(id,d[id]);});}
-async function saveDefaults(){const d={};DEFAULT_FIELDS.forEach(id=>d[id]=document.getElementById(id).value);
-  await store.set("ds:defaults",JSON.stringify(d));toast("Saved as your defaults");}
+      if (!navigator.share) {
+        toast("Share not supported — use Print / PDF");
+        checkAndPrint();
+        return;
+      }
 
-async function newSummary(){
-  if(!confirm("Start a new patient? Patient details will be cleared. Your saved defaults are kept."))return;
-  PATIENT_FIELDS.forEach(id=>setVal_(id,""));
-  complaints=[];treatment=[];rxMeds=[];invDates=[];invParams=[];invSeq=0;
-  pastHistory=[];rxHistory=[];ynState={physio:"",equip:"",dress:""};
-  ["ynPhysio","ynEquip","ynDress"].forEach(id=>{const b=document.getElementById(id);if(b)[...b.children].forEach(c=>c.classList.remove("sel"));});
-  setVal_("dod",todayISO());
-  const d=safeParse(await store.get("ds:defaults"));
-  ["advice","review","warning"].forEach(id=>setVal_(id,(d&&d[id]!=null)?d[id]:SEED[id]));
-  renderComplaints();renderTx();renderRx();renderInvEditor();renderPast();renderRxHistory();render();
-  await store.set("ds:draft",JSON.stringify(collectDraft()));
-  showTab("form");toast("New patient — defaults kept");
-}
+      toast("Generating PDF...");
 
-/* ---------- autofill sample data for testing on click ---------- */
-function autofillTest(){
-  if (val("name") || val("diagnosis") || complaints.length > 0) {
-    if (!confirm("Autofill sample test data? Existing entries will be overwritten.")) return;
-  }
-  // Patient details
-  setVal_("name", "Ramasamy M.");
-  setVal_("age", "52");
-  setVal_("sex", "M");
-  setVal_("ipno", "2026/04812");
-  setVal_("doa", "2026-10-15");
-  setVal_("dod", todayISO());
-  setVal_("unitPrefix", "M-");
-  setVal_("unitRoman", "IV");
-  setVal_("modeOfDischarge", "Discharge");
+      try {
+        // 1. Generate PDF Blob from the summary HTML
+        const opt = {
+          margin: [10, 10, 10, 10],
+          filename: fileName,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
 
-  // Diagnosis
-  setVal_("diagnosis", "Type 2 Diabetes Mellitus with DKA (Resolved)\nCommunity Acquired Pneumonia (Right Lower Lobe)\nEssential Hypertension");
+        const pdfBlob = await html2pdf().set(opt).from(paper).output('blob');
+        const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
-  // Complaints
-  complaints = [
-    "H/o fever for 4 days",
-    "H/o cough with expectoration for 4 days",
-    "H/o breathlessness for 2 days"
-  ];
-  renderComplaints();
+        // 2. Share PDF file if supported by browser/device
+        if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+          await navigator.share({
+            title: `Discharge Summary — ${name}`,
+            files: [pdfFile]
+          });
+          toast("PDF shared successfully ✓");
+        } else {
+          toast("File sharing not supported on this browser — opening Print/PDF");
+          checkAndPrint();
+        }
+      } catch (e) {
+        if (e.name !== "AbortError") {
+          toast("Could not share PDF — opening Print/PDF");
+          checkAndPrint();
+        }
+      }
+    }
 
-  // History
-  setVal_("hopi", "Patient was apparently normal 4 days ago, then developed high-grade fever with chills and cough with expectoration. Developed progressive breathlessness (MMRC Grade III) for 2 days. No history of chest pain or palpitations. Patient had nausea, vomiting and reduced oral intake for 1 day prior to admission.");
-  pastHistory = [
-    "K/C/O Type 2 Diabetes Mellitus on medication",
-    "K/C/O Systemic Hypertension on medication"
-  ];
-  renderPast();
-  rxHistory = [
-    "Tab. Metformin 500 mg BD",
-    "Tab. Telmisartan 40 mg OD"
-  ];
-  renderRxHistory();
+    /* live update on any form input */
+    document.addEventListener("input", e => { if (e.target.closest("#invEditor")) return; render(); scheduleSave(); });
 
-  // Examination
-  setVal_("generalExam", "Patient conscious, oriented, tachypneic, afebrile, not pale, no icterus, cyanosis, clubbing, lymphadenopathy. Mild bilateral pedal edema present.");
-  setVal_("vBP", "130/80");
-  setVal_("vPR", "88");
-  setVal_("vRR", "22");
-  setVal_("vSpO2", "96% RA");
-  setVal_("vTemp", "Afebrile");
-  setVal_("vGRBS", "164");
-  setVal_("seCVS", "S1, S2 heard, no murmurs");
-  setVal_("seRS", "Bilateral air entry present, crepitations in right infrascapular area");
-  setVal_("sePA", "Soft, non-tender, no organomegaly");
-  setVal_("seCNS", "Conscious, oriented, NFND, GCS 15/15");
+    /* ---------- persistence ---------- */
+    const FIELDS = ["college", "address", "dept", "summaryType", "name", "age", "sex", "ipno",
+      "doa", "dod", "unitPrefix", "modeOfDischarge",
+      "diagnosis", "hopi",
+      "generalExam", "vBP", "vPR", "vRR", "vSpO2", "vTemp", "vGRBS", "seCVS", "seRS", "sePA", "seCNS",
+      "invOther", "opinions", "course", "condition", "condExtra",
+      "diet", "physicalActivity", "otherNeeds", "advice", "emergencyContact", "review", "warning",
+      "preparedBy", "chief", "signDateTime"];
+    const SELECT_FIELDS = ["unitRoman"];
+    const DEFAULT_FIELDS = ["college", "address", "dept", "summaryType", "unitPrefix", "unitRoman", "chief", "preparedBy", "advice", "review", "warning"];
+    const PATIENT_FIELDS = FIELDS.filter(f => !DEFAULT_FIELDS.includes(f));
+    const SEED = {
+      advice: "Take medications as advised.\nAdequate rest and oral fluids.\nTake diet as advised.",
+      review: "Review in Medicine OPD after 1 week with reports (or earlier if needed).",
+      warning: "Fever not subsiding, breathlessness, chest pain, giddiness, reduced urine output, bleeding, or drowsiness — report to casualty immediately."
+    };
 
-  // Investigations
-  invSeq = 0;
-  const d1Id = ++invSeq, d2Id = ++invSeq;
-  invDates = [
-    { id: d1Id, date: "2026-10-15" },
-    { id: d2Id, date: "2026-10-19" }
-  ];
-  invParams = [
-    { id: ++invSeq, name: "Hb", values: { [d1Id]: "11.8", [d2Id]: "12.2" } },
-    { id: ++invSeq, name: "TC", values: { [d1Id]: "14200", [d2Id]: "8600" } },
-    { id: ++invSeq, name: "Platelet", values: { [d1Id]: "2.1 L", [d2Id]: "2.4 L" } },
-    { id: ++invSeq, name: "Urea", values: { [d1Id]: "42", [d2Id]: "28" } },
-    { id: ++invSeq, name: "Creatinine", values: { [d1Id]: "1.4", [d2Id]: "0.9" } },
-    { id: ++invSeq, name: "RBS", values: { [d1Id]: "340", [d2Id]: "138" } },
-    { id: ++invSeq, name: "Na", values: { [d1Id]: "132", [d2Id]: "138" } },
-    { id: ++invSeq, name: "K", values: { [d1Id]: "4.8", [d2Id]: "4.2" } }
-  ];
-  renderInvEditor();
-  setVal_("invOther", "CXR (PA view): Right lower zone consolidation resolving.\nECG: Normal sinus rhythm, HR 86/min.\nUSG Abdomen: Grade 1 fatty liver, normal bilateral kidneys.");
+    /* ---------- localStorage-based store (works offline, no extensions needed) ---------- */
+    const store = {
+      async get(k) {
+        try { return localStorage.getItem(k); } catch (e) { return null; }
+      },
+      async set(k, v) {
+        try { localStorage.setItem(k, v); } catch (e) { }
+      },
+      async remove(k) {
+        try { localStorage.removeItem(k); } catch (e) { }
+      }
+    };
 
-  // Opinions
-  setVal_("opinions", "Pulmonology opinion obtained on 16/10/2026 — advised IV antibiotics and nebulisation.\nEndocrinology opinion obtained — advised sliding scale insulin, transitioned to basal-bolus regimen.");
+    function safeParse(s) { try { return JSON.parse(s); } catch (e) { return null; } }
+    function setVal_(id, v) { const el = document.getElementById(id); if (el) el.value = (v == null ? "" : v); }
+    function onLogo(e) {
+      const f = e.target.files && e.target.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { logoData = r.result; render(); store.set("ds:logo", logoData); };
+      r.readAsDataURL(f);
+    }
 
-  // Course in hospital
-  setVal_("course", "Patient admitted with diabetic ketoacidosis precipitated by community-acquired pneumonia. Evaluated with blood sugars, arterial blood gases, septic screen, and chest radiography. Initially managed in HDU with IV fluids, insulin infusion, and broad-spectrum IV antibiotics (Inj. Ceftriaxone) along with nebulisation. Acidosis resolved and blood glucose levels normalised. Transitioned to subcutaneous insulin. Cough and breathlessness settled; patient maintained adequate saturation on room air. Vitals remained stable, tolerating normal diabetic diet. Patient is being discharged in a stable condition with oral medications and glycemic control advice.");
+    let saveTimer;
+    function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { store.set("ds:draft", JSON.stringify(collectDraft())); }, 600); }
+    function collectDraft() {
+      const f = {}; FIELDS.forEach(id => f[id] = document.getElementById(id).value);
+      SELECT_FIELDS.forEach(id => f[id] = document.getElementById(id).value);
+      return { f, complaints, treatment, rxMeds, invDates, invParams, invSeq, pastHistory, rxHistory, ynState };
+    }
+    function restoreDraft(o) {
+      if (!o) return;
+      if (o.f) { FIELDS.forEach(id => { if (id in o.f) setVal_(id, o.f[id]); }); SELECT_FIELDS.forEach(id => { if (o.f[id] != null) setVal_(id, o.f[id]); }); }
+      complaints = o.complaints || []; treatment = o.treatment || []; rxMeds = o.rxMeds || [];
+      invDates = o.invDates || []; invParams = o.invParams || []; invSeq = o.invSeq || 0;
+      pastHistory = o.pastHistory || []; rxHistory = o.rxHistory || [];
+      ynState = o.ynState || { physio: "", equip: "", dress: "" };
+      renderComplaints(); renderTx(); renderRx(); renderInvEditor(); renderPast(); renderRxHistory();
+      ["physio", "equip", "dress"].forEach(k => { if (ynState[k]) setYNui(k, ynState[k]); });
+      if (!val("dod")) setVal_("dod", todayISO());
+      render();
+    }
+    function setYNui(key, v) {
+      const map = { physio: "ynPhysio", equip: "ynEquip", dress: "ynDress" };
+      const box = document.getElementById(map[key]);
+      if (box) [...box.children].forEach(b => b.classList.toggle("sel", b.textContent === v));
+    }
 
-  // Treatment given in hospital
-  treatment = [
-    "Inj. Ceftriaxone 1 g IV BD",
-    "Inj. Insulin (Regular) IV infusion as per protocol, transitioned to SC",
-    "Inj. Pantoprazole 40 mg IV OD",
-    "Inj. Paracetamol 1 g IV SOS",
-    "Neb. Ipratropium-Salbutamol Q8H",
-    "IV Fluids 0.9% Normal Saline"
-  ];
-  renderTx();
+    function applyDefaults(d) { if (!d) return; DEFAULT_FIELDS.forEach(id => { if (id in d) setVal_(id, d[id]); }); }
+    async function saveDefaults() {
+      const d = {}; DEFAULT_FIELDS.forEach(id => d[id] = document.getElementById(id).value);
+      await store.set("ds:defaults", JSON.stringify(d)); toast("Saved as your defaults");
+    }
 
-  // Condition at discharge
-  setVal_("condition", "Clinically stable and symptomatically improved");
-  setVal_("condExtra", "Afebrile, eupneic, hemodynamically stable, tolerating diabetic diet");
+    async function newSummary() {
+      if (!confirm("Start a new patient? Patient details will be cleared. Your saved defaults are kept.")) return;
+      PATIENT_FIELDS.forEach(id => setVal_(id, ""));
+      complaints = []; treatment = []; rxMeds = []; invDates = []; invParams = []; invSeq = 0;
+      pastHistory = []; rxHistory = []; ynState = { physio: "", equip: "", dress: "" };
+      ["ynPhysio", "ynEquip", "ynDress"].forEach(id => { const b = document.getElementById(id); if (b) [...b.children].forEach(c => c.classList.remove("sel")); });
+      setVal_("dod", todayISO());
+      const d = safeParse(await store.get("ds:defaults"));
+      ["advice", "review", "warning"].forEach(id => setVal_(id, (d && d[id] != null) ? d[id] : SEED[id]));
+      renderComplaints(); renderTx(); renderRx(); renderInvEditor(); renderPast(); renderRxHistory(); render();
+      await store.set("ds:draft", JSON.stringify(collectDraft()));
+      showTab("form"); toast("New patient — defaults kept");
+    }
 
-  // Discharge advice
-  setVal_("diet", "Diabetic and salt-restricted diet");
-  setVal_("physicalActivity", "Ambulant, adequate rest");
-  ynState = { physio: "No", equip: "No", dress: "No" };
-  ["physio","equip","dress"].forEach(k => setYNui(k, ynState[k]));
-  setVal_("otherNeeds", "Daily foot care and regular blood glucose monitoring");
-  rxMeds = [
-    "Tab. Cefpodoxime 200 mg BD × 5 days",
-    "Tab. Metformin 500 mg BD",
-    "Tab. Glimepiride 1 mg OD before breakfast",
-    "Tab. Telmisartan 40 mg OD",
-    "Tab. Pantoprazole 40 mg OD before food × 5 days",
-    "Tab. Paracetamol 650 mg SOS for fever/bodyache"
-  ];
-  renderRx();
-  setVal_("advice", "Take medications strictly as advised.\nAdequate hydration and diabetic diet.\nMonitor fasting and post-prandial blood sugar regularly.\nAvoid skipping meals.");
-  setVal_("emergencyContact", "Casualty / Emergency Dept: 044-25305000");
-  setVal_("review", "Review in Medicine OPD after 1 week with fasting and PP blood sugar reports (or earlier if needed).");
-  setVal_("warning", "Fever, increasing breathlessness, chest pain, persistent vomiting, reduced urine output, or severe giddiness — report to Casualty immediately.");
+    /* ---------- autofill sample data for testing on click ---------- */
+    function autofillTest() {
+      if (val("name") || val("diagnosis") || complaints.length > 0) {
+        if (!confirm("Autofill sample test data? Existing entries will be overwritten.")) return;
+      }
+      // Patient details
+      setVal_("name", "Ramasamy M.");
+      setVal_("age", "52");
+      setVal_("sex", "M");
+      setVal_("ipno", "2026/04812");
+      setVal_("doa", "2026-10-15");
+      setVal_("dod", todayISO());
+      setVal_("unitPrefix", "M-");
+      setVal_("unitRoman", "IV");
+      setVal_("modeOfDischarge", "Discharge");
 
-  // Signatures
-  setVal_("preparedBy", "Dr. K. Vignesh (JR)");
-  setVal_("chief", "Dr. S. Sundararajan (Unit Chief)");
-  setVal_("signDateTime", "20/10/2026, 11:30 AM");
+      // Diagnosis
+      setVal_("diagnosis", "Type 2 Diabetes Mellitus with DKA (Resolved)\nCommunity Acquired Pneumonia (Right Lower Lobe)\nEssential Hypertension");
 
-  render();
-  toast("All details autofilled with test data");
-}
+      // Complaints
+      complaints = [
+        "H/o fever for 4 days",
+        "H/o cough with expectoration for 4 days",
+        "H/o breathlessness for 2 days"
+      ];
+      renderComplaints();
 
-async function loadAll(){
-  const lg=await store.get("ds:logo"); if(lg)logoData=lg;
-  const def=safeParse(await store.get("ds:defaults"));
-  if(def)applyDefaults(def);
-  const draft=safeParse(await store.get("ds:draft"));
-  if(draft){ restoreDraft(draft); }
-  else { setVal_("dod",todayISO()); renderInvEditor(); render(); }
-}
-loadAll();
-</script>
+      // History
+      setVal_("hopi", "Patient was apparently normal 4 days ago, then developed high-grade fever with chills and cough with expectoration. Developed progressive breathlessness (MMRC Grade III) for 2 days. No history of chest pain or palpitations. Patient had nausea, vomiting and reduced oral intake for 1 day prior to admission.");
+      pastHistory = [
+        "K/C/O Type 2 Diabetes Mellitus on medication",
+        "K/C/O Systemic Hypertension on medication"
+      ];
+      renderPast();
+      rxHistory = [
+        "Tab. Metformin 500 mg BD",
+        "Tab. Telmisartan 40 mg OD"
+      ];
+      renderRxHistory();
+
+      // Examination
+      setVal_("generalExam", "Patient conscious, oriented, tachypneic, afebrile, not pale, no icterus, cyanosis, clubbing, lymphadenopathy. Mild bilateral pedal edema present.");
+      setVal_("vBP", "130/80");
+      setVal_("vPR", "88");
+      setVal_("vRR", "22");
+      setVal_("vSpO2", "96% RA");
+      setVal_("vTemp", "Afebrile");
+      setVal_("vGRBS", "164");
+      setVal_("seCVS", "S1, S2 heard, no murmurs");
+      setVal_("seRS", "Bilateral air entry present, crepitations in right infrascapular area");
+      setVal_("sePA", "Soft, non-tender, no organomegaly");
+      setVal_("seCNS", "Conscious, oriented, NFND, GCS 15/15");
+
+      // Investigations
+      invSeq = 0;
+      const d1Id = ++invSeq, d2Id = ++invSeq;
+      invDates = [
+        { id: d1Id, date: "2026-10-15" },
+        { id: d2Id, date: "2026-10-19" }
+      ];
+      invParams = [
+        { id: ++invSeq, name: "Hb", values: { [d1Id]: "11.8", [d2Id]: "12.2" } },
+        { id: ++invSeq, name: "TC", values: { [d1Id]: "14200", [d2Id]: "8600" } },
+        { id: ++invSeq, name: "Platelet", values: { [d1Id]: "2.1 L", [d2Id]: "2.4 L" } },
+        { id: ++invSeq, name: "Urea", values: { [d1Id]: "42", [d2Id]: "28" } },
+        { id: ++invSeq, name: "Creatinine", values: { [d1Id]: "1.4", [d2Id]: "0.9" } },
+        { id: ++invSeq, name: "RBS", values: { [d1Id]: "340", [d2Id]: "138" } },
+        { id: ++invSeq, name: "Na", values: { [d1Id]: "132", [d2Id]: "138" } },
+        { id: ++invSeq, name: "K", values: { [d1Id]: "4.8", [d2Id]: "4.2" } }
+      ];
+      renderInvEditor();
+      setVal_("invOther", "CXR (PA view): Right lower zone consolidation resolving.\nECG: Normal sinus rhythm, HR 86/min.\nUSG Abdomen: Grade 1 fatty liver, normal bilateral kidneys.");
+
+      // Opinions
+      setVal_("opinions", "Pulmonology opinion obtained on 16/10/2026 — advised IV antibiotics and nebulisation.\nEndocrinology opinion obtained — advised sliding scale insulin, transitioned to basal-bolus regimen.");
+
+      // Course in hospital
+      setVal_("course", "Patient admitted with diabetic ketoacidosis precipitated by community-acquired pneumonia. Evaluated with blood sugars, arterial blood gases, septic screen, and chest radiography. Initially managed in HDU with IV fluids, insulin infusion, and broad-spectrum IV antibiotics (Inj. Ceftriaxone) along with nebulisation. Acidosis resolved and blood glucose levels normalised. Transitioned to subcutaneous insulin. Cough and breathlessness settled; patient maintained adequate saturation on room air. Vitals remained stable, tolerating normal diabetic diet. Patient is being discharged in a stable condition with oral medications and glycemic control advice.");
+
+      // Treatment given in hospital
+      treatment = [
+        "Inj. Ceftriaxone 1 g IV BD",
+        "Inj. Insulin (Regular) IV infusion as per protocol, transitioned to SC",
+        "Inj. Pantoprazole 40 mg IV OD",
+        "Inj. Paracetamol 1 g IV SOS",
+        "Neb. Ipratropium-Salbutamol Q8H",
+        "IV Fluids 0.9% Normal Saline"
+      ];
+      renderTx();
+
+      // Condition at discharge
+      setVal_("condition", "Clinically stable and symptomatically improved");
+      setVal_("condExtra", "Afebrile, eupneic, hemodynamically stable, tolerating diabetic diet");
+
+      // Discharge advice
+      setVal_("diet", "Diabetic and salt-restricted diet");
+      setVal_("physicalActivity", "Ambulant, adequate rest");
+      ynState = { physio: "No", equip: "No", dress: "No" };
+      ["physio", "equip", "dress"].forEach(k => setYNui(k, ynState[k]));
+      setVal_("otherNeeds", "Daily foot care and regular blood glucose monitoring");
+      rxMeds = [
+        "Tab. Cefpodoxime 200 mg BD × 5 days",
+        "Tab. Metformin 500 mg BD",
+        "Tab. Glimepiride 1 mg OD before breakfast",
+        "Tab. Telmisartan 40 mg OD",
+        "Tab. Pantoprazole 40 mg OD before food × 5 days",
+        "Tab. Paracetamol 650 mg SOS for fever/bodyache"
+      ];
+      renderRx();
+      setVal_("advice", "Take medications strictly as advised.\nAdequate hydration and diabetic diet.\nMonitor fasting and post-prandial blood sugar regularly.\nAvoid skipping meals.");
+      setVal_("emergencyContact", "Casualty / Emergency Dept: 044-25305000");
+      setVal_("review", "Review in Medicine OPD after 1 week with fasting and PP blood sugar reports (or earlier if needed).");
+      setVal_("warning", "Fever, increasing breathlessness, chest pain, persistent vomiting, reduced urine output, or severe giddiness — report to Casualty immediately.");
+
+      // Signatures
+      setVal_("preparedBy", "Dr. K. Vignesh (JR)");
+      setVal_("chief", "Dr. S. Sundararajan (Unit Chief)");
+      setVal_("signDateTime", "20/10/2026, 11:30 AM");
+
+      render();
+      toast("All details autofilled with test data");
+    }
+
+    async function loadAll() {
+      const lg = await store.get("ds:logo"); if (lg) logoData = lg;
+      const def = safeParse(await store.get("ds:defaults"));
+      if (def) applyDefaults(def);
+      const draft = safeParse(await store.get("ds:draft"));
+      if (draft) { restoreDraft(draft); }
+      else { setVal_("dod", todayISO()); renderInvEditor(); render(); }
+    }
+    loadAll();
+  </script>
 </body>
+
 </html>
