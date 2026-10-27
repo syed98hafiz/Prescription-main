@@ -62,6 +62,11 @@ Microsoft Print to PDF on Windows. On mobile, where that printer service is not
 available, Print / PDF generates an A4 PDF in the browser and downloads it;
 Share / Send PDF uses the same generated file and shares it when supported.
 
+The service worker uses network-first updates with an offline cache fallback.
+When a new version activates, the current draft is written to IndexedDB before
+the installed app reloads. This updates the Android installed web app without
+discarding patient data or unsaved form changes.
+
 🛡️ Medical & Privacy Disclaimer
 Data Privacy: All patient information entered into DS Builder stays strictly on the client device in browser local storage. No health data is stored or transmitted to remote servers.
 

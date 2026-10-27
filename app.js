@@ -566,13 +566,15 @@
         generatePdf(false);
         return;
       }
+      const pdfName = getPdfName();
+      if (!pdfName) return;
       const paper = document.getElementById("paper");
       const cls = paper.classList.contains("compact2") ? "compact compact2" : (paper.classList.contains("compact") ? "compact" : "");
       let r = measurePagesFor(cls);
-      if (r.pages <= 2.05) { window.print(); return; }
+      if (r.pages <= 2.05) { printWithFileName(pdfName); return; }
       const pages = Math.ceil(r.pages);
       const proceed = confirm(`⚠ Content spans ~${pages} A4 pages after automatic space optimization.\n\nTap OK to proceed with Print / PDF, or Cancel to shorten any narrative.`);
-      if (proceed) window.print();
+      if (proceed) printWithFileName(pdfName);
     }
 
     function isMobileDevice() {
@@ -580,13 +582,34 @@
         /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     }
 
-    async function generatePdf(share) {
+    function getPdfName() {
+      const enteredName = val("name") || prompt("Enter a name for the PDF filename (this will not be added to the summary):");
+      if (!enteredName || !enteredName.trim()) return null;
+      const cleanName = enteredName.trim().replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+      return cleanName ? `DS_${cleanName}.pdf` : null;
+    }
+
+    function printWithFileName(fileName) {
+      const previousTitle = document.title;
+      document.title = fileName.replace(/\.pdf$/i, "");
+      const restoreTitle = () => {
+        document.title = previousTitle;
+        window.removeEventListener("afterprint", restoreTitle);
+      };
+      window.addEventListener("afterprint", restoreTitle);
+      window.print();
+      setTimeout(restoreTitle, 1000);
+    }
+
+    async function generatePdf(share, requestedName = "") {
       render();
       autoOptimizeSpacing();
       const paper = document.getElementById("paper");
-      const name = val("name") || "Patient";
-      const cleanName = name.replace(/[^a-zA-Z0-9]/g, "_");
-      const fileName = `Discharge_Summary_${cleanName}.pdf`;
+      const name = val("name") || requestedName || prompt("Enter a name for the PDF filename (this will not be added to the summary):");
+      if (!name || !name.trim()) return;
+      const cleanName = name.trim().replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+      if (!cleanName) return;
+      const fileName = `DS_${cleanName}.pdf`;
       if (typeof html2pdf !== "function") {
         toast("PDF generator is unavailable — use the browser share or print menu.");
         return;
@@ -644,10 +667,25 @@
       document.getElementById("installBtn").style.display = "none";
     }
     if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (window.__dsUpdateReloading || !navigator.serviceWorker.controller) return;
+        window.__dsUpdateReloading = true;
+        setTimeout(async () => {
+          if (typeof collectDraft === "function" && typeof store !== "undefined") {
+            await store.set("ds:draft", JSON.stringify(collectDraft()));
+          }
+          window.location.reload();
+        }, 700);
+      });
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("sw.js")
+        navigator.serviceWorker.register("sw.js", { updateViaCache: "none" })
           .then(registration => registration.update())
           .catch(error => console.error("Service worker registration failed:", error));
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          navigator.serviceWorker.ready.then(registration => registration.update());
+        }
       });
     }
 
@@ -731,9 +769,11 @@
       }
       render();
       const paper = document.getElementById("paper");
-      const name = val("name") || "Patient";
-      const cleanName = name.replace(/[^a-zA-Z0-9]/g, "_");
-      const fileName = `Discharge_Summary_${cleanName}.pdf`;
+      const name = val("name") || prompt("Enter a name for the PDF filename (this will not be added to the summary):");
+      if (!name || !name.trim()) return;
+      const cleanName = name.trim().replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+      if (!cleanName) return;
+      const fileName = `DS_${cleanName}.pdf`;
 
       if (!navigator.share) {
         toast("Share not supported — use Print / PDF");
@@ -765,12 +805,12 @@
           toast("PDF shared successfully ✓");
         } else {
           toast("File sharing not supported on this browser — downloading PDF");
-          await generatePdf(false);
+          await generatePdf(false, name);
         }
       } catch (e) {
         if (e.name !== "AbortError") {
           toast("Could not share PDF — downloading PDF");
-          await generatePdf(false);
+          await generatePdf(false, name);
         }
       }
     }
