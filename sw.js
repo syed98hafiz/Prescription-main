@@ -1,5 +1,5 @@
-const CACHE = "ds-builder-v10";
-const ASSETS = ["./index.html", "./styles.css?v=9", "./app.js?v=9", "./discharge-summary-builder.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./omandurar_footer.jpg"];
+const CACHE = "ds-builder-v27";
+const ASSETS = ["./index.html", "./styles.css?v=26", "./app.js?v=26", "./discharge-summary-builder.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./omandurar_footer.jpg"];
 
 
 self.addEventListener("install", (e) => {

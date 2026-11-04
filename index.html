@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" href="icon-192.png">
   <title>Discharge Summary Builder</title>
-  <link rel="stylesheet" href="styles.css?v=9">
+  <link rel="stylesheet" href="styles.css?v=26">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 
@@ -36,6 +36,9 @@
           <div class="menu-dropdown" id="menuDropdown">
 
             <div class="menu-label">Template <span class="beta-tag">BETA</span></div>
+            <button onclick="exportDraft();closeMenu()">💾 Export patient draft (.json)</button>
+            <button onclick="importDraft();closeMenu()">📂 Import patient draft (.json)</button>
+            <hr>
             <button onclick="exportTemplate();closeMenu()">⬇ Export defaults <span class="beta-tag">BETA</span></button>
             <button onclick="importTemplate();closeMenu()">⬆ Import defaults <span class="beta-tag">BETA</span></button>
             <button onclick="doLocalTemplate();closeMenu()">📁 Local template <span class="beta-tag">BETA</span></button>
@@ -47,7 +50,7 @@
             </label>
             <button class="install-btn" id="installBtn" onclick="doInstall();closeMenu()">📲 Install app</button>
             <button onclick="copyText();closeMenu()">📋 Copy text</button>
-            <button onclick="shareDoc();closeMenu()">↗ Share / Send PDF</button>
+            <button onclick="checkAndPrint();closeMenu()">🖨️ Print / Save PDF</button>
             <hr>
             <div class="menu-label">Manage</div>
             <button onclick="autofillTest();closeMenu()">⚡ Autofill test data</button>
@@ -121,11 +124,11 @@
           <div><label>IP No.</label><input type="text" id="ipno"></div>
         </div>
         <div class="row">
-          <div><label>Date of Admission (DOA)</label><input type="date" id="doa" lang="en-GB"></div>
+          <div><label>Date of Admission (DOA)</label><input type="text" id="doa" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" onblur="formatDisplayDate(this)"></div>
           <div>
             <label>Date of Discharge (DOD)</label>
             <div class="inline-btn-field">
-              <input type="date" id="dod" lang="en-GB">
+              <input type="text" id="dod" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" onblur="formatDisplayDate(this)">
               <button class="btn sm out" onclick="clearDOD()" title="Clear DOD">Clear</button>
             </div>
             <p class="hint">Defaults to today — edit or clear as needed.</p>
@@ -447,7 +450,7 @@ Take diet as advised.</textarea>
     </details>
 
     <details class="card" data-clear="signatures">
-      <summary><span class="section-number">14.</span> Signatures <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include signatures section without content" onchange="toggleIncludeEmpty('signatures', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">14.</span> Signatures <label class="signature-pin" title="Pin signatures to bottom of page" onclick="event.stopPropagation()"><input type="checkbox" id="signaturePinCheckbox" aria-label="Pin signatures to page bottom" checked onchange="toggleSignaturePin(this.checked)" onclick="event.stopPropagation()"><span>📌 Pin to bottom</span></label><label class="include-toggle" title="Include this section without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include signatures section without content" onchange="toggleIncludeEmpty('signatures', this.checked)" onclick="event.stopPropagation()"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="row">
           <div><label>Prepared by</label><input type="text" id="preparedBy" placeholder="____ (JR)"></div>
@@ -472,7 +475,7 @@ Take diet as advised.</textarea>
     <div class="paper" id="paper"></div>
   </div>
 
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=26"></script>
 </body>
 
 </html>
