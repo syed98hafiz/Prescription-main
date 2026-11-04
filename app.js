@@ -67,6 +67,23 @@
     let logoData = "omandurar_footer.jpg";
     let pastHistory = [], rxHistory = [];
     let ynState = { physio: "", equip: "", dress: "" };
+    const includeEmpty = {};
+
+    function setThemeColor(color) {
+      if (!/^#[0-9a-f]{6}$/i.test(color)) return;
+      const rgb = color.match(/[0-9a-f]{2}/gi).map(value => parseInt(value, 16));
+      const soft = rgb.map(value => Math.round(value + (255 - value) * .88));
+      document.documentElement.removeAttribute("data-theme");
+      document.documentElement.style.setProperty("--primary", color);
+      document.documentElement.style.setProperty("--primary-soft", `rgb(${soft.join(", ")})`);
+      document.documentElement.style.setProperty("--chip", `rgb(${soft.map(value => Math.max(0, value - 12)).join(", ")})`);
+      document.documentElement.style.setProperty("--chip-ink", color);
+      const picker = document.getElementById("themeColor");
+      if (picker) picker.value = color;
+      try { localStorage.setItem("ds:theme-color", color); } catch (e) { }
+    }
+
+    try { setThemeColor(localStorage.getItem("ds:theme-color") || "#14425f"); } catch (e) { setThemeColor("#14425f"); }
 
     /* ---------- init datalists & chips ---------- */
     function fillDatalist(id, arr) { document.getElementById(id).innerHTML = arr.map(x => `<option value="${x}">`).join(""); }
@@ -271,7 +288,7 @@
         box.innerHTML = `<p class="hint">Add a date column, then add lab rows (or tap a panel like CBC / RFT above).</p>`; return;
       }
       let h = '<table class="invtable"><thead><tr><th style="min-width:120px">Investigation</th>';
-      invDates.forEach(d => { h += `<th><input type="date" value="${d.date}" onchange="setDate(${d.id},this.value)"><button class="xbtn" title="remove date" onclick="delInvDate(${d.id})">×</button></th>`; });
+      invDates.forEach(d => { h += `<th><input type="date" lang="en-GB" value="${d.date}" onchange="setDate(${d.id},this.value)"><button class="xbtn" title="remove date" onclick="delInvDate(${d.id})">×</button></th>`; });
       h += '<th></th></tr></thead><tbody>';
       invParams.forEach(p => {
         h += `<tr><td class="pname"><input type="text" list="labList" value="${esc(p.name)}" placeholder="parameter" oninput="setPName(${p.id},this.value)"></td>`;
@@ -289,7 +306,7 @@
     function esc(s) { return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
     function val(id) { return document.getElementById(id).value.trim(); }
     function fmtDate(v) { if (!v) return ""; const [y, m, d] = v.split("-"); return `${d}/${m}/${y}`; }
-    function fmtDateShort(v) { if (!v) return ""; const [y, m, d] = v.split("-"); return `${d}/${m}`; }
+    function fmtDateShort(v) { return fmtDate(v); }
     function lines(t) { return t.split("\n").map(s => s.trim()).filter(Boolean); }
 
     /* ---------- render preview ---------- */
@@ -320,38 +337,38 @@
     <div><b>Mode of D/C</b> : ${esc(val("modeOfDischarge"))}</div>
   </div>`;
 
-      h += section("Diagnosis", listOrText(val("diagnosis")));
+      h += section("Diagnosis", listOrText(val("diagnosis")), "diagnosis");
 
-      h += section("Presenting Complaints (Chief C/O)", complaints.length ? ul(complaints) : empty());
-      if (val("hopi")) h += section("HOPI", `<div class="content">${esc(val("hopi"))}</div>`);
+      h += section("Presenting Complaints (Chief C/O)", complaints.length ? ul(complaints) : empty(), "complaints");
+      if (val("hopi")) h += section("HOPI", `<div class="content">${esc(val("hopi"))}</div>`, "history");
       // Past History & Rx History — side by side
       if (pastHistory.length || rxHistory.length) {
         if (pastHistory.length && rxHistory.length) {
           h += `<div class="two-col">`;
-          h += `<div class="col-half">${section("Past History", ul(pastHistory))}</div>`;
-          h += `<div class="col-half">${section("Rx History (Pre-admission)", ul(rxHistory))}</div>`;
+          h += `<div class="col-half">${section("Past History", ul(pastHistory), "history")}</div>`;
+          h += `<div class="col-half">${section("Rx History (Pre-admission)", ul(rxHistory), "history")}</div>`;
           h += `</div>`;
         } else if (pastHistory.length) {
-          h += section("Past History", ul(pastHistory));
+          h += section("Past History", ul(pastHistory), "history");
         } else {
-          h += section("Rx History (Pre-admission)", ul(rxHistory));
+          h += section("Rx History (Pre-admission)", ul(rxHistory), "history");
         }
       }
 
       const exam = examinationHTML();
-      if (exam) h += section("Examination", exam);
+      if (exam) h += section("Examination", exam, "examination");
 
-      h += section("Investigations", investigationsHTML());
-      h += section("Opinions", val("opinions") ? `<div class="content">${esc(val("opinions"))}</div>` : empty());
-      h += section("Course in the Hospital", val("course") ? `<div class="content">${esc(val("course"))}</div>` : empty());
+      h += section("Investigations", investigationsHTML(), "investigations");
+      h += section("Opinions", val("opinions") ? `<div class="content">${esc(val("opinions"))}</div>` : empty(), "opinions");
+      h += section("Course in the Hospital", val("course") ? `<div class="content">${esc(val("course"))}</div>` : empty(), "course");
       // Treatment content uses two columns without making the second column a heading-level block.
       if (treatment.length > 0 && treatment.length <= 6) {
-        h += section("Treatment Given", contentColumns(treatment));
+        h += section("Treatment Given", contentColumns(treatment), "treatment");
       } else {
-        h += section("Treatment Given", treatment.length ? ul(treatment) : empty());
+        h += section("Treatment Given", treatment.length ? ul(treatment) : empty(), "treatment");
       }
       const cond = [val("condition"), val("condExtra")].filter(Boolean).join(" — ");
-      h += section("Condition at Discharge", cond ? `<div class="content">${esc(cond)}</div>` : empty());
+      h += section("Condition at Discharge", cond ? `<div class="content">${esc(cond)}</div>` : empty(), "condition");
 
       // discharge advice block
       let adv = "";
@@ -371,21 +388,61 @@
       if (val("emergencyContact")) adv += `<div class="content adv-item" style="margin-top:5px"><b>Emergency contact:</b> ${esc(val("emergencyContact"))}</div>`;
       if (val("review")) adv += `<div class="content adv-item" style="margin-top:5px"><b>Follow-Up:</b> ${esc(val("review"))}</div>`;
       if (val("warning")) adv += `<div class="content adv-item" style="margin-top:5px"><b>Return immediately if:</b> ${esc(val("warning"))}</div>`;
-      h += section("Advice on Discharge (Rx)", adv || empty());
+      h += section("Advice on Discharge (Rx)", adv || empty(), "advice");
 
       const prep = ensureDr(val("preparedBy")), chf = ensureDr(val("chief"));
-      if (prep || chf || val("signDateTime")) {
+      if (prep || chf || val("signDateTime") || includeEmpty.signatures) {
         h += `<div class="sign-row">
       <div>${esc(prep)}<br><small>Prepared by</small></div>
       <div>${esc(chf)}<br><small>Medical Officer (Name &amp; Seal)</small>${val("signDateTime") ? `<br><small>${esc(val("signDateTime"))}</small>` : ""}</div>
     </div>`;
       }
       document.getElementById("paper").innerHTML = h;
+      updateFormSectionStates();
       scheduleSave();
       clearTimeout(pageCheckTimer);
       pageCheckTimer = setTimeout(autoOptimizeSpacing, 100);
     }
-    function section(title, content) { return `<div class="sec"><h3>${title}</h3>${content}</div>`; }
+    function section(title, content, key) {
+      if (!content || (content === `<div class="empty">—</div>` && !includeEmpty[key])) return "";
+      return `<div class="sec"><h3>${title}</h3>${content}</div>`;
+    }
+
+    function summarySectionHasContent(key) {
+      const values = {
+        institution: val("college") || val("address") || val("dept") || logoData,
+        patient: true,
+        diagnosis: val("diagnosis"),
+        complaints: complaints.length,
+        history: val("hopi") || pastHistory.length || rxHistory.length,
+        examination: examinationHTML(),
+        investigations: invDates.length && invParams.some(p => p.name.trim()) || val("invOther"),
+        opinions: val("opinions"),
+        course: val("course"),
+        treatment: treatment.length,
+        condition: val("condition") || val("condExtra"),
+        advice: val("diet") || val("physicalActivity") || ynState.physio || ynState.equip || ynState.dress ||
+          val("otherNeeds") || rxMeds.length || val("advice") || val("emergencyContact") || val("review") || val("warning"),
+        signatures: val("preparedBy") || val("chief") || val("signDateTime")
+      };
+      return Boolean(values[key]);
+    }
+
+    function updateFormSectionStates() {
+      document.querySelectorAll("#formTab details[data-clear]").forEach(card => {
+        const key = card.dataset.clear;
+        const emptySection = key === "setup" || !summarySectionHasContent(key);
+        card.classList.toggle("not-in-summary", emptySection && !includeEmpty[key]);
+        const checkbox = card.querySelector(".include-toggle input");
+        if (checkbox) checkbox.checked = Boolean(includeEmpty[key]);
+      });
+    }
+
+    function toggleIncludeEmpty(key, checked) {
+      includeEmpty[key] = checked;
+      updateFormSectionStates();
+      render();
+    }
     function empty() { return `<div class="empty">—</div>`; }
     function ul(arr) { return `<ul>${arr.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`; }
     function contentColumns(arr, className = "") {
@@ -431,7 +488,12 @@
       document.getElementById("summaryTab").style.display = form ? "none" : "block";
       document.getElementById("tabForm").classList.toggle("active", form);
       document.getElementById("tabSummary").classList.toggle("active", !form);
-      if (!form) { render(); window.scrollTo(0, 0); setTimeout(autoOptimizeSpacing, 60); }
+      if (!form) {
+        render();
+        document.getElementById("summaryTab").scrollTop = 0;
+        window.scrollTo(0, 0);
+        setTimeout(autoOptimizeSpacing, 60);
+      }
     }
     function copyText() {
       render();
@@ -523,7 +585,8 @@
       const fullHeight = paper.scrollHeight;
       const pageWidth = paper.getBoundingClientRect().width || 793.7;
       const pageHeight = pageWidth * 297 / 210;
-      const pageCount = Math.ceil(fullHeight / pageHeight);
+      // Ignore sub-pixel rounding from the paper's A4 minimum height.
+      const pageCount = Math.max(1, Math.ceil((fullHeight - 1) / pageHeight));
       for (let page = 1; page < pageCount; page++) {
         const g1 = document.createElement("div");
         g1.className = "a4-page-guide no-print";
@@ -537,6 +600,12 @@
       const banner = document.getElementById("pageBanner");
       if (!banner) return;
       const paper = document.getElementById("paper");
+      if (isMobileDevice()) {
+        banner.style.display = "flex";
+        banner.className = "pagebanner no-print ok";
+        banner.innerHTML = "<span>📄 <b>Scrollable preview</b>: Print / PDF will use the A4 layout.</span>";
+        return;
+      }
       const isCompact2 = paper.classList.contains("compact2");
       const isCompact = paper.classList.contains("compact");
       const isRelaxed = paper.classList.contains("relaxed");
@@ -597,7 +666,9 @@
         window.removeEventListener("afterprint", restoreTitle);
       };
       window.addEventListener("afterprint", restoreTitle);
+      document.body.classList.add("printing");
       window.print();
+      document.body.classList.remove("printing");
       setTimeout(restoreTitle, 1000);
     }
 
@@ -816,7 +887,11 @@
     }
 
     /* live update on any form input */
-    document.addEventListener("input", e => { if (e.target.closest("#invEditor")) return; render(); scheduleSave(); });
+    document.addEventListener("input", e => {
+      if (e.target.closest("#invEditor") || e.target.closest(".include-toggle")) return;
+      render();
+      scheduleSave();
+    });
 
     /* ---------- persistence ---------- */
     const FIELDS = ["college", "address", "dept", "summaryType", "name", "age", "sex", "ipno",

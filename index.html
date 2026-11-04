@@ -1,7 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
+<html lang="en-GB">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -14,7 +12,8 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" href="icon-192.png">
   <title>Discharge Summary Builder</title>
-    <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=9">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 
 <body>
@@ -22,8 +21,6 @@
   <div class="topbar">
     <div class="topbar-left">
       <h1 class="brand-title">Discharge Summary Builder</h1>
-      <button id="btnAutofill" type="button" class="btn-autofill desktop-only" onclick="autofillTest()"
-        title="Autofill sample patient data for testing (Desktop only)">⚡ Autofill (test)</button>
     </div>
     <div class="topbar-right">
       <div class="tabs">
@@ -44,11 +41,16 @@
             <button onclick="doLocalTemplate();closeMenu()">📁 Local template <span class="beta-tag">BETA</span></button>
             <hr>
             <div class="menu-label">Summary</div>
+            <label class="theme-picker">🎨 Theme color
+              <input id="themeColor" type="color" value="#14425f" aria-label="Choose theme color"
+                oninput="setThemeColor(this.value)">
+            </label>
             <button class="install-btn" id="installBtn" onclick="doInstall();closeMenu()">📲 Install app</button>
             <button onclick="copyText();closeMenu()">📋 Copy text</button>
             <button onclick="shareDoc();closeMenu()">↗ Share / Send PDF</button>
             <hr>
             <div class="menu-label">Manage</div>
+            <button onclick="autofillTest();closeMenu()">⚡ Autofill test data</button>
             <button onclick="requestPersistentStorage();closeMenu()">💾 Enable persistent storage <span class="beta-tag">BETA</span></button>
             <button onclick="newSummary();closeMenu()">🆕 New patient</button>
             <a href="templates/" target="_blank">🗂 Template library <span class="beta-tag">BETA</span></a>
@@ -77,7 +79,7 @@
     </details>
 
     <details class="card" data-clear="institution">
-      <summary><span class="section-number">2.</span> Institution header <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">2.</span> Institution header <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include institution section without content" onchange="toggleIncludeEmpty('institution', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="field"><label>College / Hospital</label>
           <input type="text" id="college" value="Government Medical College Hospital">
@@ -103,7 +105,7 @@
     </details>
 
     <details class="card" open data-clear="patient">
-      <summary><span class="section-number">3.</span> Patient details <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">3.</span> Patient details <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include patient section without content" onchange="toggleIncludeEmpty('patient', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="field"><label>Name</label><input type="text" id="name"></div>
         <div class="row">
@@ -119,11 +121,11 @@
           <div><label>IP No.</label><input type="text" id="ipno"></div>
         </div>
         <div class="row">
-          <div><label>Date of Admission (DOA)</label><input type="date" id="doa"></div>
+          <div><label>Date of Admission (DOA)</label><input type="date" id="doa" lang="en-GB"></div>
           <div>
             <label>Date of Discharge (DOD)</label>
             <div class="inline-btn-field">
-              <input type="date" id="dod">
+              <input type="date" id="dod" lang="en-GB">
               <button class="btn sm out" onclick="clearDOD()" title="Clear DOD">Clear</button>
             </div>
             <p class="hint">Defaults to today — edit or clear as needed.</p>
@@ -161,7 +163,7 @@
     </details>
 
     <details class="card" open data-clear="diagnosis">
-      <summary><span class="section-number">4.</span> Diagnosis <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">4.</span> Diagnosis <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include diagnosis section without content" onchange="toggleIncludeEmpty('diagnosis', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <label>Diagnosis (one per line)</label>
         <textarea id="diagnosis" placeholder="e.g.&#10;Dengue fever with warning signs&#10;Thrombocytopenia"></textarea>
@@ -169,7 +171,7 @@
     </details>
 
     <details class="card" open data-clear="complaints">
-      <summary><span class="section-number">5.</span> Chief complaints (Presenting Complaints) <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">5.</span> Chief complaints (Presenting Complaints) <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include complaints section without content" onchange="toggleIncludeEmpty('complaints', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="chips" id="ccChips"></div>
         <div class="addrow">
@@ -195,7 +197,7 @@
     </details>
 
     <details class="card" data-clear="history">
-      <summary><span class="section-number">6.</span> History (HOPI, Past History, Rx Hx) <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">6.</span> History (HOPI, Past History, Rx Hx) <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include history section without content" onchange="toggleIncludeEmpty('history', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="subhead">History of Present Illness (HOPI)</div>
         <textarea id="hopi" placeholder="The patient was apparently normal [__] back, then developed..."></textarea>
@@ -231,7 +233,7 @@
     </details>
 
     <details class="card" data-clear="examination">
-      <summary><span class="section-number">7.</span> Examination <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">7.</span> Examination <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include examination section without content" onchange="toggleIncludeEmpty('examination', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="subhead">General Examination</div>
         <div class="chips"><span class="chip" onclick="insertGeneralExam()">+ Standard PICCLE findings</span></div>
@@ -272,7 +274,7 @@
     </details>
 
     <details class="card" data-clear="investigations">
-      <summary><span class="section-number">8.</span> Investigations <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">8.</span> Investigations <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include investigations section without content" onchange="toggleIncludeEmpty('investigations', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="inv-controls">
           <button class="btn sm" onclick="addInvDate()">+ Add date</button>
@@ -292,7 +294,7 @@
     </details>
 
     <details class="card" data-clear="opinions">
-      <summary><span class="section-number">9.</span> Opinions <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">9.</span> Opinions <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include opinions section without content" onchange="toggleIncludeEmpty('opinions', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <label>Consultations / opinions obtained</label>
         <textarea id="opinions"
@@ -301,7 +303,7 @@
     </details>
 
     <details class="card" data-clear="course">
-      <summary><span class="section-number">10.</span> Course in the hospital <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">10.</span> Course in the hospital <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include course section without content" onchange="toggleIncludeEmpty('course', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <label>Insert a template (tap to drop in, then edit the blanks)</label>
         <div class="chips" id="courseTpl"></div>
@@ -313,7 +315,7 @@
     </details>
 
     <details class="card" data-clear="treatment">
-      <summary><span class="section-number">11.</span> Treatment given (in hospital) <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">11.</span> Treatment given (in hospital) <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include treatment section without content" onchange="toggleIncludeEmpty('treatment', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <label>Quick bundles (tap to add the usual set, then edit)</label>
         <div class="chips" id="txBundles"></div>
@@ -357,7 +359,7 @@
     </details>
 
     <details class="card" open data-clear="condition">
-      <summary><span class="section-number">12.</span> Condition at discharge <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">12.</span> Condition at discharge <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include condition section without content" onchange="toggleIncludeEmpty('condition', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="chips" id="condChips"></div>
         <div class="field"><label>Condition</label><input type="text" id="condition" placeholder="Stable / Improved">
@@ -368,7 +370,7 @@
     </details>
 
     <details class="card" open data-clear="advice">
-      <summary><span class="section-number">13.</span> Discharge advice (Rx) <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">13.</span> Discharge advice (Rx) <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include advice section without content" onchange="toggleIncludeEmpty('advice', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="subhead">Advice on Discharge</div>
         <div class="row">
@@ -445,21 +447,22 @@ Take diet as advised.</textarea>
     </details>
 
     <details class="card" data-clear="signatures">
-      <summary><span class="section-number">14.</span> Signatures <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">14.</span> Signatures <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include signatures section without content" onchange="toggleIncludeEmpty('signatures', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="row">
           <div><label>Prepared by</label><input type="text" id="preparedBy" placeholder="____ (JR)"></div>
           <div><label>Medical Officer / Unit Chief</label><input type="text" id="chief" placeholder="____"></div>
         </div>
         <div class="field"><label>Date &amp; Time (of signing)</label><input type="text" id="signDateTime"
-            placeholder="e.g. 21/06/26, 4:30 PM"></div>
+            placeholder="e.g. 21/06/2026, 4:30 PM"></div>
         <p class="hint">"Dr." is added automatically in the printed summary — just type the name.</p>
       </div>
     </details>
 
     <p class="hint no-print" style="text-align:center;padding-bottom:20px">
-      Tip: switch to <b>View summary</b> to check spacing, then <b>Print / PDF</b>. Your entries are <b>auto-saved on
-        this device</b> — closing the tab or app won't lose your work.
+      Tip: switch to <b>View summary</b> to check spacing, then <b>Print / PDF</b>. Grey sections are excluded from the
+      summary; use their checkbox to include an empty section. Your entries are <b>auto-saved on this device</b> —
+      closing the tab or app won't lose your work.
     </p>
   </div>
 
@@ -469,7 +472,7 @@ Take diet as advised.</textarea>
     <div class="paper" id="paper"></div>
   </div>
 
-    <script src="app.js?v=4"></script>
+  <script src="app.js?v=9"></script>
 </body>
 
 </html>

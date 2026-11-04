@@ -11,6 +11,27 @@
       --bg: #eaeef2;
     }
 
+    :root[data-theme="slate"] {
+      --primary: #34495e;
+      --primary-soft: #e7ebef;
+      --chip: #dce3e9;
+      --chip-ink: #2f4354;
+    }
+
+    :root[data-theme="forest"] {
+      --primary: #286044;
+      --primary-soft: #e5f0e9;
+      --chip: #d8ebdf;
+      --chip-ink: #205338;
+    }
+
+    :root[data-theme="rose"] {
+      --primary: #70445f;
+      --primary-soft: #f0e6ed;
+      --chip: #ead9e4;
+      --chip-ink: #613b52;
+    }
+
     * {
       box-sizing: border-box
     }
@@ -199,6 +220,36 @@
 
     .card[open]>summary::before {
       transform: rotate(90deg)
+    }
+
+    .card.not-in-summary {
+      opacity: .58;
+    }
+
+    .card.not-in-summary>summary {
+      background: #e1e5e9;
+      color: #66737e;
+    }
+
+    .include-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin: 0 0 0 auto;
+      color: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .include-toggle input {
+      width: auto;
+      margin: 0;
+      accent-color: var(--primary);
+    }
+
+    .include-toggle + .section-clear {
+      margin-left: 6px;
     }
 
     .card .body {
@@ -408,6 +459,8 @@
       display: none;
       background: #dfe5ec;
       padding: 20px 10px 40px;
+      height: calc(100vh - 60px);
+      overflow-y: auto;
     }
 
     #summaryTab .wrap {
@@ -431,6 +484,10 @@
       font-size: 14px;
       color: #111;
       position: relative;
+    }
+
+    .paper:empty {
+      min-height: 0;
     }
 
     .pdf-export-paper {
@@ -796,6 +853,10 @@
       .card>summary {
         padding: 10px 12px;
         font-size: 13.5px
+      }
+
+      .include-toggle {
+        font-size: 10px;
       }
 
       .card .body {
@@ -1255,6 +1316,28 @@
       color: var(--primary)
     }
 
+    .theme-picker {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .theme-picker input[type="color"] {
+      width: 34px;
+      height: 26px;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: transparent;
+      cursor: pointer;
+    }
+
     .menu-dropdown hr {
       border: 0;
       border-top: 1px solid var(--line);
@@ -1298,6 +1381,9 @@
 
       #summaryTab {
         display: block !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
         padding: 0 !important;
         background: #fff !important
       }
@@ -1320,8 +1406,12 @@
       }
 
       .paper {
+        display: block !important;
+        visibility: visible !important;
         width: auto !important;
         min-height: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
         border: 0 !important;
         border-radius: 0 !important;
         box-shadow: none !important;
