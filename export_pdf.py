@@ -86,6 +86,48 @@ def sanitize_filename(name):
     clean = clean.strip("_")
     return clean or "patient"
 
+def share_pdf(pdf_path):
+    """Opens Android share sheet (Termux / intent) or system handler for the generated PDF."""
+    pdf_path = os.path.abspath(pdf_path)
+    if not os.path.exists(pdf_path):
+        print(f"[X] PDF file not found for sharing: {pdf_path}")
+        return False
+
+    print(f"[*] Triggering share menu for: {pdf_path}")
+
+    # 1. Android Termux share (opens native Android app picker: WhatsApp, Gmail, etc.)
+    if shutil.which("termux-share"):
+        try:
+            subprocess.run(["termux-share", "-a", "send", "-t", "application/pdf", pdf_path], check=True)
+            print("[OK] Android native share menu opened via Termux ✓")
+            return True
+        except Exception as e:
+            print(f"[!] termux-share failed: {e}")
+
+    # 2. Android activity manager intent (am)
+    if shutil.which("am"):
+        try:
+            cmd = ["am", "start", "-a", "android.intent.action.SEND", "-t", "application/pdf", "--eu", "android.intent.extra.STREAM", f"file://{pdf_path}"]
+            subprocess.run(cmd, check=True)
+            print("[OK] Android share intent launched ✓")
+            return True
+        except Exception:
+            pass
+
+    # 3. Desktop / OS default open (Windows, macOS, Linux)
+    try:
+        if sys.platform == "win32":
+            os.startfile(pdf_path)
+        elif sys.platform == "darwin":
+            subprocess.run(["open", pdf_path], check=True)
+        else:
+            subprocess.run(["xdg-open", pdf_path], check=True)
+        print("[OK] PDF opened in system viewer / share dialog ✓")
+        return True
+    except Exception as e:
+        print(f"[!] Could not open PDF automatically: {e}")
+        return False
+
 def render_and_print_pdf(url_or_html_path, output_pdf, browser_path=None, timeout=30):
     """Renders URL or HTML file into a high-quality A4 PDF using headless Chromium."""
     browser = find_browser(browser_path)
@@ -296,6 +338,7 @@ def main():
     parser.add_argument("-b", "--browser", help="Path to Chrome or Edge executable")
     parser.add_argument("-s", "--serve", action="store_true", help="Start local offline HTTP server")
     parser.add_argument("-p", "--port", type=int, default=8080, help="Port for local server (default: 8080)")
+    parser.add_argument("--share", action="store_true", help="Automatically trigger share / open menu for the generated PDF")
     parser.add_argument("--test", action="store_true", help="Generate a test PDF from sample patient data")
 
     args = parser.parse_args()
@@ -368,6 +411,8 @@ def main():
             pass
         if success:
             print(f"[OK] Test PDF created: {out_pdf}")
+            if args.share:
+                share_pdf(out_pdf)
         sys.exit(0 if success else 1)
 
     if args.input:
@@ -376,25 +421,46 @@ def main():
             print(f"[X] Input file does not exist: {in_path}")
             sys.exit(1)
 
+        target_out = args.output
         if in_path.lower().endswith(".json"):
-            success = generate_pdf_from_draft(in_path, args.output, root_dir, browser_path=args.browser)
+            if not target_out:
+                try:
+                    with open(in_path, "r", encoding="utf-8") as f:
+                        d = json.load(f)
+                    p_name = "patient"
+                    if isinstance(d, dict):
+                        if "f" in d and isinstance(d["f"], dict):
+                            p_name = d["f"].get("name", "patient") or "patient"
+                        elif "name" in d:
+                            p_name = d.get("name", "patient") or "patient"
+                    clean = sanitize_filename(p_name)
+                    target_out = os.path.join(os.getcwd(), f"DS_{clean}.pdf")
+                except Exception:
+                    target_out = os.path.join(os.getcwd(), "Discharge_Summary.pdf")
+            success = generate_pdf_from_draft(in_path, target_out, root_dir, browser_path=args.browser)
         elif in_path.lower().endswith(".html"):
-            out_pdf = args.output or os.path.splitext(in_path)[0] + ".pdf"
-            success = render_and_print_pdf(in_path, out_pdf, browser_path=args.browser)
+            target_out = target_out or os.path.splitext(in_path)[0] + ".pdf"
+            success = render_and_print_pdf(in_path, target_out, browser_path=args.browser)
         else:
             try:
                 with open(in_path, "r", encoding="utf-8") as f:
                     json.load(f)
-                success = generate_pdf_from_draft(in_path, args.output, root_dir, browser_path=args.browser)
+                target_out = target_out or os.path.join(os.getcwd(), "Discharge_Summary.pdf")
+                success = generate_pdf_from_draft(in_path, target_out, root_dir, browser_path=args.browser)
             except Exception:
                 print("[X] Unrecognized input format. Please pass a .json draft or .html file.")
                 sys.exit(1)
+
+        if success and args.share:
+            share_pdf(target_out)
         sys.exit(0 if success else 1)
 
     # No input: convert current index.html
     out_pdf = args.output or os.path.join(root_dir, "Discharge_Summary.pdf")
     print("[*] Generating PDF from current discharge summary...")
     success = generate_pdf_from_current(out_pdf, root_dir, browser_path=args.browser)
+    if success and args.share:
+        share_pdf(out_pdf)
     sys.exit(0 if success else 1)
 
 if __name__ == "__main__":

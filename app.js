@@ -69,7 +69,25 @@
     let pastHistory = [], rxHistory = [];
     let ynState = { physio: "", equip: "", dress: "" };
     let signaturePinned = true;
+    let saveTimer;
+    let pageCheckTimer;
     const includeEmpty = {};
+    const includeEmptyLines = {};
+    const DISPLAY_DATE_FIELDS = new Set(["doa", "dod"]);
+    function normalizeDateValue(value) {
+      const v = (value || "").trim();
+      const display = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (display) return `${display[3]}-${display[2]}-${display[1]}`;
+      return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : "";
+    }
+
+    function isIOSDevice() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+    function isSafariBrowser() {
+      return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    }
 
     function setThemeColor(color) {
       if (!/^#[0-9a-f]{6}$/i.test(color)) return;
@@ -187,13 +205,6 @@
     function getUnit() {
       return (val("unitPrefix") || "") + (document.getElementById("unitRoman").value || "");
     }
-    const DISPLAY_DATE_FIELDS = new Set(["doa", "dod"]);
-    function normalizeDateValue(value) {
-      const v = (value || "").trim();
-      const display = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-      if (display) return `${display[3]}-${display[2]}-${display[1]}`;
-      return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : "";
-    }
     function displayDateValue(value) {
       const iso = normalizeDateValue(value);
       return iso ? fmtDate(iso) : "";
@@ -259,6 +270,8 @@
         const box = document.getElementById(`yn${name[0].toUpperCase()}${name.slice(1)}`);
         if (box) [...box.children].forEach(child => child.classList.remove("sel"));
       });
+      delete includeEmpty[key];
+      delete includeEmptyLines[key];
       render();
     }
 
@@ -382,10 +395,14 @@
         } else {
           h += section("Rx History (Pre-admission)", ul(rxHistory), "history");
         }
+      } else if (!val("hopi") && (includeEmpty.history || (includeEmptyLines.history > 0))) {
+        h += section("History", empty(), "history");
       }
 
       const exam = examinationHTML();
-      if (exam) h += section("Examination", exam, "examination");
+      if (exam || includeEmpty.examination || (includeEmptyLines.examination > 0)) {
+        h += section("Examination", exam || empty(), "examination");
+      }
 
       h += section("Investigations", investigationsHTML(), "investigations");
       h += section("Opinions", val("opinions") ? `<div class="content">${esc(val("opinions"))}</div>` : empty(), "opinions");
@@ -420,8 +437,11 @@
       h += section("Advice on Discharge (Rx)", adv || empty(), "advice");
 
       const prep = ensureDr(val("preparedBy")), chf = ensureDr(val("chief"));
-      if (prep || chf || val("signDateTime") || includeEmpty.signatures) {
+      const sigLines = includeEmptyLines.signatures || 0;
+      if (prep || chf || val("signDateTime") || includeEmpty.signatures || sigLines > 0) {
+        const sigSpace = sigLines > 0 ? `<div class="empty-lines-space" style="height:${(sigLines * 1.4).toFixed(2)}em"></div>` : "";
         h += `<div class="sign-row${signaturePinned ? " signature-pinned" : ""}">
+      ${sigSpace}
       <div>${esc(prep)}<br><small>Prepared by</small></div>
       <div>${esc(chf)}<br><small>Medical Officer (Name &amp; Seal)</small>${val("signDateTime") ? `<br><small>${esc(val("signDateTime"))}</small>` : ""}</div>
     </div>`;
@@ -433,8 +453,20 @@
       pageCheckTimer = setTimeout(autoOptimizeSpacing, 100);
     }
     function section(title, content, key) {
-      if (!content || (content === `<div class="empty">—</div>` && !includeEmpty[key])) return "";
-      return `<div class="sec"><h3>${title}</h3>${content}</div>`;
+      const isEmpty = !content || content === `<div class="empty">—</div>`;
+      const linesCount = includeEmptyLines[key] || 0;
+      if (isEmpty && !includeEmpty[key] && linesCount <= 0) return "";
+      let bodyHTML = "";
+      if (linesCount > 0) {
+        const spaceHeight = (linesCount * 1.4).toFixed(2);
+        const spaceHTML = `<div class="empty-lines-space" style="height:${spaceHeight}em;" aria-hidden="true"></div>`;
+        bodyHTML = isEmpty ? spaceHTML : `${content}${spaceHTML}`;
+      } else if (isEmpty) {
+        bodyHTML = `<div class="empty">—</div>`;
+      } else {
+        bodyHTML = content;
+      }
+      return `<div class="sec"><h3>${title}</h3>${bodyHTML}</div>`;
     }
 
     function summarySectionHasContent(key) {
@@ -461,9 +493,15 @@
       document.querySelectorAll("#formTab details[data-clear]").forEach(card => {
         const key = card.dataset.clear;
         const emptySection = key === "setup" || !summarySectionHasContent(key);
-        card.classList.toggle("not-in-summary", emptySection && !includeEmpty[key]);
-        const checkbox = card.querySelector(".include-toggle input");
-        if (checkbox) checkbox.checked = Boolean(includeEmpty[key]);
+        const lines = includeEmptyLines[key] || 0;
+        const isIncluded = Boolean(includeEmpty[key] || lines > 0);
+        card.classList.toggle("not-in-summary", emptySection && !isIncluded);
+        const checkbox = card.querySelector(".include-toggle input[type='checkbox']");
+        if (checkbox) checkbox.checked = isIncluded;
+        const linesInput = card.querySelector(".empty-lines-input");
+        if (linesInput) {
+          linesInput.value = lines > 0 ? lines : "";
+        }
         if (key === "signatures") {
           const pin = card.querySelector(".signature-pin input");
           if (pin && pin.checked !== signaturePinned) pin.checked = signaturePinned;
@@ -472,7 +510,20 @@
     }
 
     function toggleIncludeEmpty(key, checked) {
-      includeEmpty[key] = checked;
+      includeEmpty[key] = Boolean(checked);
+      if (!checked) delete includeEmptyLines[key];
+      updateFormSectionStates();
+      render();
+    }
+    function setEmptyLines(key, count) {
+      const n = parseInt(count, 10);
+      const val = isNaN(n) || n < 0 ? 0 : Math.min(40, n);
+      if (val > 0) {
+        includeEmptyLines[key] = val;
+        includeEmpty[key] = true;
+      } else {
+        delete includeEmptyLines[key];
+      }
       updateFormSectionStates();
       render();
     }
@@ -541,6 +592,7 @@
       const availableWidth = Math.max(280, window.innerWidth - 20);
       const scale = Math.min(1, availableWidth / 793.7);
       paper.style.setProperty("--paper-scale", scale.toFixed(4));
+      paper.style.zoom = scale.toFixed(4);
     }
     window.addEventListener("resize", () => {
       if (document.getElementById("summaryTab").style.display !== "none") {
@@ -565,7 +617,6 @@
     }
 
     /* ---------- A4 page-count measurement, auto-fit & print ---------- */
-    let pageCheckTimer;
     const A4_HEIGHT_PX = 1122.5;
 
     function autoOptimizeSpacing() {
@@ -873,10 +924,11 @@
       };
       window.addEventListener("afterprint", restoreTitle);
       document.body.classList.add("printing");
+      const printDelay = isSafariBrowser() || isIOSDevice() ? 180 : 80;
       setTimeout(() => {
         window.print();
         setTimeout(restoreTitle, 2000);
-      }, 60);
+      }, printDelay);
     }
 
     async function generatePdf(share, requestedName = "") {
@@ -889,52 +941,110 @@
       const cleanName = name.trim().replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
       if (!cleanName) return;
       const fileName = `DS_${cleanName}.pdf`;
+
       if (typeof html2pdf !== "function") {
         toast("PDF generator is unavailable — using browser print.");
         printWithFileName(fileName);
         return;
       }
 
+      // Clone paper for clean export
       const exportPaper = paper.cloneNode(true);
       exportPaper.querySelectorAll(".a4-page-guide").forEach(el => el.remove());
       exportPaper.classList.add("pdf-export-paper");
-      exportPaper.style.cssText = "width:210mm !important; max-width:none !important; position:fixed !important; left:0 !important; top:0 !important; z-index:99999 !important; background:#ffffff !important; zoom:1 !important; transform:none !important; opacity:1 !important;";
 
-      const exportPages = exportPaper.querySelectorAll(".paper-page");
-      exportPages.forEach((p, idx) => {
-        p.style.cssText = "box-sizing:border-box !important; width:210mm !important; height:297mm !important; min-height:297mm !important; max-height:297mm !important; padding:7mm 7mm 8mm !important; margin:0 !important; overflow:hidden !important; position:relative !important; box-shadow:none !important; border:0 !important; border-radius:0 !important;";
-        if (idx < exportPages.length - 1) {
-          const pb = document.createElement("div");
-          pb.className = "html2pdf__page-break";
-          pb.style.cssText = "page-break-before:always !important; break-before:page !important; height:0 !important; margin:0 !important; padding:0 !important;";
-          p.after(pb);
-        }
+      let exportPages = Array.from(exportPaper.querySelectorAll(".paper-page"));
+      if (exportPages.length === 0) {
+        const page = document.createElement("div");
+        page.className = "paper-page";
+        while (exportPaper.firstChild) page.appendChild(exportPaper.firstChild);
+        exportPaper.appendChild(page);
+        exportPages = [page];
+      }
+
+      exportPages.forEach(p => {
+        p.className = `paper-page ${paper.className}`;
+        p.style.cssText = "box-sizing:border-box !important; width:210mm !important; height:1120px !important; min-height:0 !important; max-height:1120px !important; padding:7mm 7mm 8mm !important; margin:0 !important; overflow:hidden !important; position:relative !important; box-shadow:none !important; border:0 !important; border-radius:0 !important; background:#ffffff !important; page-break-after:auto !important; break-after:auto !important;";
       });
 
-      document.body.appendChild(exportPaper);
+      // Safari canvas memory protection: scale 1.5 on iOS/Safari avoids canvas memory overflow
+      const isIOS = isIOSDevice();
+      const isSafari = isSafariBrowser();
+      const canvasScale = (isIOS || isSafari) ? 1.5 : 2;
+
       try {
-        toast("Generating PDF...");
+        toast(share ? "Generating PDF to share..." : "Generating PDF...");
         const opt = {
           margin: 0,
           filename: fileName,
           image: { type: "jpeg", quality: 0.98 },
           html2canvas: {
-            scale: 2,
+            scale: canvasScale,
             useCORS: true,
+            allowTaint: true,
             logging: false,
             scrollX: 0,
-            scrollY: 0
+            scrollY: 0,
+            windowWidth: 1200,
+            backgroundColor: "#ffffff"
           },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-          pagebreak: { mode: ["css", "legacy"] }
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
         };
-        const pdfBlob = await html2pdf().set(opt).from(exportPaper).output("blob");
-        const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
+
+        // Render Page 1 and initialize PDF instance
+        const worker1 = html2pdf().set(opt).from(exportPages[0]);
+        await worker1.toCanvas();
+        const pdf = await worker1.toPdf().get("pdf");
+
+        // Clean up any extraneous blank page slice created by html2pdf floating point division on Page 1
+        while (pdf.internal.getNumberOfPages() > 1) {
+          pdf.deletePage(pdf.internal.getNumberOfPages());
+        }
+
+        // Render any subsequent pages one-by-one to avoid html2pdf multi-page blank spacer injection
+        for (let i = 1; i < exportPages.length; i++) {
+          const workerNext = html2pdf().set(opt).from(exportPages[i]);
+          const canvasNext = await workerNext.toCanvas().get("canvas");
+          pdf.addPage();
+          const imgData = canvasNext.toDataURL("image/jpeg", 0.98);
+          pdf.addImage(imgData, "JPEG", 0, 0, 210, 297);
+        }
+
+        const pdfBlob = pdf.output("blob");
+        let pdfFile = null;
+        try {
+          pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
+        } catch (e) {
+          pdfFile = pdfBlob;
+          pdfFile.name = fileName;
+        }
+
         if (share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-          await navigator.share({ title: `Discharge Summary — ${name}`, files: [pdfFile] });
-          toast("PDF shared successfully ✓");
+          try {
+            await navigator.share({
+              title: `Discharge Summary — ${name}`,
+              text: `Discharge Summary for ${name}`,
+              files: [pdfFile]
+            });
+            toast("PDF shared successfully ✓");
+            return;
+          } catch (shareErr) {
+            if (shareErr.name === "AbortError") return;
+            console.warn("navigator.share failed, falling back to download / viewer:", shareErr);
+          }
+        }
+
+        const blobUrl = URL.createObjectURL(pdfBlob);
+
+        if (isIOS) {
+          // iOS Safari doesn't trigger <a download> for blobs.
+          // Opening the blob allows Safari to open its native PDF reader with AirPrint & Share options!
+          const win = window.open(blobUrl, "_blank");
+          if (!win) {
+            window.location.href = blobUrl;
+          }
+          toast("PDF opened in Safari viewer — tap Share to save or send ✓");
         } else {
-          const blobUrl = URL.createObjectURL(pdfBlob);
           const link = document.createElement("a");
           link.href = blobUrl;
           link.download = fileName;
@@ -950,7 +1060,7 @@
       } catch (e) {
         console.error("PDF generation error:", e);
         if (e.name !== "AbortError") {
-          toast("Direct PDF failed — opening Browser Print");
+          toast("Direct PDF failed — opening Print");
           printWithFileName(fileName);
         }
       } finally {
@@ -967,14 +1077,19 @@
       if (btn) btn.style.display = "flex";
     });
     async function doInstall() {
-      if (!deferredPrompt) {
-        toast("Use your browser menu → 'Add to Home screen' to install");
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        const btn = document.getElementById("installBtn");
+        if (btn) btn.style.display = "none";
         return;
       }
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      deferredPrompt = null;
-      document.getElementById("installBtn").style.display = "none";
+      if (isIOSDevice()) {
+        alert("To install DS Builder on iPhone / iPad:\n\n1. Tap the Share button ⎋ (or [↑]) in Safari's bottom toolbar.\n2. Scroll down and tap 'Add to Home Screen' ➕.\n3. Tap 'Add' in the top right.\n\nThe app will be added to your home screen and work offline!");
+        return;
+      }
+      toast("Use your browser menu → 'Add to Home screen' to install");
     }
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.addEventListener("controllerchange", () => {
@@ -1033,11 +1148,9 @@
       inp.onchange = async () => {
         const f = inp.files[0]; if (!f) return;
         const text = await f.text();
-        const d = safeParse(text);
-        if (!d || typeof d !== "object") { toast("Invalid draft file"); return; }
-        restoreDraft(d);
-        await store.set("ds:draft", JSON.stringify(collectDraft()));
-        toast("Draft loaded successfully ✓");
+        const ok = await loadJsonTemplate(text);
+        if (ok) toast("Draft loaded successfully ✓");
+        else toast("Invalid draft file");
       };
       inp.click();
     }
@@ -1060,11 +1173,9 @@
       inp.onchange = async () => {
         const f = inp.files[0]; if (!f) return;
         const text = await f.text();
-        const d = safeParse(text);
-        if (!d || typeof d !== "object") { toast("Invalid template file"); return; }
-        await store.set("ds:defaults", JSON.stringify(d));
-        applyDefaults(d);
-        toast("Template imported and applied as defaults ✓");
+        const ok = await loadJsonTemplate(text);
+        if (ok) toast("Template imported and applied ✓");
+        else toast("Invalid template file");
       };
       inp.click();
     }
@@ -1077,28 +1188,107 @@
         const res = await fetch("templates/default-template.json");
         if (!res.ok) throw new Error("HTTP " + res.status);
         const d = await res.json();
-        await store.set("ds:defaults", JSON.stringify(d));
-        applyDefaults(d);
-        toast("Default template loaded ✓");
+        const ok = await loadJsonTemplate(d);
+        if (ok) toast("Default template loaded ✓");
+        else throw new Error("Template parsing failed");
       } catch (e) {
         const inp = document.createElement("input");
         inp.type = "file"; inp.accept = ".json,application/json";
         inp.onchange = async () => {
           const f = inp.files[0]; if (!f) return;
           const text = await f.text();
-          const d = safeParse(text);
-          if (!d) { toast("Invalid file"); return; }
-          await store.set("ds:defaults", JSON.stringify(d));
-          applyDefaults(d);
-          toast("Template loaded ✓");
+          const ok = await loadJsonTemplate(text);
+          if (ok) toast("Template loaded ✓");
+          else toast("Invalid file");
         };
         inp.click();
       }
     }
 
+    /* ---------- Universal JSON draft & template loader ---------- */
+    async function loadJsonTemplate(data) {
+      if (!data) return false;
+      const raw = typeof data === "string" ? data.trim().replace(/^\ufeff/, "") : data;
+      const parsed = typeof raw === "string" ? safeParse(raw) : raw;
+      if (!parsed || typeof parsed !== "object") return false;
+
+      // 1. Unwrap nested payload container if present
+      let payload = parsed;
+      if (payload.draft && typeof payload.draft === "object") payload = payload.draft;
+      else if (payload.template && typeof payload.template === "object") payload = payload.template;
+      else if (payload.defaults && typeof payload.defaults === "object") payload = payload.defaults;
+      else if (Array.isArray(payload) && payload[0]) payload = payload[0];
+
+      // 2. Identify fields
+      let fields = {};
+      if (payload.f && typeof payload.f === "object") {
+        fields = payload.f;
+      } else {
+        fields = payload;
+      }
+
+      // 3. Extract and save defaults
+      const defaults = {};
+      DEFAULT_FIELDS.forEach(id => {
+        if (fields[id] != null && String(fields[id]).trim()) {
+          defaults[id] = fields[id];
+        }
+      });
+      if (Object.keys(defaults).length > 0) {
+        applyDefaults(defaults);
+        try { store.set("ds:defaults", JSON.stringify(defaults)); } catch (e) { }
+      }
+
+      // 4. Populate form fields
+      FIELDS.forEach(id => {
+        if (fields[id] != null) setVal_(id, fields[id]);
+      });
+      SELECT_FIELDS.forEach(id => {
+        if (fields[id] != null) setVal_(id, fields[id]);
+      });
+
+      // 5. Populate lists & state
+      if (Array.isArray(payload.complaints)) complaints = [...payload.complaints];
+      if (Array.isArray(payload.treatment)) treatment = [...payload.treatment];
+      if (Array.isArray(payload.rxMeds)) rxMeds = [...payload.rxMeds];
+      if (Array.isArray(payload.pastHistory)) pastHistory = [...payload.pastHistory];
+      if (Array.isArray(payload.rxHistory)) rxHistory = [...payload.rxHistory];
+      if (Array.isArray(payload.invDates)) invDates = [...payload.invDates];
+      if (Array.isArray(payload.invParams)) invParams = [...payload.invParams];
+      if (payload.invSeq != null) invSeq = payload.invSeq;
+      if (payload.ynState && typeof payload.ynState === "object") {
+        ynState = { ...payload.ynState };
+        ["physio", "equip", "dress"].forEach(k => {
+          if (ynState[k]) setYNui(k, ynState[k]);
+        });
+      }
+      if (payload.signaturePinned != null) {
+        signaturePinned = payload.signaturePinned !== false;
+      }
+      if (payload.includeEmpty && typeof payload.includeEmpty === "object") {
+        Object.assign(includeEmpty, payload.includeEmpty);
+      }
+      if (payload.includeEmptyLines && typeof payload.includeEmptyLines === "object") {
+        Object.assign(includeEmptyLines, payload.includeEmptyLines);
+      }
+
+      renderComplaints();
+      renderTx();
+      renderRx();
+      renderInvEditor();
+      renderPast();
+      renderRxHistory();
+
+      if (!val("dod")) setVal_("dod", todayISO());
+      render();
+      updateFormSectionStates();
+      try { store.set("ds:draft", JSON.stringify(collectDraft())); } catch (e) { }
+      return true;
+    }
+
     /* ---------- Share / Send as PDF ---------- */
     async function shareDoc() {
-      checkAndPrint();
+      await generatePdf(true);
     }
 
     /* live update on any form input */
@@ -1212,12 +1402,16 @@
       r.readAsDataURL(f);
     }
 
-    let saveTimer;
     function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { store.set("ds:draft", JSON.stringify(collectDraft())); }, 600); }
     function collectDraft() {
       const f = {}; FIELDS.forEach(id => f[id] = document.getElementById(id).value);
       SELECT_FIELDS.forEach(id => f[id] = document.getElementById(id).value);
-      return { f, complaints, treatment, rxMeds, invDates, invParams, invSeq, pastHistory, rxHistory, ynState, signaturePinned };
+      return {
+        f, complaints, treatment, rxMeds, invDates, invParams, invSeq,
+        pastHistory, rxHistory, ynState, signaturePinned,
+        includeEmpty: { ...includeEmpty },
+        includeEmptyLines: { ...includeEmptyLines }
+      };
     }
     function restoreDraft(o) {
       if (!o) return;
@@ -1227,10 +1421,19 @@
       pastHistory = o.pastHistory || []; rxHistory = o.rxHistory || [];
       ynState = o.ynState || { physio: "", equip: "", dress: "" };
       signaturePinned = o.signaturePinned !== false;
+      if (o.includeEmpty && typeof o.includeEmpty === "object") {
+        Object.keys(includeEmpty).forEach(k => delete includeEmpty[k]);
+        Object.assign(includeEmpty, o.includeEmpty);
+      }
+      if (o.includeEmptyLines && typeof o.includeEmptyLines === "object") {
+        Object.keys(includeEmptyLines).forEach(k => delete includeEmptyLines[k]);
+        Object.assign(includeEmptyLines, o.includeEmptyLines);
+      }
       renderComplaints(); renderTx(); renderRx(); renderInvEditor(); renderPast(); renderRxHistory();
       ["physio", "equip", "dress"].forEach(k => { if (ynState[k]) setYNui(k, ynState[k]); });
       if (!val("dod")) setVal_("dod", todayISO());
       render();
+      updateFormSectionStates();
     }
     function setYNui(key, v) {
       const map = { physio: "ynPhysio", equip: "ynEquip", dress: "ynDress" };
@@ -1385,6 +1588,14 @@
       if (window.__CLI_AUTO_DRAFT__) {
         restoreDraft(window.__CLI_AUTO_DRAFT__);
         showTab("summary");
+        return;
+      }
+      // Check for template queued from Template Library
+      const pendingTpl = localStorage.getItem("ds:pending-template");
+      if (pendingTpl) {
+        localStorage.removeItem("ds:pending-template");
+        await loadJsonTemplate(pendingTpl);
+        toast("Template loaded from library ✓");
         return;
       }
       const lg = await store.get("ds:logo"); if (lg) logoData = lg;

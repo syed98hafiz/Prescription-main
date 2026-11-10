@@ -1,0 +1,14 @@
+{
+  "college": "Government Medical College Hospital",
+  "address": "Omandurar Government Estate, Chennai - 02",
+  "dept": "Department of General Medicine",
+  "summaryType": "Discharge Summary",
+  "unitPrefix": "M-",
+  "unitRoman": "IV",
+  "chief": "Dr. S. Ramesh, MD",
+  "preparedBy": "Dr. A. Kumar, MBBS",
+  "advice": "Take medications as advised.\nAdequate rest and oral fluids.\nTake diet as advised.",
+  "review": "Review in Medicine OPD after 1 week with reports (or earlier if needed).",
+  "warning": "Fever not subsiding, breathlessness, chest pain, giddiness, reduced urine output, bleeding, or drowsiness — report to casualty immediately."
+}
+

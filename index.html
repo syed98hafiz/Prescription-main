@@ -6,14 +6,16 @@
   <meta name="theme-color" content="#14425f">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="DS Builder">
+  <meta name="format-detection" content="telephone=no">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-192.png">
   <link rel="icon" href="icon-192.png">
   <title>Discharge Summary Builder</title>
-  <link rel="stylesheet" href="styles.css?v=26">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link rel="stylesheet" href="styles.css?v=31">
+  <script src="html2pdf.bundle.min.js"></script>
 </head>
 
 <body>
@@ -28,9 +30,10 @@
         <button id="tabSummary" onclick="showTab('summary')">View summary</button>
       </div>
       <div class="actions">
-        <button class="ghost" onclick="newSummary()">New patient</button>
-        <button class="ghost" onclick="copyText()">Copy text</button>
-        <button onclick="checkAndPrint()">Print / PDF</button>
+        <button class="ghost" onclick="newSummary()"><span class="btn-text-full">New patient</span><span class="btn-text-short">New</span></button>
+        <button class="ghost" onclick="copyText()"><span class="btn-text-full">Copy text</span><span class="btn-text-short">Copy</span></button>
+        <button onclick="checkAndPrint()"><span class="btn-text-full">Print / PDF</span><span class="btn-text-short">Print</span></button>
+        <button class="share-btn" id="shareBtn" onclick="shareDoc()" title="Share PDF via WhatsApp, Email, etc."><span class="btn-text-full">Share PDF</span><span class="btn-text-short">Share</span></button>
         <div class="menu-wrap">
           <button class="menu-btn" id="menuBtn" onclick="toggleMenu()" title="More options">⋮</button>
           <div class="menu-dropdown" id="menuDropdown">
@@ -49,6 +52,7 @@
                 oninput="setThemeColor(this.value)">
             </label>
             <button class="install-btn" id="installBtn" onclick="doInstall();closeMenu()">📲 Install app</button>
+            <button onclick="shareDoc();closeMenu()">📤 Share PDF (WhatsApp, etc.)</button>
             <button onclick="copyText();closeMenu()">📋 Copy text</button>
             <button onclick="checkAndPrint();closeMenu()">🖨️ Print / Save PDF</button>
             <hr>
@@ -82,7 +86,7 @@
     </details>
 
     <details class="card" data-clear="institution">
-      <summary><span class="section-number">2.</span> Institution header <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include institution section without content" onchange="toggleIncludeEmpty('institution', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">2.</span> Institution header <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include institution section without content" onchange="toggleIncludeEmpty('institution', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for institution" oninput="setEmptyLines('institution', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="field"><label>College / Hospital</label>
           <input type="text" id="college" value="Government Medical College Hospital">
@@ -108,7 +112,7 @@
     </details>
 
     <details class="card" open data-clear="patient">
-      <summary><span class="section-number">3.</span> Patient details <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include patient section without content" onchange="toggleIncludeEmpty('patient', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">3.</span> Patient details <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include patient section without content" onchange="toggleIncludeEmpty('patient', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for patient" oninput="setEmptyLines('patient', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="field"><label>Name</label><input type="text" id="name"></div>
         <div class="row">
@@ -166,7 +170,7 @@
     </details>
 
     <details class="card" open data-clear="diagnosis">
-      <summary><span class="section-number">4.</span> Diagnosis <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include diagnosis section without content" onchange="toggleIncludeEmpty('diagnosis', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">4.</span> Diagnosis <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include diagnosis section without content" onchange="toggleIncludeEmpty('diagnosis', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for diagnosis" oninput="setEmptyLines('diagnosis', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <label>Diagnosis (one per line)</label>
         <textarea id="diagnosis" placeholder="e.g.&#10;Dengue fever with warning signs&#10;Thrombocytopenia"></textarea>
@@ -174,7 +178,7 @@
     </details>
 
     <details class="card" open data-clear="complaints">
-      <summary><span class="section-number">5.</span> Chief complaints (Presenting Complaints) <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include complaints section without content" onchange="toggleIncludeEmpty('complaints', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">5.</span> Chief complaints (Presenting Complaints) <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include complaints section without content" onchange="toggleIncludeEmpty('complaints', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for complaints" oninput="setEmptyLines('complaints', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="chips" id="ccChips"></div>
         <div class="addrow">
@@ -200,7 +204,7 @@
     </details>
 
     <details class="card" data-clear="history">
-      <summary><span class="section-number">6.</span> History (HOPI, Past History, Rx Hx) <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include history section without content" onchange="toggleIncludeEmpty('history', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">6.</span> History (HOPI, Past History, Rx Hx) <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include history section without content" onchange="toggleIncludeEmpty('history', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for history" oninput="setEmptyLines('history', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="subhead">History of Present Illness (HOPI)</div>
         <textarea id="hopi" placeholder="The patient was apparently normal [__] back, then developed..."></textarea>
@@ -236,7 +240,7 @@
     </details>
 
     <details class="card" data-clear="examination">
-      <summary><span class="section-number">7.</span> Examination <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include examination section without content" onchange="toggleIncludeEmpty('examination', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">7.</span> Examination <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include examination section without content" onchange="toggleIncludeEmpty('examination', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for examination" oninput="setEmptyLines('examination', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="subhead">General Examination</div>
         <div class="chips"><span class="chip" onclick="insertGeneralExam()">+ Standard PICCLE findings</span></div>
@@ -277,7 +281,7 @@
     </details>
 
     <details class="card" data-clear="investigations">
-      <summary><span class="section-number">8.</span> Investigations <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include investigations section without content" onchange="toggleIncludeEmpty('investigations', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">8.</span> Investigations <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include investigations section without content" onchange="toggleIncludeEmpty('investigations', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for investigations" oninput="setEmptyLines('investigations', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="inv-controls">
           <button class="btn sm" onclick="addInvDate()">+ Add date</button>
@@ -297,7 +301,7 @@
     </details>
 
     <details class="card" data-clear="opinions">
-      <summary><span class="section-number">9.</span> Opinions <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include opinions section without content" onchange="toggleIncludeEmpty('opinions', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">9.</span> Opinions <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include opinions section without content" onchange="toggleIncludeEmpty('opinions', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for opinions" oninput="setEmptyLines('opinions', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <label>Consultations / opinions obtained</label>
         <textarea id="opinions"
@@ -306,7 +310,7 @@
     </details>
 
     <details class="card" data-clear="course">
-      <summary><span class="section-number">10.</span> Course in the hospital <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include course section without content" onchange="toggleIncludeEmpty('course', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">10.</span> Course in the hospital <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include course section without content" onchange="toggleIncludeEmpty('course', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for course" oninput="setEmptyLines('course', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <label>Insert a template (tap to drop in, then edit the blanks)</label>
         <div class="chips" id="courseTpl"></div>
@@ -318,7 +322,7 @@
     </details>
 
     <details class="card" data-clear="treatment">
-      <summary><span class="section-number">11.</span> Treatment given (in hospital) <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include treatment section without content" onchange="toggleIncludeEmpty('treatment', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">11.</span> Treatment given (in hospital) <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include treatment section without content" onchange="toggleIncludeEmpty('treatment', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for treatment" oninput="setEmptyLines('treatment', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <label>Quick bundles (tap to add the usual set, then edit)</label>
         <div class="chips" id="txBundles"></div>
@@ -362,7 +366,7 @@
     </details>
 
     <details class="card" open data-clear="condition">
-      <summary><span class="section-number">12.</span> Condition at discharge <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include condition section without content" onchange="toggleIncludeEmpty('condition', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">12.</span> Condition at discharge <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include condition section without content" onchange="toggleIncludeEmpty('condition', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for condition" oninput="setEmptyLines('condition', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="chips" id="condChips"></div>
         <div class="field"><label>Condition</label><input type="text" id="condition" placeholder="Stable / Improved">
@@ -373,7 +377,7 @@
     </details>
 
     <details class="card" open data-clear="advice">
-      <summary><span class="section-number">13.</span> Discharge advice (Rx) <label class="include-toggle" title="Include this section without content"><input type="checkbox" aria-label="Include advice section without content" onchange="toggleIncludeEmpty('advice', this.checked)"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">13.</span> Discharge advice (Rx) <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include advice section without content" onchange="toggleIncludeEmpty('advice', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for advice" oninput="setEmptyLines('advice', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="subhead">Advice on Discharge</div>
         <div class="row">
@@ -450,7 +454,7 @@ Take diet as advised.</textarea>
     </details>
 
     <details class="card" data-clear="signatures">
-      <summary><span class="section-number">14.</span> Signatures <label class="signature-pin" title="Pin signatures to bottom of page" onclick="event.stopPropagation()"><input type="checkbox" id="signaturePinCheckbox" aria-label="Pin signatures to page bottom" checked onchange="toggleSignaturePin(this.checked)" onclick="event.stopPropagation()"><span>📌 Pin to bottom</span></label><label class="include-toggle" title="Include this section without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include signatures section without content" onchange="toggleIncludeEmpty('signatures', this.checked)" onclick="event.stopPropagation()"></label><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">14.</span> Signatures <label class="signature-pin" title="Pin signatures to bottom of page" onclick="event.stopPropagation()"><input type="checkbox" id="signaturePinCheckbox" aria-label="Pin signatures to page bottom" checked onchange="toggleSignaturePin(this.checked)" onclick="event.stopPropagation()"><span>📌 Pin to bottom</span></label><label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include signatures section without content" onchange="toggleIncludeEmpty('signatures', this.checked)" onclick="event.stopPropagation()"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for signatures" oninput="setEmptyLines('signatures', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
         <div class="row">
           <div><label>Prepared by</label><input type="text" id="preparedBy" placeholder="____ (JR)"></div>
@@ -475,7 +479,7 @@ Take diet as advised.</textarea>
     <div class="paper" id="paper"></div>
   </div>
 
-  <script src="app.js?v=26"></script>
+  <script src="app.js?v=31"></script>
 </body>
 
 </html>
