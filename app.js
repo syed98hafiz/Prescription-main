@@ -76,9 +76,23 @@
     const DISPLAY_DATE_FIELDS = new Set(["doa", "dod"]);
     function normalizeDateValue(value) {
       const v = (value || "").trim();
-      const display = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-      if (display) return `${display[3]}-${display[2]}-${display[1]}`;
-      return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : "";
+      if (!v) return "";
+      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+      const dotOrSlash = v.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2}|\d{4})$/);
+      if (dotOrSlash) {
+        const dd = dotOrSlash[1].padStart(2, "0");
+        const mm = dotOrSlash[2].padStart(2, "0");
+        const yyyy = dotOrSlash[3].length === 2 ? `20${dotOrSlash[3]}` : dotOrSlash[3];
+        return `${yyyy}-${mm}-${dd}`;
+      }
+      const digits = v.replace(/\D/g, "");
+      if (digits.length === 8) {
+        return `${digits.slice(4, 8)}-${digits.slice(2, 4)}-${digits.slice(0, 2)}`;
+      }
+      if (digits.length === 6) {
+        return `20${digits.slice(4, 6)}-${digits.slice(2, 4)}-${digits.slice(0, 2)}`;
+      }
+      return "";
     }
 
     function isIOSDevice() {
@@ -210,9 +224,9 @@
       return iso ? fmtDate(iso) : "";
     }
     function formatDisplayDate(input) {
-      const digits = input.value.replace(/\D/g, "").slice(0, 8);
-      if (digits.length === 8) {
-        input.value = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+      const formatted = displayDateValue(input.value);
+      if (formatted) {
+        input.value = formatted;
       }
       render();
     }
@@ -322,7 +336,7 @@
       }
       let h = '<table class="invtable"><thead><tr><th style="min-width:120px">Investigation</th>';
       invDates.forEach(d => {
-        h += `<th><input type="text" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" value="${displayDateValue(d.date)}" onblur="setDisplayInvDate(${d.id},this.value)"><button class="xbtn" title="remove date" onclick="delInvDate(${d.id})">×</button></th>`;
+        h += `<th><input type="text" inputmode="numeric" placeholder="DD.MM.YYYY" maxlength="10" value="${displayDateValue(d.date)}" oninput="setDisplayInvDate(${d.id},this)" onblur="setDisplayInvDate(${d.id},this,true)"><button class="xbtn" title="remove date" onclick="delInvDate(${d.id})">×</button></th>`;
       });
       h += '<th></th></tr></thead><tbody>';
       invParams.forEach(p => {
@@ -334,8 +348,12 @@
       box.innerHTML = h;
     }
     function setDate(id, v) { const d = invDates.find(x => x.id === id); if (d) { d.date = v; render(); } }
-    function setDisplayInvDate(id, value) {
-      const iso = normalizeDateValue(value);
+    function setDisplayInvDate(id, inputOrValue, formatInput = false) {
+      const raw = typeof inputOrValue === "string" ? inputOrValue : inputOrValue.value;
+      const iso = normalizeDateValue(raw);
+      if (formatInput && typeof inputOrValue === "object" && inputOrValue && iso) {
+        inputOrValue.value = fmtDate(iso);
+      }
       setDate(id, iso);
     }
     function setPName(id, v) { const p = invParams.find(x => x.id === id); if (p) { p.name = v; render(); } }
@@ -347,7 +365,7 @@
       const value = document.getElementById(id).value.trim();
       return DISPLAY_DATE_FIELDS.has(id) ? normalizeDateValue(value) : value;
     }
-    function fmtDate(v) { if (!v) return ""; const [y, m, d] = v.split("-"); return `${d}/${m}/${y}`; }
+    function fmtDate(v) { if (!v) return ""; const [y, m, d] = v.split("-"); return `${d}.${m}.${y}`; }
     function fmtDateShort(v) { return fmtDate(v); }
     function lines(t) { return t.split("\n").map(s => s.trim()).filter(Boolean); }
 
@@ -1535,7 +1553,7 @@
       setVal_("invOther", "CXR (PA view): Right lower zone consolidation resolving.\nECG: Normal sinus rhythm, HR 86/min.\nUSG Abdomen: Grade 1 fatty liver, normal bilateral kidneys.");
 
       // Opinions
-      setVal_("opinions", "Pulmonology opinion obtained on 16/10/2026 — advised IV antibiotics and nebulisation.\nEndocrinology opinion obtained — advised sliding scale insulin, transitioned to basal-bolus regimen.");
+      setVal_("opinions", "Pulmonology opinion obtained on 16.10.2026 — advised IV antibiotics and nebulisation.\nEndocrinology opinion obtained — advised sliding scale insulin, transitioned to basal-bolus regimen.");
 
       // Course in hospital
       setVal_("course", "Patient admitted with diabetic ketoacidosis precipitated by community-acquired pneumonia. Evaluated with blood sugars, arterial blood gases, septic screen, and chest radiography. Initially managed in HDU with IV fluids, insulin infusion, and broad-spectrum IV antibiotics (Inj. Ceftriaxone) along with nebulisation. Acidosis resolved and blood glucose levels normalised. Transitioned to subcutaneous insulin. Cough and breathlessness settled; patient maintained adequate saturation on room air. Vitals remained stable, tolerating normal diabetic diet. Patient is being discharged in a stable condition with oral medications and glycemic control advice.");
@@ -1578,7 +1596,7 @@
       // Signatures
       setVal_("preparedBy", "Dr. K. Vignesh (JR)");
       setVal_("chief", "Dr. S. Sundararajan (Unit Chief)");
-      setVal_("signDateTime", "20/10/2026, 11:30 AM");
+      setVal_("signDateTime", "20.10.2026, 11:30 AM");
 
       render();
       toast("All details autofilled with test data");

@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="icon-192.png">
   <link rel="icon" href="icon-192.png">
   <title>Discharge Summary Builder</title>
-  <link rel="stylesheet" href="styles.css?v=31">
+  <link rel="stylesheet" href="styles.css?v=32">
   <script src="html2pdf.bundle.min.js"></script>
 </head>
 
@@ -128,11 +128,11 @@
           <div><label>IP No.</label><input type="text" id="ipno"></div>
         </div>
         <div class="row">
-          <div><label>Date of Admission (DOA)</label><input type="text" id="doa" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" onblur="formatDisplayDate(this)"></div>
+          <div><label>Date of Admission (DOA)</label><input type="text" id="doa" inputmode="numeric" placeholder="DD.MM.YYYY" maxlength="10" autocomplete="off" onblur="formatDisplayDate(this)"></div>
           <div>
             <label>Date of Discharge (DOD)</label>
             <div class="inline-btn-field">
-              <input type="text" id="dod" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" onblur="formatDisplayDate(this)">
+              <input type="text" id="dod" inputmode="numeric" placeholder="DD.MM.YYYY" maxlength="10" autocomplete="off" onblur="formatDisplayDate(this)">
               <button class="btn sm out" onclick="clearDOD()" title="Clear DOD">Clear</button>
             </div>
             <p class="hint">Defaults to today — edit or clear as needed.</p>
@@ -461,7 +461,7 @@ Take diet as advised.</textarea>
           <div><label>Medical Officer / Unit Chief</label><input type="text" id="chief" placeholder="____"></div>
         </div>
         <div class="field"><label>Date &amp; Time (of signing)</label><input type="text" id="signDateTime"
-            placeholder="e.g. 21/06/2026, 4:30 PM"></div>
+            placeholder="e.g. 21.06.2026, 4:30 PM"></div>
         <p class="hint">"Dr." is added automatically in the printed summary — just type the name.</p>
       </div>
     </details>
@@ -479,7 +479,7 @@ Take diet as advised.</textarea>
     <div class="paper" id="paper"></div>
   </div>
 
-  <script src="app.js?v=31"></script>
+  <script src="app.js?v=32"></script>
 </body>
 
 </html>

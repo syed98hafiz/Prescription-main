@@ -368,7 +368,7 @@ def main():
                 "condition": "Hemodynamically stable, afebrile, tolerating normal diabetic diet.",
                 "preparedBy": "Kavitha S.",
                 "chief": "V. Senthilkumar",
-                "signDateTime": "04/11/2026, 05:00 PM",
+                "signDateTime": "04.11.2026, 05:00 PM",
                 "advice": "1. Strict diabetic diet (low salt, low carbohydrate).\n2. Regular walking 30 mins daily.\n3. Monitor fasting and post-prandial blood glucose twice weekly.",
                 "review": "Review in Medicine OPD after 1 week with fasting and PP blood sugar reports.",
                 "warning": "High grade fever, breathlessness, altered sensorium, or severe hypoglycemic symptoms (sweating, tremors)."
