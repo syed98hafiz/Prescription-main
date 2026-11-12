@@ -138,6 +138,7 @@ create index if not exists idx_discharge_summaries_user_status
 create or replace function public.ds_touch_updated_at()
 returns trigger
 language plpgsql
+set search_path = public
 as $$
 begin
   if new.updated_at is null then
@@ -2373,11 +2374,15 @@ create policy "Users can delete own settings"
     }
 
     /* ---------- Supabase Integration, Auth & Cloud Sync ---------- */
+    function normalizeSupabaseUrl(u) {
+      return String(u || "").trim().replace(/\/rest\/v1\/?$/i, "").replace(/\/+$/, "");
+    }
+
     function resolveSupabaseConfig() {
       let localUrl = "";
       let localKey = "";
       try {
-        localUrl = (localStorage.getItem(SB_OVERRIDE_URL_KEY) || "").trim();
+        localUrl = normalizeSupabaseUrl(localStorage.getItem(SB_OVERRIDE_URL_KEY) || "");
         localKey = (localStorage.getItem(SB_OVERRIDE_KEY_KEY) || "").trim();
       } catch (e) { }
 
@@ -2385,7 +2390,7 @@ create policy "Users can delete own settings"
         return { url: localUrl, anonKey: localKey, source: "local-override" };
       }
       const cfg = window.DS_SUPABASE_CONFIG || {};
-      const fileUrl = String(cfg.url || "").trim();
+      const fileUrl = normalizeSupabaseUrl(cfg.url || "");
       const fileKey = String(cfg.anonKey || "").trim();
       if (fileUrl && fileKey) {
         return { url: fileUrl, anonKey: fileKey, source: "config-file" };
@@ -3072,8 +3077,9 @@ create policy "Users can delete own settings"
 
     async function saveSupabaseSetup(event) {
       event.preventDefault();
-      const url = document.getElementById("sbUrlInput").value.trim().replace(/\/+$/, "");
+      const url = normalizeSupabaseUrl(document.getElementById("sbUrlInput").value);
       const key = document.getElementById("sbKeyInput").value.trim();
+      document.getElementById("sbUrlInput").value = url;
       if (!url || !key) return;
 
       try {
@@ -3110,8 +3116,9 @@ create policy "Users can delete own settings"
     }
 
     async function testSupabaseConnection() {
-      const url = document.getElementById("sbUrlInput").value.trim().replace(/\/+$/, "");
+      const url = normalizeSupabaseUrl(document.getElementById("sbUrlInput").value);
       const key = document.getElementById("sbKeyInput").value.trim();
+      document.getElementById("sbUrlInput").value = url;
       const resBox = document.getElementById("sbTestResult");
       resBox.style.display = "block";
 
@@ -3133,7 +3140,7 @@ create policy "Users can delete own settings"
         const probeClient = window.supabase.createClient(url, key, { auth: { persistSession: false } });
         const { error } = await probeClient
           .from("discharge_summaries")
-          .select("id", { head: true, count: "exact" })
+          .select("id")
           .limit(1);
 
         if (!error) {

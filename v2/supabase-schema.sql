@@ -38,6 +38,7 @@ create index if not exists idx_discharge_summaries_user_status
 create or replace function public.ds_touch_updated_at()
 returns trigger
 language plpgsql
+set search_path = public
 as $$
 begin
   if new.updated_at is null then
