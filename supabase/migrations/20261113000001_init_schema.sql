@@ -115,3 +115,4 @@ create policy "Users can delete own settings"
   on public.user_settings for delete
   to authenticated
   using (auth.uid() = user_id);
+
