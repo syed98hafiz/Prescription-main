@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#14425f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="DS Builder v2">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="../icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="../icon-192.png">
+  <link rel="icon" href="../icon-192.png">
+  <title>DS Builder v2 — Dashboard &amp; Discharge Summary</title>
+  <link rel="stylesheet" href="styles.css?v=2">
+  <script src="../html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js?v=2"></script>
+</head>
+
+<body>
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1 class="brand-title">Discharge Summary Builder <span class="v2-pill">v2</span></h1>
+      <button type="button" id="topbarAuthBtn" class="topbar-auth-btn" onclick="openAuthOrAccount()" title="Account &amp; Cloud Sync">
+        <span id="topbarAuthDot" class="sync-dot offline"></span>
+        <span id="topbarAuthText">Local mode</span>
+      </button>
+    </div>
+    <div class="topbar-right">
+      <div class="tabs">
+        <button id="tabDashboard" class="active" onclick="showTab('dashboard')"><span class="btn-text-full">Dashboard</span><span class="btn-text-short">Dash</span></button>
+        <button id="tabForm" onclick="showTab('form')"><span class="btn-text-full">Fill form</span><span class="btn-text-short">Form</span></button>
+        <button id="tabSummary" onclick="showTab('summary')"><span class="btn-text-full">View summary</span><span class="btn-text-short">Summary</span></button>
+      </div>
+      <div class="actions">
+        <button class="ghost" onclick="newSummary()"><span class="btn-text-full">New patient</span><span class="btn-text-short">New</span></button>
+        <button class="ghost" onclick="copyText()"><span class="btn-text-full">Copy text</span><span class="btn-text-short">Copy</span></button>
+        <button onclick="checkAndPrint()"><span class="btn-text-full">Print / PDF</span><span class="btn-text-short">Print</span></button>
+        <button class="share-btn" id="shareBtn" onclick="shareDoc()" title="Share PDF via WhatsApp, Email, etc."><span class="btn-text-full">Share PDF</span><span class="btn-text-short">Share</span></button>
+        <div class="menu-wrap">
+          <button class="menu-btn" id="menuBtn" onclick="toggleMenu()" title="More options">⋮</button>
+          <div class="menu-dropdown" id="menuDropdown">
+
+            <div class="menu-label">Cloud &amp; Dashboard</div>
+            <button onclick="showTab('dashboard');closeMenu()">🏠 Patient Dashboard</button>
+            <button onclick="saveCurrentRecordNow(true);closeMenu()">💾 Save current patient draft</button>
+            <button onclick="syncNow(true);closeMenu()">☁ Sync with Supabase</button>
+            <button onclick="openAuthOrAccount();closeMenu()">👤 Account / Sign in</button>
+            <button onclick="openSupabaseSetupModal();closeMenu()">⚙ Supabase cloud setup</button>
+            <hr>
+            <div class="menu-label">Template <span class="beta-tag">BETA</span></div>
+            <button onclick="exportDraft();closeMenu()">💾 Export patient draft (.json)</button>
+            <button onclick="importDraft();closeMenu()">📂 Import patient draft (.json)</button>
+            <hr>
+            <button onclick="exportTemplate();closeMenu()">⬇ Export defaults <span class="beta-tag">BETA</span></button>
+            <button onclick="importTemplate();closeMenu()">⬆ Import defaults <span class="beta-tag">BETA</span></button>
+            <button onclick="doLocalTemplate();closeMenu()">📁 Local template <span class="beta-tag">BETA</span></button>
+            <hr>
+            <div class="menu-label">Summary</div>
+            <label class="theme-picker">🎨 Theme color
+              <input id="themeColor" type="color" value="#14425f" aria-label="Choose theme color"
+                oninput="setThemeColor(this.value)">
+            </label>
+            <button class="install-btn" id="installBtn" onclick="doInstall();closeMenu()">📲 Install app</button>
+            <button onclick="shareDoc();closeMenu()">📤 Share PDF (WhatsApp, etc.)</button>
+            <button onclick="copyText();closeMenu()">📋 Copy text</button>
+            <button onclick="checkAndPrint();closeMenu()">🖨️ Print / Save PDF</button>
+            <hr>
+            <div class="menu-label">Manage</div>
+            <button onclick="autofillTest();closeMenu()">⚡ Autofill test data</button>
+            <button onclick="requestPersistentStorage();closeMenu()">💾 Enable persistent storage <span class="beta-tag">BETA</span></button>
+            <button onclick="newSummary();closeMenu()">🆕 New patient</button>
+            <a href="../templates/" target="_blank">🗂 Template library <span class="beta-tag">BETA</span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DASHBOARD (MAIN VIEW) ================= -->
+  <div class="dash-wrap" id="dashboardTab">
+
+    <!-- Account & Cloud Hero Card -->
+    <section class="dash-hero" id="dashHero"></section>
+
+    <!-- Inline Auth Card (shown when Supabase configured & user signed out unless dismissed to offline mode) -->
+    <section class="dash-auth-card" id="dashAuthCard" style="display:none"></section>
+
+    <!-- Local-to-Cloud Guest Migration Banner -->
+    <div class="dash-migration-banner" id="guestMigrationBanner" style="display:none"></div>
+
+    <!-- Summary Metrics & Quick Filter Strip -->
+    <section class="dash-stats" aria-label="Discharge summary overview">
+      <button type="button" class="stat-card active" data-filter="all" onclick="setDashFilter('all')">
+        <span class="stat-label">All Patients</span>
+        <span class="stat-val" id="statTotal">0</span>
+        <span class="stat-sub">Saved charts</span>
+      </button>
+      <button type="button" class="stat-card warn" data-filter="incomplete" onclick="setDashFilter('incomplete')">
+        <span class="stat-label">Incomplete</span>
+        <span class="stat-val" id="statIncomplete">0</span>
+        <span class="stat-sub">In progress</span>
+      </button>
+      <button type="button" class="stat-card ok" data-filter="completed" onclick="setDashFilter('completed')">
+        <span class="stat-label">Completed</span>
+        <span class="stat-val" id="statCompleted">0</span>
+        <span class="stat-sub">Ready to print</span>
+      </button>
+      <button type="button" class="stat-card cloud" id="statSyncCard" onclick="handleSyncCardClick()">
+        <span class="stat-label">Cloud Sync</span>
+        <span class="stat-val stat-val-sm" id="statSyncText">Local</span>
+        <span class="stat-sub" id="statSyncSub">Tap to configure</span>
+      </button>
+    </section>
+
+    <!-- Search, Filter, Sort & New CTA -->
+    <section class="dash-toolbar">
+      <div class="dash-search-box">
+        <span class="dash-search-icon" aria-hidden="true">🔍</span>
+        <input type="text" id="dashSearch" placeholder="Search name, IP No., diagnosis, unit..." oninput="setDashSearch(this.value)" autocomplete="off">
+        <button type="button" id="dashSearchClear" class="dash-search-clear" style="display:none" onclick="clearDashSearch()" title="Clear search">×</button>
+      </div>
+      <div class="dash-controls-row">
+        <div class="dash-filter-pills" id="dashFilterPills">
+          <button type="button" class="pill active" data-filter="all" onclick="setDashFilter('all')">All</button>
+          <button type="button" class="pill" data-filter="incomplete" onclick="setDashFilter('incomplete')">Incomplete</button>
+          <button type="button" class="pill" data-filter="completed" onclick="setDashFilter('completed')">Completed</button>
+        </div>
+        <div class="dash-right-controls">
+          <select id="dashSort" aria-label="Sort patient summaries" onchange="setDashSort(this.value)">
+            <option value="updated_desc">Last edited (Newest)</option>
+            <option value="updated_asc">Last edited (Oldest)</option>
+            <option value="doa_desc">DOA (Newest)</option>
+            <option value="dod_desc">DOD (Newest)</option>
+            <option value="name_asc">Name (A–Z)</option>
+          </select>
+          <div class="dash-view-toggle desktop-only" role="group" aria-label="Layout view">
+            <button type="button" id="viewBtnCards" class="active" onclick="setDashViewMode('cards')" title="Card view">▦ Cards</button>
+            <button type="button" id="viewBtnTable" onclick="setDashViewMode('table')" title="Table view">☰ Table</button>
+          </div>
+          <button type="button" class="btn dash-new-btn" onclick="newSummary()">+ New patient</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Patient Records List / Empty State -->
+    <section id="dashRecordsContainer" class="dash-records"></section>
+
+  </div>
+
+  <!-- ================= FORM ================= -->
+  <div class="wrap" id="formTab" style="display:none">
+
+    <!-- Active Patient Context & Save Bar -->
+    <div class="active-patient-bar no-print" id="activePatientBar">
+      <div class="apb-left">
+        <button type="button" class="btn sm out" onclick="showTab('dashboard')">← Dashboard</button>
+        <div class="apb-info">
+          <div class="apb-title" id="activePatientTitle">New Patient Draft</div>
+          <div class="apb-meta" id="activePatientMeta">Auto-saves on device</div>
+        </div>
+      </div>
+      <div class="apb-right">
+        <button type="button" class="status-toggle-btn incomplete" id="activeStatusBtn" onclick="toggleActiveStatus()" title="Click to toggle Incomplete / Completed">
+          <span id="activeStatusText">Incomplete</span>
+        </button>
+        <button type="button" class="btn sm" onclick="saveCurrentRecordNow(true)">💾 Save</button>
+      </div>
+    </div>
+
+    <details class="card" data-clear="setup">
+      <summary><span class="section-number">1.</span> Setup &amp; defaults <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <div class="body">
+        <p class="hint" style="margin-top:0">Fill your <b>college, unit, chief</b> and the standard <b>advice / warning
+            / review</b> lines once, then tap <b>Save as my defaults</b>. They auto-fill every new summary and survive a
+          refresh. Defaults also sync with your Supabase account when signed in.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" onclick="saveDefaults()">Save as my defaults</button>
+          <button class="btn out" onclick="newSummary()">New patient (keep defaults)</button>
+        </div>
+        <p class="hint">Defaults kept: college, address, department, summary type, unit, chief, prepared-by, and the
+          advice / warning / review templates. Set unit &amp; chief in the sections below, then save.</p>
+      </div>
+    </details>
+
+    <details class="card" data-clear="institution">
+      <summary><span class="section-number">2.</span> Institution header <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include institution section without content" onchange="toggleIncludeEmpty('institution', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for institution" oninput="setEmptyLines('institution', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <div class="body">
+        <div class="field"><label>College / Hospital</label>
+          <input type="text" id="college" value="Government Medical College Hospital">
+        </div>
+        <div class="field"><label>Address line</label>
+          <input type="text" id="address" value="Omandurar Government Estate, Chennai - 02">
+        </div>
+        <div class="field"><label>Department</label>
+          <input type="text" id="dept" value="Department of General Medicine">
+        </div>
+        <div class="field"><label>College logo / emblem (optional)</label>
+          <input type="file" id="logoFile" accept="image/*" onchange="onLogo(event)">
+          <p class="hint">Shows top-left of the summary. Saved with your defaults. Leave empty for a plain box.</p>
+        </div>
+        <div class="field"><label>Summary type</label>
+          <select id="summaryType">
+            <option>Discharge Summary</option>
+            <option>Discharge Summary (At Request)</option>
+            <option>Discharge Summary (AMA)</option>
+          </select>
+        </div>
+      </div>
+    </details>
+
+    <details class="card" open data-clear="patient">
+      <summary><span class="section-number">3.</span> Patient details <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include patient section without content" onchange="toggleIncludeEmpty('patient', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for patient" oninput="setEmptyLines('patient', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <div class="body">
+        <div class="field"><label>Name</label><input type="text" id="name"></div>
+        <div class="row">
+          <div><label>Age</label><input type="text" id="age" placeholder="e.g. 45"></div>
+          <div><label>Sex</label>
+            <select id="sex">
+              <option value=""></option>
+              <option>M</option>
+              <option>F</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div><label>IP No.</label><input type="text" id="ipno"></div>
+        </div>
+        <div class="row">
+          <div><label>Date of Admission (DOA)</label><input type="text" id="doa" inputmode="numeric" placeholder="DD.MM.YYYY" maxlength="10" autocomplete="off" onblur="formatDisplayDate(this)"></div>
+          <div>
+            <label>Date of Discharge (DOD)</label>
+            <div class="inline-btn-field">
+              <input type="text" id="dod" inputmode="numeric" placeholder="DD.MM.YYYY" maxlength="10" autocomplete="off" onblur="formatDisplayDate(this)">
+              <button class="btn sm out" onclick="clearDOD()" title="Clear DOD">Clear</button>
+            </div>
+            <p class="hint">Defaults to today — edit or clear as needed.</p>
+          </div>
+        </div>
+        <div class="subhead">Unit</div>
+        <div class="unit-row">
+          <div><label>Prefix</label><input type="text" id="unitPrefix" value="M-"></div>
+          <div><label>Roman numeral</label>
+            <select id="unitRoman">
+              <option>I</option>
+              <option>II</option>
+              <option>III</option>
+              <option selected>IV</option>
+              <option>V</option>
+              <option>VI</option>
+              <option>VII</option>
+              <option>VIII</option>
+              <option>IX</option>
+              <option>X</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-top:12px">
+          <label>Mode of Discharge</label>
+          <select id="modeOfDischarge">
+            <option>Discharge</option>
+            <option>At Request Discharge</option>
+            <option>LAMA</option>
+            <option>Absconded</option>
+            <option>Death</option>
+          </select>
+        </div>
+      </div>
+    </details>
+
+    <details class="card" open data-clear="diagnosis">
+      <summary><span class="section-number">4.</span> Diagnosis <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include diagnosis section without content" onchange="toggleIncludeEmpty('diagnosis', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for diagnosis" oninput="setEmptyLines('diagnosis', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <div class="body">
+        <label>Diagnosis (one per line)</label>
+        <textarea id="diagnosis" placeholder="e.g.&#10;Dengue fever with warning signs&#10;Thrombocytopenia"></textarea>
+      </div>
+    </details>
+
+    <details class="card" open data-clear="complaints">
+      <summary><span class="section-number">5.</span> Chief complaints (Presenting Complaints) <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include complaints section without content" onchange="toggleIncludeEmpty('complaints', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for complaints" oninput="setEmptyLines('complaints', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <div class="body">
+        <div class="chips" id="ccChips"></div>
+        <div class="addrow">
+          <div style="flex:2"><label>Complaint</label>
+            <input type="text" id="ccText" list="ccList" placeholder="breathlessness">
+            <datalist id="ccList"></datalist>
+          </div>
+          <div style="max-width:80px"><label>For</label><input type="text" id="ccDur" placeholder="4"></div>
+          <div style="max-width:100px"><label>Unit</label>
+            <select id="ccUnit">
+              <option>days</option>
+              <option>weeks</option>
+              <option>months</option>
+              <option>hours</option>
+              <option>year</option>
+            </select>
+          </div>
+          <div style="flex:0"><button class="btn sm" onclick="addComplaint()">Add</button></div>
+        </div>
+        <p class="hint">Tap a common complaint above, or type your own. Adds as “H/o breathlessness for 4 days”.</p>
+        <ul class="list" id="ccListOut"></ul>
+      </div>
+    </details>
+
+    <details class="card" data-clear="history">
+      <summary><span class="section-number">6.</span> History (HOPI, Past History, Rx Hx) <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include history section without content" onchange="toggleIncludeEmpty('history', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for history" oninput="setEmptyLines('history', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <div class="body">
+        <div class="subhead">History of Present Illness (HOPI)</div>
+        <textarea id="hopi" placeholder="The patient was apparently normal [__] back, then developed..."></textarea>
+
+        <div class="subhead">Past History</div>
+        <div class="chips" id="pastChips"></div>
+        <div class="addrow">
+          <div style="flex:1"><input type="text" id="pastText" placeholder="e.g. K/C/O T2DM x 8 years on medication">
+          </div>
+          <div style="flex:0"><button class="btn sm" onclick="addPast()">Add</button></div>
+        </div>
+        <ul class="list" id="pastListOut"></ul>
+
+        <div class="subhead">Rx History (home medications before admission)</div>
+        <div class="addrow">
+          <div style="flex:2"><input type="text" id="rxhName" list="drugList" placeholder="Tab. Metformin"></div>
+          <div style="max-width:80px"><input type="text" id="rxhDose" placeholder="500 mg"></div>
+          <div style="max-width:80px">
+            <select id="rxhFreq">
+              <option value=""></option>
+              <option>OD</option>
+              <option>BD</option>
+              <option>TDS</option>
+              <option>QID</option>
+              <option>HS</option>
+              <option>SOS</option>
+            </select>
+          </div>
+          <div style="flex:0"><button class="btn sm" onclick="addRxHistory()">Add</button></div>
+        </div>
+        <ul class="list" id="rxhListOut"></ul>
+      </div>
+    </details>
+
+    <details class="card" data-clear="examination">
+      <summary><span class="section-number">7.</span> Examination <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include examination section without content" onchange="toggleIncludeEmpty('examination', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for examination" oninput="setEmptyLines('examination', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <div class="body">
+        <div class="subhead">General Examination</div>
+        <div class="chips"><span class="chip" onclick="insertGeneralExam()">+ Standard PICCLE findings</span></div>
+        <textarea id="generalExam" placeholder="Patient conscious, oriented, afebrile..."></textarea>
+
+        <div class="subhead">Vitals</div>
+        <div class="vitals-grid">
+          <div><label>BP (mmHg)</label><input type="text" id="vBP" placeholder="120/80"></div>
+          <div><label>PR (/min)</label><input type="text" id="vPR" placeholder="80"></div>
+          <div><label>RR (/min)</label><input type="text" id="vRR" placeholder="18"></div>
+          <div><label>SpO2 (%)</label><input type="text" id="vSpO2" placeholder="98% RA"></div>
+          <div><label>Temp</label><input type="text" id="vTemp" placeholder="Afebrile"></div>
+          <div><label>GRBS</label><input type="text" id="vGRBS" placeholder="optional"></div>
+        </div>
+
+        <div class="subhead">Systemic Examination</div>
+        <div class="row">
+          <div><label>CVS</label><input type="text" id="seCVS" placeholder="S1S2+, no murmurs">
+            <span class="hint" style="cursor:pointer;color:var(--primary)"
+              onclick="document.getElementById('seCVS').value='S1S2+, no murmurs';render()">use normal</span>
+          </div>
+          <div><label>RS</label><input type="text" id="seRS" placeholder="BAE+, NVBS">
+            <span class="hint" style="cursor:pointer;color:var(--primary)"
+              onclick="document.getElementById('seRS').value='BAE+, NVBS';render()">use normal</span>
+          </div>
+        </div>
+        <div class="row">
+          <div><label>P/A</label><input type="text" id="sePA" placeholder="Soft, non-tender">
+            <span class="hint" style="cursor:pointer;color:var(--primary)"
+              onclick="document.getElementById('sePA').value='Soft, non-tender';render()">use normal</span>
+          </div>
+          <div><label>CNS</label><input type="text" id="seCNS" placeholder="NFND">
+            <span class="hint" style="cursor:pointer;color:var(--primary)"
+              onclick="document.getElementById('seCNS').value='NFND';render()">use normal</span>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="card" data-clear="investigations">
+      <summary><span class="section-number">8.</span> Investigations <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include investigations section without content" onchange="toggleIncludeEmpty('investigations', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for investigations" oninput="setEmptyLines('investigations', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <div class="body">
+        <div class="inv-controls">
+          <button class="btn sm" onclick="addInvDate()">+ Add date</button>
+          <button class="btn sm out" onclick="addInvParam('')">+ Add row</button>
+        </div>
+        <div class="chips" id="invPanels"></div>
+        <div style="overflow-x:auto">
+          <div id="invEditor"></div>
+        </div>
+        <datalist id="labList"></datalist>
+        <div class="field" style="margin-top:14px">
+          <label>Other investigations / imaging (free text)</label>
+          <textarea id="invOther"
+            placeholder="ECG: sinus tachycardia&#10;CXR: normal study&#10;USG abdomen: mild hepatomegaly"></textarea>
+        </div>
+      </div>
+    </details>
+
+    <details class="card" data-clear="opinions">
+      <summary><span class="section-number">9.</span> Opinions <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include opinions section without content" onchange="toggleIncludeEmpty('opinions', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for opinions" oninput="setEmptyLines('opinions', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <div class="body">
+        <label>Consultations / opinions obtained</label>
+        <textarea id="opinions"
+          placeholder="Cardiology opinion obtained — advised…&#10;Nephrology opinion obtained — advised…"></textarea>
+      </div>
+    </details>
+
+    <details class="card" data-clear="course">
+      <summary><span class="section-number">10.</span> Course in the hospital <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include course section without content" onchange="toggleIncludeEmpty('course', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for course" oninput="setEmptyLines('course', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <div class="body">
+        <label>Insert a template (tap to drop in, then edit the blanks)</label>
+        <div class="chips" id="courseTpl"></div>
+        <label>Narrative</label>
+        <textarea id="course" style="min-height:150px"
+          placeholder="Patient admitted with above complaints. Evaluated and managed as detailed. Responded to treatment…"></textarea>
+        <p class="hint">Tapping a template appends to whatever's already in the box. Fill the [ ] blanks.</p>
+      </div>
+    </details>
+
+    <details class="card" data-clear="treatment">
+      <summary><span class="section-number">11.</span> Treatment given (in hospital) <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include treatment section without content" onchange="toggleIncludeEmpty('treatment', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for treatment" oninput="setEmptyLines('treatment', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <div class="body">
+        <label>Quick bundles (tap to add the usual set, then edit)</label>
+        <div class="chips" id="txBundles"></div>
+        <div class="addrow">
+          <div style="flex:2"><label>Drug</label>
+            <input type="text" id="txName" list="drugList" placeholder="Inj. Ceftriaxone">
+            <datalist id="drugList"></datalist>
+          </div>
+          <div style="max-width:90px"><label>Dose</label><input type="text" id="txDose" placeholder="1 g"></div>
+          <div style="max-width:90px"><label>Route</label>
+            <select id="txRoute">
+              <option value=""></option>
+              <option>IV</option>
+              <option>IM</option>
+              <option>PO</option>
+              <option>SC</option>
+              <option>Neb</option>
+              <option>PR</option>
+              <option>SL</option>
+            </select>
+          </div>
+          <div style="max-width:90px"><label>Freq</label>
+            <select id="txFreq">
+              <option value=""></option>
+              <option>OD</option>
+              <option>BD</option>
+              <option>TDS</option>
+              <option>QID</option>
+              <option>HS</option>
+              <option>Q6H</option>
+              <option>Q8H</option>
+              <option>Q12H</option>
+              <option>SOS</option>
+              <option>Stat</option>
+            </select>
+          </div>
+          <div style="flex:0"><button class="btn sm" onclick="addTx()">Add</button></div>
+        </div>
+        <ul class="list" id="txListOut"></ul>
+      </div>
+    </details>
+
+    <details class="card" open data-clear="condition">
+      <summary><span class="section-number">12.</span> Condition at discharge <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include condition section without content" onchange="toggleIncludeEmpty('condition', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for condition" oninput="setEmptyLines('condition', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <div class="body">
+        <div class="chips" id="condChips"></div>
+        <div class="field"><label>Condition</label><input type="text" id="condition" placeholder="Stable / Improved">
+        </div>
+        <div class="field"><label>Additional note (optional)</label><input type="text" id="condExtra"
+            placeholder="Afebrile, vitals stable, tolerating orals"></div>
+      </div>
+    </details>
+
+    <details class="card" open data-clear="advice">
+      <summary><span class="section-number">13.</span> Discharge advice (Rx) <label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include advice section without content" onchange="toggleIncludeEmpty('advice', this.checked)"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for advice" oninput="setEmptyLines('advice', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <div class="body">
+        <div class="subhead">Advice on Discharge</div>
+        <div class="row">
+          <div><label>1. Diet</label><input type="text" id="diet" placeholder="e.g. Diabetic diet"></div>
+          <div><label>2. Physical Activity</label><input type="text" id="physicalActivity"
+              placeholder="e.g. Ambulant, avoid strenuous activity"></div>
+        </div>
+        <div class="row">
+          <div>
+            <label>3. Physiotherapy needed at home?</label>
+            <div class="yn" id="ynPhysio">
+              <button type="button" onclick="setYN('physio','Yes')">Yes</button>
+              <button type="button" onclick="setYN('physio','No')">No</button>
+            </div>
+          </div>
+          <div>
+            <label>4. Home medical equipment needed?</label>
+            <div class="yn" id="ynEquip">
+              <button type="button" onclick="setYN('equip','Yes')">Yes</button>
+              <button type="button" onclick="setYN('equip','No')">No</button>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>5. Dressing needs at home anticipated?</label>
+            <div class="yn" id="ynDress">
+              <button type="button" onclick="setYN('dress','Yes')">Yes</button>
+              <button type="button" onclick="setYN('dress','No')">No</button>
+            </div>
+          </div>
+          <div><label>6. Any other needs</label><input type="text" id="otherNeeds" placeholder="optional"></div>
+        </div>
+
+        <div class="subhead">7. Medication</div>
+        <label style="margin-bottom:6px">Discharge medications</label>
+        <div class="chips" id="rxBundles"></div>
+        <div class="addrow">
+          <div style="flex:2"><input type="text" id="rxName" list="drugList" placeholder="Tab. Paracetamol"></div>
+          <div style="max-width:80px"><input type="text" id="rxDose" placeholder="650 mg"></div>
+          <div style="max-width:80px">
+            <select id="rxFreq">
+              <option value=""></option>
+              <option>OD</option>
+              <option>BD</option>
+              <option>TDS</option>
+              <option>QID</option>
+              <option>HS</option>
+              <option>SOS</option>
+            </select>
+          </div>
+          <div style="max-width:90px"><input type="text" id="rxDur" placeholder="× 5 days"></div>
+          <div style="flex:0"><button class="btn sm" onclick="addRx()">Add</button></div>
+        </div>
+        <ul class="list" id="rxListOut"></ul>
+
+        <div class="field" style="margin-top:14px"><label>General advice</label>
+          <textarea id="advice" placeholder="Take rest. Adequate oral fluids.">Take medications as advised.
+Adequate rest and oral fluids.
+Take diet as advised.</textarea>
+        </div>
+        <div class="field"><label>8. In case of Emergency, contact no.</label>
+          <input type="text" id="emergencyContact" placeholder="e.g. Casualty: 044-XXXXXXX">
+        </div>
+        <div class="field"><label>9. Follow-Up / Review</label>
+          <input type="text" id="review"
+            value="Review in Medicine OPD after 1 week with reports (or earlier if needed).">
+        </div>
+        <div class="field"><label>Warning signs — return immediately if (optional)</label>
+          <textarea id="warning"
+            placeholder="bleeding, breathlessness, giddiness…">Fever not subsiding, breathlessness, chest pain, giddiness, reduced urine output, bleeding, or drowsiness — report to casualty immediately.</textarea>
+        </div>
+      </div>
+    </details>
+
+    <details class="card" data-clear="signatures">
+      <summary><span class="section-number">14.</span> Signatures <label class="signature-pin" title="Pin signatures to bottom of page" onclick="event.stopPropagation()"><input type="checkbox" id="signaturePinCheckbox" aria-label="Pin signatures to page bottom" checked onchange="toggleSignaturePin(this.checked)" onclick="event.stopPropagation()"><span>📌 Pin to bottom</span></label><label class="include-toggle" title="Include without content" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Include signatures section without content" onchange="toggleIncludeEmpty('signatures', this.checked)" onclick="event.stopPropagation()"></label><span class="empty-lines-wrap" title="Lines of empty space"><input type="number" class="empty-lines-input" min="0" max="40" placeholder="0" aria-label="Empty lines for signatures" oninput="setEmptyLines('signatures', this.value)" onclick="event.stopPropagation()"><span class="lines-unit">lines</span></span><button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <div class="body">
+        <div class="row">
+          <div><label>Prepared by</label><input type="text" id="preparedBy" placeholder="____ (JR)"></div>
+          <div><label>Medical Officer / Unit Chief</label><input type="text" id="chief" placeholder="____"></div>
+        </div>
+        <div class="field"><label>Date &amp; Time (of signing)</label><input type="text" id="signDateTime"
+            placeholder="e.g. 21.06.2026, 4:30 PM"></div>
+        <p class="hint">"Dr." is added automatically in the printed summary — just type the name.</p>
+      </div>
+    </details>
+
+    <p class="hint no-print" style="text-align:center;padding-bottom:20px">
+      Tip: switch to <b>View summary</b> to check spacing, then <b>Print / PDF</b>. Return to <b>Dashboard</b> anytime
+      to switch patients or resume incomplete summaries across devices.
+    </p>
+  </div>
+
+  <!-- ================= SUMMARY ================= -->
+  <div class="wrap" id="summaryTab">
+    <div class="active-patient-bar summary-bar no-print" id="summaryActiveBar">
+      <div class="apb-left">
+        <button type="button" class="btn sm out" onclick="showTab('dashboard')">← Dashboard</button>
+        <button type="button" class="btn sm out" onclick="showTab('form')">✎ Edit Form</button>
+        <span class="apb-summary-name" id="summaryPatientTitle">Patient Summary</span>
+      </div>
+      <div class="apb-right">
+        <button type="button" class="status-toggle-btn incomplete" id="summaryStatusBtn" onclick="toggleActiveStatus()">
+          <span id="summaryStatusText">Incomplete</span>
+        </button>
+        <button type="button" class="btn sm" onclick="saveCurrentRecordNow(true)">💾 Save</button>
+      </div>
+    </div>
+    <div class="pagebanner no-print" id="pageBanner" style="display:none"></div>
+    <div class="paper" id="paper"></div>
+  </div>
+
+  <!-- ================= AUTH MODAL ================= -->
+  <div class="modal-backdrop no-print" id="authModal" style="display:none" onclick="if(event.target===this) closeAuthModal()">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+      <div class="modal-head">
+        <h2 id="authModalTitle">Doctor Account &amp; Cloud Sync</h2>
+        <button type="button" class="modal-close" onclick="closeAuthModal()" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body" id="authModalBody"></div>
+    </div>
+  </div>
+
+  <!-- ================= SUPABASE SETUP MODAL ================= -->
+  <div class="modal-backdrop no-print" id="supabaseSetupModal" style="display:none" onclick="if(event.target===this) closeSupabaseSetupModal()">
+    <div class="modal-card modal-wide" role="dialog" aria-modal="true" aria-labelledby="setupModalTitle">
+      <div class="modal-head">
+        <h2 id="setupModalTitle">⚙ Connect Supabase Project</h2>
+        <button type="button" class="modal-close" onclick="closeSupabaseSetupModal()" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint" style="margin-top:0;font-size:13px">
+          Enter your Supabase <b>Project URL</b> and <b>Anon / Publishable Key</b> from
+          <i>Supabase Dashboard → Project Settings → API</i>. These are saved in your browser (or you can hardcode them permanently in <code>v2/supabase-config.js</code>).
+        </p>
+        <form onsubmit="saveSupabaseSetup(event)">
+          <div class="field">
+            <label for="sbUrlInput">Supabase Project URL</label>
+            <input type="url" id="sbUrlInput" placeholder="https://your-project-id.supabase.co" required>
+          </div>
+          <div class="field">
+            <label for="sbKeyInput">Supabase Anon (Public) Key</label>
+            <textarea id="sbKeyInput" rows="2" placeholder="eyJhbGciOi..." style="min-height:56px;font-family:monospace;font-size:12px" required></textarea>
+          </div>
+          <div id="sbTestResult" class="setup-status" style="display:none"></div>
+          <div class="modal-actions">
+            <button type="submit" class="btn">Save &amp; Connect</button>
+            <button type="button" class="btn out" onclick="testSupabaseConnection()">Test Connection</button>
+            <button type="button" class="btn danger" onclick="clearSupabaseSetupOverride()">Reset</button>
+          </div>
+        </form>
+
+        <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+        <div class="setup-sql-head">
+          <div>
+            <b>Database Setup SQL</b>
+            <p class="hint" style="margin:2px 0 0">Run once in <b>Supabase → SQL Editor</b> to create <code>discharge_summaries</code> &amp; <code>user_settings</code> with per-user Row Level Security.</p>
+          </div>
+          <button type="button" class="btn sm out" onclick="copySetupSQL()">📋 Copy SQL</button>
+        </div>
+        <pre class="sql-preview" id="setupSqlCode"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PASSWORD RECOVERY MODAL ================= -->
+  <div class="modal-backdrop no-print" id="recoveryModal" style="display:none">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="recoveryModalTitle">
+      <div class="modal-head">
+        <h2 id="recoveryModalTitle">Set New Password</h2>
+        <button type="button" class="modal-close" onclick="closeRecoveryModal()" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="submitPasswordRecovery(event)">
+          <div class="field">
+            <label for="recoveryNewPassword">New Password (min 6 characters)</label>
+            <input type="password" id="recoveryNewPassword" minlength="6" required>
+          </div>
+          <div class="modal-actions">
+            <button type="submit" class="btn">Update Password</button>
+            <button type="button" class="btn out" onclick="closeRecoveryModal()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=2"></script>
+</body>
+
+</html>
+

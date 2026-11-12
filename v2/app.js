@@ -1,0 +1,3331 @@
+/* ---------- clinical presets & bundles (mirrored from main) ---------- */
+    const COMMON_CC = ["fever", "breathlessness", "cough", "chest pain", "palpitations",
+      "abdominal pain", "vomiting", "loose stools", "decreased urine output", "pedal edema",
+      "giddiness", "headache", "altered sensorium", "seizures", "loss of consciousness",
+      "weakness of limbs", "yellowish discolouration of eyes", "decreased appetite",
+      "hematemesis", "melena", "burning micturition"];
+    const COMMON_LABS = ["Hb", "TC", "DC", "Platelet", "PCV", "ESR", "Urea", "Creatinine", "Na", "K",
+      "Cl", "HCO3", "RBS", "FBS", "PPBS", "HbA1c", "T.Bilirubin", "D.Bilirubin", "SGOT", "SGPT", "ALP",
+      "T.Protein", "Albumin", "PT", "INR", "aPTT", "TSH", "Ca", "PO4", "Mg", "CRP", "Troponin"];
+    const PANELS = {
+      "CBC": ["Hb", "TC", "DC", "Platelet", "PCV"],
+      "RFT": ["Urea", "Creatinine", "Na", "K", "Cl"],
+      "LFT": ["T.Bilirubin", "D.Bilirubin", "SGOT", "SGPT", "ALP", "T.Protein", "Albumin"],
+      "Coagulation": ["PT", "INR", "aPTT"],
+      "Sugar": ["RBS", "HbA1c"]
+    };
+    const COMMON_DRUGS = ["Inj. Ceftriaxone", "Inj. Piperacillin-Tazobactam", "Inj. Meropenem",
+      "Inj. Doxycycline", "Tab. Doxycycline", "Tab. Azithromycin", "Inj. Pantoprazole", "Tab. Pantoprazole",
+      "Inj. Ondansetron", "Inj. Paracetamol", "Tab. Paracetamol", "Inj. Metronidazole", "Tab. Metformin",
+      "Inj. Insulin (HAI)", "Inj. Furosemide", "Tab. Furosemide", "Tab. Aspirin", "Tab. Atorvastatin",
+      "Tab. Clopidogrel", "Tab. Amlodipine", "Tab. Telmisartan", "Inj. Hydrocortisone", "Neb. Ipravent",
+      "Neb. Budecort", "Inj. Vitamin K", "Inj. Thiamine", "Tab. Ecosprin", "Tab. Pan 40"];
+    const COMMON_COND = ["Stable", "Improved", "Symptomatically better", "Hemodynamically stable",
+      "Afebrile and stable", "Discharged at request", "Discharged against medical advice"];
+    const COMMON_PAST = ["K/C/O T2DM on medication", "K/C/O Systemic Hypertension on medication",
+      "K/C/O CAD", "K/C/O CVA", "K/C/O Epilepsy", "K/C/O Bronchial Asthma/COPD", "K/C/O CKD",
+      "K/C/O Koch's disease (TB) — treated", "K/C/O Chronic Liver Disease", "K/C/O Hypothyroidism",
+      "No significant past history"];
+
+    const RX_BUNDLES = {
+      "CAD": ["Tab. Aspirin 75 mg OD (continue)", "Tab. Clopidogrel 75 mg OD × 12 months", "Tab. Atorvastatin 40 mg HS (continue)", "Tab. Metoprolol 25 mg BD (continue)", "Tab. Ramipril 2.5 mg OD (continue)", "Tab. Sorbitrate 5 mg SL SOS (for chest pain)"],
+      "HFrEF": ["Tab. Furosemide 40 mg BD (continue)", "Tab. Sacubitril-Valsartan 50 mg BD (continue)", "Tab. Carvedilol 3.125 mg BD (continue)", "Tab. Spironolactone 25 mg OD (continue)", "Tab. Dapagliflozin 10 mg OD (continue)"],
+      "COPD": ["MDI Budesonide-Formoterol 1 puff BD (continue)", "MDI Tiotropium 1 puff OD (continue)", "Tab. Prednisolone 40 mg OD × 5 days", "Tab. Pantoprazole 40 mg OD × 5 days"],
+      "CAP": ["Tab. Cefpodoxime 200 mg BD × 5 days", "Tab. Azithromycin 500 mg OD × 3 days", "Tab. Paracetamol 650 mg TDS SOS × 3 days", "Tab. Pantoprazole 40 mg OD × 5 days"],
+      "T2DM": ["Tab. Metformin 500 mg BD (continue)", "Tab. Glimepiride 1 mg OD before breakfast (continue)", "GRBS monitoring + diabetic diet"],
+      "SHTN": ["Tab. Amlodipine 5 mg OD (continue)", "Tab. Telmisartan 40 mg OD (continue)", "Tab. Chlorthalidone 12.5 mg OD (continue)", "Home BP monitoring"]
+    };
+
+    const TX_BUNDLES = {
+      "CAD": ["Tab. Aspirin 75 mg PO OD", "Tab. Clopidogrel 75 mg PO OD", "Tab. Atorvastatin 40 mg PO HS", "Tab. Metoprolol 25 mg PO BD", "Tab. Ramipril 2.5 mg PO OD", "Inj. Enoxaparin 0.6 mL SC BD", "Tab. Nitroglycerin 0.5 mg SL SOS"],
+      "HFrEF": ["Inj. Furosemide 40 mg IV BD", "Tab. Sacubitril-Valsartan 50 mg PO BD", "Tab. Carvedilol 3.125 mg PO BD", "Tab. Spironolactone 25 mg PO OD", "Tab. Dapagliflozin 10 mg PO OD"],
+      "COPD": ["Neb. Ipratropium-Salbutamol Q6H", "Neb. Budesonide BD", "Inj. Hydrocortisone 100 mg IV Q8H", "Inj. Ceftriaxone 1 g IV BD", "Tab. Pantoprazole 40 mg PO OD", "Controlled O2 to target SpO2 88–92%"],
+      "CAP": ["Inj. Ceftriaxone 1 g IV BD", "Tab. Azithromycin 500 mg PO OD", "Inj. Paracetamol 1 g IV SOS", "Tab. Pantoprazole 40 mg PO OD"],
+      "T2DM": ["Inj. Insulin (HAI) SC TDS (pre-meal / sliding scale)", "Tab. Metformin 500 mg PO BD", "GRBS monitoring QID"],
+      "SHTN": ["Tab. Amlodipine 5 mg PO OD", "Tab. Telmisartan 40 mg PO OD", "Tab. Chlorthalidone 12.5 mg PO OD", "BP monitoring"]
+    };
+
+    const COURSE_TEMPLATES = [
+      { label: "Dengue", text: `Patient admitted with above complaints. On evaluation found to have thrombocytopenia with [NS1/IgM] positivity, suggestive of Dengue fever [with/without warning signs]. Managed with IV fluids as per dengue protocol, antipyretics and serial platelet monitoring. Platelet count reached a nadir of [___] on [__/__] and subsequently improved. Patient remained hemodynamically stable, became afebrile with improving counts, and is being discharged in a stable condition.` },
+      { label: "LRTI / CAP", text: `Patient admitted with above complaints. Clinically and radiologically diagnosed as Community-acquired pneumonia (LRTI). Started on IV antibiotics, nebulisation, antipyretics and supportive care. Saturation monitored and maintained [on room air / with O2 support]. Symptomatically improved — afebrile, breathlessness settled, maintaining saturation on room air — and is being discharged in a stable condition with oral antibiotics to complete the course.` },
+      { label: "AGE w/ dehydration", text: `Patient admitted with above complaints with features of [mild/moderate] dehydration, diagnosed as Acute gastroenteritis with dehydration. Rehydrated with IV fluids, given antiemetics, [antibiotics] and supportive care. Electrolytes monitored and corrected. Stool frequency reduced, tolerating orals well, and is being discharged in a stable condition.` },
+      { label: "CKD", text: `Patient admitted with above complaints. [Known/Newly detected] Chronic kidney disease (Stage [__]). Evaluated with RFT, electrolytes, urine analysis and USG abdomen. Managed with fluid and salt restriction, [diuretics], correction of electrolyte and acid-base derangements and supportive care. [Nephrology opinion obtained.] Symptomatically improved, hemodynamically stable, and is being discharged in a stable condition with renal diet advice and follow-up.` },
+      { label: "Tropical fever", text: `Patient admitted with above complaints. Evaluated for acute febrile illness — septic screen, dengue / leptospira / scrub typhus serology and peripheral smear sent. Started on empirical [doxycycline/ceftriaxone] with antipyretics and supportive care. [Scrub typhus/leptospirosis] [confirmed/considered clinically]. Became afebrile with treatment, remained hemodynamically stable, and is being discharged in a stable condition.` },
+      { label: "COPD exac.", text: `Patient, a known case of COPD, admitted with acute exacerbation. Managed with nebulised bronchodilators, systemic steroids, antibiotics, controlled oxygen and [NIV / BiPAP support]. Breathlessness improved, maintaining saturation on room air, and is being discharged in a stable condition with inhaler technique advice.` },
+      { label: "DKA", text: `Patient admitted with above complaints, found to have hyperglycemia with ketosis and metabolic acidosis suggestive of Diabetic ketoacidosis. Managed with IV fluids, insulin infusion and potassium monitoring as per DKA protocol. Blood sugars and anion gap normalised; transitioned to subcutaneous insulin. Tolerating orals, stable, and is being discharged with insulin / OHA and diabetic diet advice.` },
+      { label: "ACS", text: `Patient admitted with above complaints. ECG and cardiac markers suggestive of [STEMI / NSTEMI / Unstable angina]. Managed as Acute coronary syndrome with antiplatelets, statin, anticoagulation and supportive care. Cardiology opinion obtained; [thrombolysed / advised coronary angiogram]. Hemodynamically stable, chest pain settled, and is being discharged in a stable condition on cardiac medications.` },
+      { label: "CVA / Stroke", text: `Patient admitted with above complaints. CT / MRI brain suggestive of [ischemic / hemorrhagic] stroke. Managed with [antiplatelets / anti-edema measures], physiotherapy and supportive care. Neurology opinion obtained. Vitals stable, [neurological deficit improving], and is being discharged in a stable condition with physiotherapy and follow-up advice.` },
+      { label: "UTI / Pyelo", text: `Patient admitted with above complaints. Urine analysis and culture suggestive of [urinary tract infection / pyelonephritis]. Started on IV antibiotics [as per sensitivity], antipyretics and adequate hydration. Became afebrile with treatment, symptomatically improved, and is being discharged in a stable condition with oral antibiotics to complete the course.` },
+      { label: "ALD / Hepatitis", text: `Patient, [chronic alcoholic], admitted with above complaints. Evaluated with LFT, USG abdomen and coagulation profile suggestive of [alcoholic hepatitis / decompensated chronic liver disease]. Managed with [diuretics for ascites], hepatoprotective measures, vitamin supplementation, [lactulose] and supportive care. Alcohol abstinence counselling given. Symptomatically improved, stable, and is being discharged with follow-up advice.` },
+      { label: "Cellulitis", text: `Patient admitted with above complaints suggestive of cellulitis of [site]. Managed with IV antibiotics, limb elevation, analgesics and wound care. [Blood sugars optimised.] Local signs of inflammation reduced, became afebrile, and is being discharged in a stable condition with oral antibiotics.` },
+      { label: "Seizure / GTCS", text: `Patient admitted following [new-onset / breakthrough] generalised tonic-clonic seizures. Evaluated with CT / MRI brain, EEG and metabolic workup. [Started on / optimised] anti-epileptic drugs. Neurology opinion obtained. No further seizure episodes during the stay, conscious and oriented, and is being discharged in a stable condition on AEDs with advice.` }
+    ];
+
+    /* ---------- editor & dashboard state ---------- */
+    let complaints = [], treatment = [], rxMeds = [];
+    let invDates = [], invParams = [], invSeq = 0;
+    const DEFAULT_LOGO = "data:image/jpeg;base64,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";
+    let logoData = DEFAULT_LOGO;
+    let pastHistory = [], rxHistory = [];
+    let ynState = { physio: "", equip: "", dress: "" };
+    let signaturePinned = true;
+    let saveTimer;
+    let pageCheckTimer;
+    const includeEmpty = {};
+    const includeEmptyLines = {};
+    const DISPLAY_DATE_FIELDS = new Set(["doa", "dod"]);
+
+    /* ---------- v2 Dashboard, Records & Supabase Cloud Sync State ---------- */
+    let activeTab = "dashboard";
+    let records = [];
+    let pendingDeletes = [];
+    let currentRecordId = null;
+    let currentRecordStatus = "incomplete";
+    let currentRecordCreatedAt = null;
+    let hasRecordPersisted = false;
+    let suppressSave = false;
+
+    let dashFilter = "all";
+    let dashSearch = "";
+    let dashSort = "updated_desc";
+    let dashViewMode = "cards";
+    let authMode = "signin";
+    let authFeedback = null;
+    let offlineDismissedAuthCard = false;
+
+    const SB_OVERRIDE_URL_KEY = "ds-v2:sb-url";
+    const SB_OVERRIDE_KEY_KEY = "ds-v2:sb-key";
+    let sbClient = null;
+    let sbConfig = { url: "", anonKey: "", source: "none" };
+    let currentUser = null;
+    let syncState = "local"; // "local" | "syncing" | "synced" | "pending" | "offline" | "error"
+    let lastSyncError = "";
+    let lastSyncTime = null;
+    let cloudSaveTimer = null;
+    let syncInFlight = false;
+    let guestDraftsPromptVisible = false;
+    let guestDraftsCount = 0;
+
+    const SUPABASE_SCHEMA_SQL = `-- Run once in Supabase Dashboard -> SQL Editor -> New query
+create table if not exists public.discharge_summaries (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade default auth.uid(),
+  status text not null default 'incomplete' check (status in ('incomplete', 'completed')),
+  patient_name text not null default '',
+  ip_no text not null default '',
+  doa text not null default '',
+  dod text not null default '',
+  unit text not null default '',
+  diagnosis_preview text not null default '',
+  payload jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.user_settings (
+  user_id uuid primary key references auth.users(id) on delete cascade default auth.uid(),
+  defaults jsonb not null default '{}'::jsonb,
+  theme_color text not null default '#14425f',
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_discharge_summaries_user_updated
+  on public.discharge_summaries (user_id, updated_at desc);
+
+create index if not exists idx_discharge_summaries_user_status
+  on public.discharge_summaries (user_id, status);
+
+create or replace function public.ds_touch_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.updated_at is null then
+    new.updated_at = now();
+  elsif tg_op = 'UPDATE' and new.updated_at = old.updated_at then
+    new.updated_at = now();
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_discharge_summaries_updated_at on public.discharge_summaries;
+create trigger trg_discharge_summaries_updated_at
+  before insert or update on public.discharge_summaries
+  for each row execute function public.ds_touch_updated_at();
+
+drop trigger if exists trg_user_settings_updated_at on public.user_settings;
+create trigger trg_user_settings_updated_at
+  before insert or update on public.user_settings
+  for each row execute function public.ds_touch_updated_at();
+
+alter table public.discharge_summaries enable row level security;
+alter table public.user_settings enable row level security;
+
+drop policy if exists "Users can view own summaries" on public.discharge_summaries;
+create policy "Users can view own summaries"
+  on public.discharge_summaries for select to authenticated using (auth.uid() = user_id);
+
+drop policy if exists "Users can insert own summaries" on public.discharge_summaries;
+create policy "Users can insert own summaries"
+  on public.discharge_summaries for insert to authenticated with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update own summaries" on public.discharge_summaries;
+create policy "Users can update own summaries"
+  on public.discharge_summaries for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "Users can delete own summaries" on public.discharge_summaries;
+create policy "Users can delete own summaries"
+  on public.discharge_summaries for delete to authenticated using (auth.uid() = user_id);
+
+drop policy if exists "Users can view own settings" on public.user_settings;
+create policy "Users can view own settings"
+  on public.user_settings for select to authenticated using (auth.uid() = user_id);
+
+drop policy if exists "Users can upsert own settings" on public.user_settings;
+create policy "Users can upsert own settings"
+  on public.user_settings for insert to authenticated with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update own settings" on public.user_settings;
+create policy "Users can update own settings"
+  on public.user_settings for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "Users can delete own settings" on public.user_settings;
+create policy "Users can delete own settings"
+  on public.user_settings for delete to authenticated using (auth.uid() = user_id);`;
+
+    /* ---------- UUID & date normalization helpers ---------- */
+    function generateUUID() {
+      if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+        return crypto.randomUUID();
+      }
+      if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+        const bytes = new Uint8Array(16);
+        crypto.getRandomValues(bytes);
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        const hex = Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
+        return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+      }
+      return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        const v = c === "x" ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      });
+    }
+
+    function normalizeDateValue(value) {
+      const v = (value || "").trim();
+      if (!v) return "";
+      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+      const dotOrSlash = v.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2}|\d{4})$/);
+      if (dotOrSlash) {
+        const dd = dotOrSlash[1].padStart(2, "0");
+        const mm = dotOrSlash[2].padStart(2, "0");
+        const yyyy = dotOrSlash[3].length === 2 ? `20${dotOrSlash[3]}` : dotOrSlash[3];
+        return `${yyyy}-${mm}-${dd}`;
+      }
+      const digits = v.replace(/\D/g, "");
+      if (digits.length === 8) {
+        return `${digits.slice(4, 8)}-${digits.slice(2, 4)}-${digits.slice(0, 2)}`;
+      }
+      if (digits.length === 6) {
+        return `20${digits.slice(4, 6)}-${digits.slice(2, 4)}-${digits.slice(0, 2)}`;
+      }
+      return "";
+    }
+
+    function isIOSDevice() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+    function isSafariBrowser() {
+      return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    }
+
+    function setThemeColor(color, syncToCloud = true) {
+      if (!/^#[0-9a-f]{6}$/i.test(color)) return;
+      const rgb = color.match(/[0-9a-f]{2}/gi).map(value => parseInt(value, 16));
+      const soft = rgb.map(value => Math.round(value + (255 - value) * .88));
+      document.documentElement.removeAttribute("data-theme");
+      document.documentElement.style.setProperty("--primary", color);
+      document.documentElement.style.setProperty("--primary-soft", `rgb(${soft.join(", ")})`);
+      document.documentElement.style.setProperty("--chip", `rgb(${soft.map(value => Math.max(0, value - 12)).join(", ")})`);
+      document.documentElement.style.setProperty("--chip-ink", color);
+      const picker = document.getElementById("themeColor");
+      if (picker) picker.value = color;
+      try { localStorage.setItem("ds-v2:theme-color", color); } catch (e) { }
+      if (syncToCloud && currentUser && sbClient && navigator.onLine) {
+        pushUserSettingsToCloud().catch(() => {});
+      }
+    }
+
+    try { setThemeColor(localStorage.getItem("ds-v2:theme-color") || "#14425f", false); } catch (e) { setThemeColor("#14425f", false); }
+
+    /* ---------- init datalists & chips ---------- */
+    function fillDatalist(id, arr) { document.getElementById(id).innerHTML = arr.map(x => `<option value="${x}">`).join(""); }
+    fillDatalist("ccList", COMMON_CC);
+    fillDatalist("labList", COMMON_LABS);
+    fillDatalist("drugList", COMMON_DRUGS);
+
+    document.getElementById("ccChips").innerHTML =
+      COMMON_CC.slice(0, 12).map(c => `<span class="chip" onclick="document.getElementById('ccText').value='${c}';document.getElementById('ccDur').focus()">${c}</span>`).join("");
+    document.getElementById("condChips").innerHTML =
+      COMMON_COND.map(c => `<span class="chip" onclick="document.getElementById('condition').value='${c}';render()">${c}</span>`).join("");
+    document.getElementById("pastChips").innerHTML =
+      COMMON_PAST.map((c, i) => `<span class="chip" onclick="addPastPreset(${i})">${c}</span>`).join("");
+    document.getElementById("invPanels").innerHTML =
+      Object.keys(PANELS).map(p => `<span class="chip" onclick="addPanel('${p}')">+ ${p}</span>`).join("");
+    document.getElementById("courseTpl").innerHTML =
+      COURSE_TEMPLATES.map((t, i) => `<span class="chip" onclick="insertCourse(${i})">${t.label}</span>`).join("");
+    document.getElementById("txBundles").innerHTML =
+      Object.keys(TX_BUNDLES).map(k => `<span class="chip" onclick="addBundle('${k}')">+ ${k}</span>`).join("");
+    document.getElementById("rxBundles").innerHTML =
+      Object.keys(RX_BUNDLES).map(k => `<span class="chip" onclick="addRxBundle('${k}')">+ ${k}</span>`).join("");
+
+    function addBundle(k) {
+      (TX_BUNDLES[k] || []).forEach(d => { if (!treatment.includes(d)) treatment.push(d); });
+      renderTx(); render();
+    }
+    function addPastPreset(i) {
+      document.getElementById("pastText").value = COMMON_PAST[i];
+      addPast();
+    }
+    function addRxBundle(k) {
+      (RX_BUNDLES[k] || []).forEach(d => { if (!rxMeds.includes(d)) rxMeds.push(d); });
+      renderRx(); render();
+    }
+
+    function insertCourse(i) {
+      const el = document.getElementById("course");
+      const t = COURSE_TEMPLATES[i].text;
+      el.value = el.value.trim() ? el.value.trim() + "\n\n" + t : t;
+      render();
+    }
+
+    /* ---------- complaints ---------- */
+    function addComplaint() {
+      const t = document.getElementById("ccText").value.trim();
+      if (!t) return;
+      const d = document.getElementById("ccDur").value.trim();
+      const u = document.getElementById("ccUnit").value;
+      complaints.push(d ? `H/o ${t} for ${d} ${u}` : `H/o ${t}`);
+      document.getElementById("ccText").value = ""; document.getElementById("ccDur").value = "";
+      renderComplaints(); render();
+    }
+    function renderComplaints() {
+      document.getElementById("ccListOut").innerHTML = complaints.map((c, i) =>
+        `<li><span>${esc(c)}</span><button onclick="complaints.splice(${i},1);renderComplaints();render()">×</button></li>`).join("");
+    }
+
+    /* ---------- past history / rx history ---------- */
+    function addPast() {
+      const t = document.getElementById("pastText").value.trim(); if (!t) return;
+      pastHistory.push(t); document.getElementById("pastText").value = "";
+      renderPast(); render();
+    }
+    function renderPast() {
+      document.getElementById("pastListOut").innerHTML = pastHistory.map((c, i) =>
+        `<li><span>${esc(c)}</span><button onclick="pastHistory.splice(${i},1);renderPast();render()">×</button></li>`).join("");
+    }
+    function addRxHistory() {
+      const n = document.getElementById("rxhName").value.trim(); if (!n) return;
+      const parts = [n, document.getElementById("rxhDose").value.trim(), document.getElementById("rxhFreq").value].filter(Boolean);
+      rxHistory.push(parts.join(" "));
+      ["rxhName", "rxhDose"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("rxhFreq").value = "";
+      renderRxHistory(); render();
+    }
+    function renderRxHistory() {
+      document.getElementById("rxhListOut").innerHTML = rxHistory.map((t, i) =>
+        `<li><span>${esc(t)}</span><button onclick="rxHistory.splice(${i},1);renderRxHistory();render()">×</button></li>`).join("");
+    }
+
+    /* ---------- general exam & yes/no ---------- */
+    function insertGeneralExam() {
+      const el = document.getElementById("generalExam");
+      const line = "Patient conscious, oriented, afebrile. No pallor, icterus, cyanosis, clubbing, lymphadenopathy or pedal edema.";
+      el.value = el.value.trim() ? el.value.trim() + "\n" + line : line;
+      render();
+    }
+    function setYN(key, val_) {
+      ynState[key] = ynState[key] === val_ ? "" : val_;
+      const map = { physio: "ynPhysio", equip: "ynEquip", dress: "ynDress" };
+      const box = document.getElementById(map[key]);
+      if (box) [...box.children].forEach(b => b.classList.toggle("sel", b.textContent === ynState[key]));
+      render();
+    }
+
+    /* ---------- unit & honorific helpers ---------- */
+    function getUnit() {
+      return (val("unitPrefix") || "") + (document.getElementById("unitRoman").value || "");
+    }
+    function displayDateValue(value) {
+      const iso = normalizeDateValue(value);
+      return iso ? fmtDate(iso) : "";
+    }
+    function formatDisplayDate(input) {
+      const formatted = displayDateValue(input.value);
+      if (formatted) {
+        input.value = formatted;
+      }
+      render();
+    }
+    function ensureDr(name) {
+      const n = (name || "").trim();
+      if (!n) return "";
+      return /^dr\.?\s/i.test(n) ? n : "Dr. " + n;
+    }
+    function todayISO() {
+      const d = new Date(); const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+      return local.toISOString().slice(0, 10);
+    }
+    function clearDOD() { document.getElementById("dod").value = ""; render(); }
+
+    async function clearFormSection(event, button) {
+      event.preventDefault();
+      event.stopPropagation();
+      const section = button.closest("details");
+      const key = section.dataset.clear;
+      if (!confirm(`Clear all entries in "${section.querySelector("summary").textContent.replace("Clear", "").trim()}"?`)) return;
+
+      section.querySelectorAll("input, textarea").forEach(el => {
+        el.value = "";
+      });
+      section.querySelectorAll("select").forEach(el => {
+        el.selectedIndex = 0;
+      });
+
+      if (key === "complaints") complaints = [];
+      if (key === "history") {
+        pastHistory = [];
+        rxHistory = [];
+      }
+      if (key === "advice") {
+        rxMeds = [];
+        ynState = { physio: "", equip: "", dress: "" };
+      }
+      if (key === "investigations") {
+        invDates = [];
+        invParams = [];
+        invSeq = 0;
+      }
+      if (key === "treatment") treatment = [];
+      if (key === "institution") {
+        logoData = "";
+        await store.remove("ds-v2:logo");
+      }
+      if (key === "setup") await store.remove(getDefaultsKey());
+
+      renderComplaints();
+      renderTx();
+      renderRx();
+      renderInvEditor();
+      renderPast();
+      renderRxHistory();
+      ["physio", "equip", "dress"].forEach(name => {
+        const box = document.getElementById(`yn${name[0].toUpperCase()}${name.slice(1)}`);
+        if (box) [...box.children].forEach(child => child.classList.remove("sel"));
+      });
+      delete includeEmpty[key];
+      delete includeEmptyLines[key];
+      render();
+    }
+
+    /* ---------- treatment ---------- */
+    function addTx() {
+      const n = document.getElementById("txName").value.trim(); if (!n) return;
+      const parts = [n, document.getElementById("txDose").value.trim(),
+        document.getElementById("txRoute").value, document.getElementById("txFreq").value].filter(Boolean);
+      treatment.push(parts.join(" "));
+      ["txName", "txDose"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("txRoute").value = ""; document.getElementById("txFreq").value = "";
+      renderTx(); render();
+    }
+    function renderTx() {
+      document.getElementById("txListOut").innerHTML = treatment.map((t, i) =>
+        `<li><span>${esc(t)}</span><button onclick="treatment.splice(${i},1);renderTx();render()">×</button></li>`).join("");
+    }
+
+    /* ---------- discharge meds ---------- */
+    function addRx() {
+      const n = document.getElementById("rxName").value.trim(); if (!n) return;
+      const parts = [n, document.getElementById("rxDose").value.trim(),
+        document.getElementById("rxFreq").value, document.getElementById("rxDur").value.trim()].filter(Boolean);
+      rxMeds.push(parts.join(" "));
+      ["rxName", "rxDose", "rxDur"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("rxFreq").value = "";
+      renderRx(); render();
+    }
+    function renderRx() {
+      document.getElementById("rxListOut").innerHTML = rxMeds.map((t, i) =>
+        `<li><span>${esc(t)}</span><button onclick="rxMeds.splice(${i},1);renderRx();render()">×</button></li>`).join("");
+    }
+
+    /* ---------- investigations table editor ---------- */
+    function addInvDate() { invDates.push({ id: ++invSeq, date: "" }); renderInvEditor(); render(); }
+    function addInvParam(name) { invParams.push({ id: ++invSeq, name: name, values: {} }); renderInvEditor(); render(); }
+    function addPanel(p) {
+      PANELS[p].forEach(n => invParams.push({ id: ++invSeq, name: n, values: {} }));
+      if (invDates.length === 0) addInvDate(); else { renderInvEditor(); render(); }
+    }
+    function delInvDate(id) { invDates = invDates.filter(d => d.id !== id); renderInvEditor(); render(); }
+    function delInvParam(id) { invParams = invParams.filter(p => p.id !== id); renderInvEditor(); render(); }
+
+    function renderInvEditor() {
+      const box = document.getElementById("invEditor");
+      if (invDates.length === 0 && invParams.length === 0) {
+        box.innerHTML = `<p class="hint">Add a date column, then add lab rows (or tap a panel like CBC / RFT above).</p>`; return;
+      }
+      let h = '<table class="invtable"><thead><tr><th style="min-width:120px">Investigation</th>';
+      invDates.forEach(d => {
+        h += `<th><input type="text" inputmode="numeric" placeholder="DD.MM.YYYY" maxlength="10" value="${displayDateValue(d.date)}" oninput="setDisplayInvDate(${d.id},this)" onblur="setDisplayInvDate(${d.id},this,true)"><button class="xbtn" title="remove date" onclick="delInvDate(${d.id})">×</button></th>`;
+      });
+      h += '<th></th></tr></thead><tbody>';
+      invParams.forEach(p => {
+        h += `<tr><td class="pname"><input type="text" list="labList" value="${esc(p.name)}" placeholder="parameter" oninput="setPName(${p.id},this.value)"></td>`;
+        invDates.forEach(d => { h += `<td><input type="text" value="${esc(p.values[d.id] || '')}" oninput="setVal(${p.id},${d.id},this.value)"></td>`; });
+        h += `<td><button class="xbtn" onclick="delInvParam(${p.id})">×</button></td></tr>`;
+      });
+      h += '</tbody></table>';
+      box.innerHTML = h;
+    }
+    function setDate(id, v) { const d = invDates.find(x => x.id === id); if (d) { d.date = v; render(); } }
+    function setDisplayInvDate(id, inputOrValue, formatInput = false) {
+      const raw = typeof inputOrValue === "string" ? inputOrValue : inputOrValue.value;
+      const iso = normalizeDateValue(raw);
+      if (formatInput && typeof inputOrValue === "object" && inputOrValue && iso) {
+        inputOrValue.value = fmtDate(iso);
+      }
+      setDate(id, iso);
+    }
+    function setPName(id, v) { const p = invParams.find(x => x.id === id); if (p) { p.name = v; render(); } }
+    function setVal(pid, did, v) { const p = invParams.find(x => x.id === pid); if (p) { p.values[did] = v; render(); } }
+
+    /* ---------- helpers ---------- */
+    function esc(s) { return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+    function val(id) {
+      const el = document.getElementById(id);
+      if (!el) return "";
+      const value = el.value.trim();
+      return DISPLAY_DATE_FIELDS.has(id) ? normalizeDateValue(value) : value;
+    }
+    function fmtDate(v) { if (!v) return ""; const parts = String(v).split("-"); if (parts.length !== 3) return v; const [y, m, d] = parts; return `${d}.${m}.${y}`; }
+    function fmtDateShort(v) { return fmtDate(v); }
+    function lines(t) { return (t || "").split("\n").map(s => s.trim()).filter(Boolean); }
+
+    /* ---------- render preview ---------- */
+    function render(shouldSave = true) {
+      const kind = val("summaryType").toUpperCase();
+      const logoHTML = logoData
+        ? `<img class="logo-box" src="${logoData}" alt="logo">`
+        : `<img class="logo-box" src="../omandurar_footer.jpg" alt="logo">`;
+      let h = "";
+      h += `<div class="doc-head">
+    ${logoHTML}
+    <div class="head-text">
+      <div class="college">${esc(val("college"))}</div>
+      ${val("address") ? `<div class="addr">${esc(val("address"))}</div>` : ""}
+      <div class="dept">${esc(val("dept"))}</div>
+      <div class="kind">${esc(kind)}</div>
+    </div>
+  </div>`;
+
+      const ageSex = [val("age"), val("sex")].filter(Boolean).join(" / ");
+      h += `<div class="pt-grid">
+    <div><b>Name</b> : ${esc(val("name"))}</div>
+    <div><b>Age/Sex</b> : ${esc(ageSex)}</div>
+    <div><b>IP No.</b> : ${esc(val("ipno"))}</div>
+    <div><b>DOA</b> : ${fmtDate(val("doa"))}</div>
+    <div><b>DOD</b> : ${fmtDate(val("dod"))}</div>
+    <div><b>Unit</b> : ${esc(getUnit())}</div>
+    <div><b>Mode of D/C</b> : ${esc(val("modeOfDischarge"))}</div>
+  </div>`;
+
+      h += section("Diagnosis", listOrText(val("diagnosis")), "diagnosis");
+
+      h += section("Presenting Complaints (Chief C/O)", complaints.length ? ul(complaints) : empty(), "complaints");
+      if (val("hopi")) h += section("HOPI", `<div class="content">${esc(val("hopi"))}</div>`, "history");
+      if (pastHistory.length || rxHistory.length) {
+        if (pastHistory.length && rxHistory.length) {
+          h += `<div class="two-col">`;
+          h += `<div class="col-half">${section("Past History", ul(pastHistory), "history")}</div>`;
+          h += `<div class="col-half">${section("Rx History (Pre-admission)", ul(rxHistory), "history")}</div>`;
+          h += `</div>`;
+        } else if (pastHistory.length) {
+          h += section("Past History", ul(pastHistory), "history");
+        } else {
+          h += section("Rx History (Pre-admission)", ul(rxHistory), "history");
+        }
+      } else if (!val("hopi") && (includeEmpty.history || (includeEmptyLines.history > 0))) {
+        h += section("History", empty(), "history");
+      }
+
+      const exam = examinationHTML();
+      if (exam || includeEmpty.examination || (includeEmptyLines.examination > 0)) {
+        h += section("Examination", exam || empty(), "examination");
+      }
+
+      h += section("Investigations", investigationsHTML(), "investigations");
+      h += section("Opinions", val("opinions") ? `<div class="content">${esc(val("opinions"))}</div>` : empty(), "opinions");
+      h += section("Course in the Hospital", val("course") ? `<div class="content">${esc(val("course"))}</div>` : empty(), "course");
+      if (treatment.length > 0 && treatment.length <= 6) {
+        h += section("Treatment Given", contentColumns(treatment), "treatment");
+      } else {
+        h += section("Treatment Given", treatment.length ? ul(treatment) : empty(), "treatment");
+      }
+      const cond = [val("condition"), val("condExtra")].filter(Boolean).join(" — ");
+      h += section("Condition at Discharge", cond ? `<div class="content">${esc(cond)}</div>` : empty(), "condition");
+
+      let adv = "";
+      const advBits = [];
+      if (val("diet")) advBits.push(`<div class="adv-item"><b>Diet:</b> ${esc(val("diet"))}</div>`);
+      if (val("physicalActivity")) advBits.push(`<div class="adv-item"><b>Physical Activity:</b> ${esc(val("physicalActivity"))}</div>`);
+      if (ynState.physio) advBits.push(`<div class="adv-item"><b>Physiotherapy at home:</b> ${ynState.physio}</div>`);
+      if (ynState.equip) advBits.push(`<div class="adv-item"><b>Home medical equipment needed:</b> ${ynState.equip}</div>`);
+      if (ynState.dress) advBits.push(`<div class="adv-item"><b>Dressing needs at home:</b> ${ynState.dress}</div>`);
+      if (val("otherNeeds")) advBits.push(`<div class="adv-item"><b>Other needs:</b> ${esc(val("otherNeeds"))}</div>`);
+      if (advBits.length) adv += `<div class="adv-items-group">${advBits.join("")}</div>`;
+      if (rxMeds.length) {
+        adv += `<div class="adv-item" style="font-weight:700;margin-top:6px;margin-bottom:2px">Medications:</div>`;
+        adv += contentColumns(rxMeds, "med-list");
+      }
+      if (val("advice")) adv += `<div class="content adv-item" style="margin-top:5px">${esc(val("advice"))}</div>`;
+      if (val("emergencyContact")) adv += `<div class="content adv-item" style="margin-top:5px"><b>Emergency contact:</b> ${esc(val("emergencyContact"))}</div>`;
+      if (val("review")) adv += `<div class="content adv-item" style="margin-top:5px"><b>Follow-Up:</b> ${esc(val("review"))}</div>`;
+      if (val("warning")) adv += `<div class="content adv-item" style="margin-top:5px"><b>Return immediately if:</b> ${esc(val("warning"))}</div>`;
+      h += section("Advice on Discharge (Rx)", adv || empty(), "advice");
+
+      const prep = ensureDr(val("preparedBy")), chf = ensureDr(val("chief"));
+      const sigLines = includeEmptyLines.signatures || 0;
+      if (prep || chf || val("signDateTime") || includeEmpty.signatures || sigLines > 0) {
+        const sigSpace = sigLines > 0 ? `<div class="empty-lines-space" style="height:${(sigLines * 1.4).toFixed(2)}em"></div>` : "";
+        h += `<div class="sign-row${signaturePinned ? " signature-pinned" : ""}">
+      ${sigSpace}
+      <div>${esc(prep)}<br><small>Prepared by</small></div>
+      <div>${esc(chf)}<br><small>Medical Officer (Name &amp; Seal)</small>${val("signDateTime") ? `<br><small>${esc(val("signDateTime"))}</small>` : ""}</div>
+    </div>`;
+      }
+      document.getElementById("paper").innerHTML = h;
+      updateFormSectionStates();
+      updateActivePatientBar();
+      if (shouldSave && !suppressSave) scheduleSave();
+      clearTimeout(pageCheckTimer);
+      pageCheckTimer = setTimeout(autoOptimizeSpacing, 100);
+    }
+
+    function section(title, content, key) {
+      const isEmpty = !content || content === `<div class="empty">—</div>`;
+      const linesCount = includeEmptyLines[key] || 0;
+      if (isEmpty && !includeEmpty[key] && linesCount <= 0) return "";
+      let bodyHTML = "";
+      if (linesCount > 0) {
+        const spaceHeight = (linesCount * 1.4).toFixed(2);
+        const spaceHTML = `<div class="empty-lines-space" style="height:${spaceHeight}em;" aria-hidden="true"></div>`;
+        bodyHTML = isEmpty ? spaceHTML : `${content}${spaceHTML}`;
+      } else if (isEmpty) {
+        bodyHTML = `<div class="empty">—</div>`;
+      } else {
+        bodyHTML = content;
+      }
+      return `<div class="sec"><h3>${title}</h3>${bodyHTML}</div>`;
+    }
+
+    function summarySectionHasContent(key) {
+      const values = {
+        institution: val("college") || val("address") || val("dept") || logoData,
+        patient: true,
+        diagnosis: val("diagnosis"),
+        complaints: complaints.length,
+        history: val("hopi") || pastHistory.length || rxHistory.length,
+        examination: examinationHTML(),
+        investigations: invDates.length && invParams.some(p => p.name.trim()) || val("invOther"),
+        opinions: val("opinions"),
+        course: val("course"),
+        treatment: treatment.length,
+        condition: val("condition") || val("condExtra"),
+        advice: val("diet") || val("physicalActivity") || ynState.physio || ynState.equip || ynState.dress ||
+          val("otherNeeds") || rxMeds.length || val("advice") || val("emergencyContact") || val("review") || val("warning"),
+        signatures: val("preparedBy") || val("chief") || val("signDateTime")
+      };
+      return Boolean(values[key]);
+    }
+
+    function updateFormSectionStates() {
+      document.querySelectorAll("#formTab details[data-clear]").forEach(card => {
+        const key = card.dataset.clear;
+        const emptySection = key === "setup" || !summarySectionHasContent(key);
+        const linesCount = includeEmptyLines[key] || 0;
+        const isIncluded = Boolean(includeEmpty[key] || linesCount > 0);
+        card.classList.toggle("not-in-summary", emptySection && !isIncluded);
+        const checkbox = card.querySelector(".include-toggle input[type='checkbox']");
+        if (checkbox) checkbox.checked = isIncluded;
+        const linesInput = card.querySelector(".empty-lines-input");
+        if (linesInput) {
+          linesInput.value = linesCount > 0 ? linesCount : "";
+        }
+        if (key === "signatures") {
+          const pin = card.querySelector(".signature-pin input");
+          if (pin && pin.checked !== signaturePinned) pin.checked = signaturePinned;
+        }
+      });
+    }
+
+    function toggleIncludeEmpty(key, checked) {
+      includeEmpty[key] = Boolean(checked);
+      if (!checked) delete includeEmptyLines[key];
+      updateFormSectionStates();
+      render();
+    }
+    function setEmptyLines(key, count) {
+      const n = parseInt(count, 10);
+      const countVal = isNaN(n) || n < 0 ? 0 : Math.min(40, n);
+      if (countVal > 0) {
+        includeEmptyLines[key] = countVal;
+        includeEmpty[key] = true;
+      } else {
+        delete includeEmptyLines[key];
+      }
+      updateFormSectionStates();
+      render();
+    }
+    function toggleSignaturePin(checked) {
+      signaturePinned = Boolean(checked);
+      updateFormSectionStates();
+      render();
+    }
+    function empty() { return `<div class="empty">—</div>`; }
+    function ul(arr) { return `<ul>${arr.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`; }
+    function contentColumns(arr, className = "") {
+      return `<ul class="content-columns ${className}">${arr.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+    }
+    function listOrText(t) { const l = lines(t); if (!l.length) return empty(); return l.length > 1 ? ul(l) : `<div class="content">${esc(l[0])}</div>`; }
+    function listOrTextRaw(t) { const l = lines(t); return l.join(", "); }
+
+    function examinationHTML() {
+      let parts = [];
+      if (val("generalExam")) parts.push(`<div class="content">${esc(val("generalExam"))}</div>`);
+      const vit = [["BP", val("vBP")], ["PR", val("vPR")], ["RR", val("vRR")], ["SpO2", val("vSpO2")], ["Temp", val("vTemp")], ["GRBS", val("vGRBS")]]
+        .filter(([, v]) => v);
+      if (vit.length) parts.push(`<div class="content" style="margin-top:4px"><b>Vitals:</b> ${vit.map(([k, v]) => `${k} - ${esc(v)}`).join(", ")}</div>`);
+      const se = [["CVS", val("seCVS")], ["RS", val("seRS")], ["P/A", val("sePA")], ["CNS", val("seCNS")]].filter(([, v]) => v);
+      if (se.length) parts.push(`<div class="content" style="margin-top:4px"><b>Systemic Examination:</b> ${se.map(([k, v]) => `${k} - ${esc(v)}`).join("; ")}</div>`);
+      return parts.join("");
+    }
+
+    function investigationsHTML() {
+      let out = "";
+      const hasTable = invDates.length && invParams.some(p => p.name.trim());
+      if (hasTable) {
+        let h = `<div class="inv-table-wrap"><table class="prev-table"><thead><tr><th>Investigation</th>`;
+        invDates.forEach(d => { h += `<th>${d.date ? fmtDateShort(d.date) : "—"}</th>`; });
+        h += `</tr></thead><tbody>`;
+        invParams.forEach(p => {
+          if (!p.name.trim()) return;
+          h += `<tr><td class="pn">${esc(p.name)}</td>`;
+          invDates.forEach(d => { h += `<td>${esc(p.values[d.id] || "")}</td>`; });
+          h += `</tr>`;
+        });
+        h += `</tbody></table></div>`; out += h;
+      }
+      if (val("invOther")) out += `<div class="content" style="margin-top:6px">${esc(val("invOther"))}</div>`;
+      return out || empty();
+    }
+
+    /* ---------- tabs / copy / navigation ---------- */
+    function showTab(t) {
+      if ((activeTab === "form" || activeTab === "summary") && t === "dashboard") {
+        saveCurrentRecordNow(false);
+      }
+      activeTab = t;
+      const isDash = t === "dashboard";
+      const isForm = t === "form";
+      const isSummary = t === "summary";
+
+      document.getElementById("dashboardTab").style.display = isDash ? "block" : "none";
+      document.getElementById("formTab").style.display = isForm ? "block" : "none";
+      document.getElementById("summaryTab").style.display = isSummary ? "block" : "none";
+
+      document.getElementById("tabDashboard").classList.toggle("active", isDash);
+      document.getElementById("tabForm").classList.toggle("active", isForm);
+      document.getElementById("tabSummary").classList.toggle("active", isSummary);
+
+      if (isDash) {
+        renderDashboard();
+        window.scrollTo(0, 0);
+      } else if (isForm) {
+        updateActivePatientBar();
+        window.scrollTo(0, 0);
+      } else if (isSummary) {
+        setPreviewScale();
+        render(false);
+        document.getElementById("summaryTab").scrollTop = 0;
+        window.scrollTo(0, 0);
+        setTimeout(autoOptimizeSpacing, 60);
+      }
+    }
+
+    function setPreviewScale() {
+      const paper = document.getElementById("paper");
+      if (!paper) return;
+      const availableWidth = Math.max(280, window.innerWidth - 20);
+      const scale = Math.min(1, availableWidth / 793.7);
+      paper.style.setProperty("--paper-scale", scale.toFixed(4));
+      paper.style.zoom = scale.toFixed(4);
+    }
+    window.addEventListener("resize", () => {
+      if (document.getElementById("summaryTab").style.display !== "none") {
+        setPreviewScale();
+        clearTimeout(pageCheckTimer);
+        pageCheckTimer = setTimeout(autoOptimizeSpacing, 100);
+      }
+    });
+    function copyText() {
+      render(false);
+      const t = document.getElementById("paper").innerText.replace(/\n{3,}/g, "\n\n");
+      navigator.clipboard.writeText(t).then(
+        () => toast("Summary copied to clipboard"),
+        () => toast("Copy failed — long-press to select in View summary")
+      );
+    }
+    function toast(msg) {
+      let el = document.createElement("div");
+      el.textContent = msg;
+      el.style.cssText = "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#14425f;color:#fff;padding:10px 18px;border-radius:8px;font-size:14px;z-index:999;box-shadow:0 3px 10px rgba(0,0,0,.25);max-width:90vw;text-align:center";
+      document.body.appendChild(el); setTimeout(() => el.remove(), 2400);
+    }
+
+    /* ---------- A4 page-count measurement, auto-fit & print ---------- */
+    const A4_HEIGHT_PX = 1122.5;
+
+    function autoOptimizeSpacing() {
+      const paper = document.getElementById("paper");
+      if (!paper) return;
+
+      const summaryTab = document.getElementById("summaryTab");
+      const wasHidden = summaryTab && summaryTab.style.display === "none";
+      if (wasHidden) {
+        summaryTab.style.visibility = "hidden";
+        summaryTab.style.position = "absolute";
+        summaryTab.style.left = "-9999px";
+        summaryTab.style.display = "block";
+        summaryTab.style.width = "850px";
+      }
+
+      paper.style.zoom = "1";
+      paper.style.transform = "none";
+      paper.style.width = "210mm";
+      paper.style.maxWidth = "none";
+
+      function runPaginationFor(cls) {
+        unpaginatePreview();
+        paper.className = "paper" + (cls ? " " + cls : "");
+        paper.style.zoom = "1";
+        paper.style.transform = "none";
+        paper.style.width = "210mm";
+        paper.style.maxWidth = "none";
+        paginatePreview();
+        const pages = paper.querySelectorAll(".paper-page");
+        return pages.length;
+      }
+
+      let count = runPaginationFor("");
+
+      if (count === 1) {
+        let relCount = runPaginationFor("relaxed");
+        if (relCount === 1) {
+          count = 1;
+        } else {
+          count = runPaginationFor("");
+        }
+      } else if (count > 2) {
+        count = runPaginationFor("compact");
+        if (count > 2) {
+          count = runPaginationFor("compact2");
+        }
+      }
+
+      if (wasHidden) {
+        summaryTab.style.display = "none";
+        summaryTab.style.position = "";
+        summaryTab.style.left = "";
+        summaryTab.style.width = "";
+        summaryTab.style.visibility = "";
+      }
+
+      setPreviewScale();
+      updatePageBanner();
+    }
+
+    function unpaginatePreview() {
+      const paper = document.getElementById("paper");
+      if (!paper) return;
+      const pages = Array.from(paper.querySelectorAll(".paper-page"));
+      if (!pages.length) return;
+      const content = pages.flatMap(page => Array.from(page.children));
+      content.forEach(block => {
+        block.classList.remove("signature-footer");
+        if (block.parentElement) block.parentElement.classList.remove("signature-footer-page");
+      });
+      paper.replaceChildren(...content);
+    }
+
+    function paginatePreview() {
+      const paper = document.getElementById("paper");
+      if (!paper || paper.querySelector(".paper-page")) return;
+      const blocks = Array.from(paper.children);
+      if (!blocks.length) return;
+      const pages = [];
+      let page = null;
+      const pageHeight = A4_HEIGHT_PX;
+
+      const newPage = () => {
+        page = document.createElement("div");
+        page.className = "paper-page";
+        page.style.width = "210mm";
+        page.style.minHeight = "0";
+        page.style.height = `${pageHeight}px`;
+        paper.appendChild(page);
+        pages.push(page);
+      };
+
+      const fits = () => {
+        if (!page) return true;
+        const pageTop = page.getBoundingClientRect().top;
+        const paddingBottom = parseFloat(getComputedStyle(page).paddingBottom) || 60;
+        const contentBottom = Math.max(0, ...Array.from(page.children)
+          .filter(child => getComputedStyle(child).position !== "absolute")
+          .map(child => child.getBoundingClientRect().bottom - pageTop));
+        return contentBottom <= pageHeight - paddingBottom + 1;
+      };
+
+      const continuationTitle = title =>
+        `${(title || "Section").replace(/\s+\(continued\)(?:\s+\(continued\))*$/i, "")} (continued)`;
+
+      const addSection = sectionBlock => {
+        paper.removeChild(sectionBlock);
+        const heading = sectionBlock.querySelector(":scope > h3");
+        const children = Array.from(sectionBlock.children).filter(child => child !== heading);
+        let fragment = document.createElement("div");
+        fragment.className = "sec";
+        if (heading) fragment.appendChild(heading);
+        page.appendChild(fragment);
+
+        if (!fits() && page.children.length > 1) {
+          page.removeChild(fragment);
+          newPage();
+          fragment = document.createElement("div");
+          fragment.className = "sec";
+          if (heading) fragment.appendChild(heading);
+          page.appendChild(fragment);
+        }
+
+        children.forEach(child => {
+          if (child.matches(".inv-table-wrap")) {
+            const table = child.querySelector("table");
+            const rows = table ? Array.from(table.querySelectorAll("tbody tr")) : [];
+            if (table && rows.length) {
+              const addTablePage = () => {
+                const wrapper = document.createElement("div");
+                wrapper.className = "inv-table-wrap";
+                const tablePart = table.cloneNode(false);
+                const head = table.querySelector("thead");
+                if (head) tablePart.appendChild(head.cloneNode(true));
+                tablePart.appendChild(document.createElement("tbody"));
+                wrapper.appendChild(tablePart);
+                fragment.appendChild(wrapper);
+                return tablePart.querySelector("tbody");
+              };
+              let tableBody = addTablePage();
+              rows.forEach(row => {
+                tableBody.appendChild(row);
+                if (!fits() && tableBody.children.length > 1) {
+                  tableBody.removeChild(row);
+                  newPage();
+                  fragment = document.createElement("div");
+                  fragment.className = "sec";
+                  const continuedHeading = document.createElement("h3");
+                  continuedHeading.textContent = continuationTitle(heading && heading.textContent);
+                  fragment.appendChild(continuedHeading);
+                  page.appendChild(fragment);
+                  tableBody = addTablePage();
+                  tableBody.appendChild(row);
+                }
+              });
+              return;
+            }
+          }
+          fragment.appendChild(child);
+          if (!fits() && fragment.children.length > 1) {
+            fragment.removeChild(child);
+            newPage();
+            fragment = document.createElement("div");
+            fragment.className = "sec";
+            const continuedHeading = document.createElement("h3");
+            continuedHeading.textContent = continuationTitle(heading && heading.textContent);
+            fragment.appendChild(continuedHeading);
+            page.appendChild(fragment);
+            fragment.appendChild(child);
+          }
+        });
+      };
+
+      function placeSignature(signature) {
+        const pinned = signature.classList.contains("signature-pinned");
+        if (pinned) {
+          page.classList.add("signature-footer-page");
+          signature.classList.add("signature-footer");
+        }
+        page.appendChild(signature);
+        if (!pinned) {
+          if (!fits() && page.children.length > 1) {
+            page.removeChild(signature);
+            newPage();
+            page.appendChild(signature);
+          }
+          return;
+        }
+
+        const pageBounds = page.getBoundingClientRect();
+        const signatureRect = signature.getBoundingClientRect();
+        const flowBottom = Math.max(pageBounds.top, ...Array.from(page.children)
+          .filter(child => child !== signature)
+          .map(child => child.getBoundingClientRect().bottom));
+        const signatureTop = signatureRect.top;
+
+        if (flowBottom > signatureTop - 6) {
+          page.removeChild(signature);
+          page.classList.remove("signature-footer-page");
+          signature.classList.remove("signature-footer");
+          const previousBlock = page.children.length > 1 ? page.lastElementChild : null;
+          newPage();
+          if (previousBlock) {
+            page.appendChild(previousBlock);
+            if (pinned) {
+              page.classList.add("signature-footer-page");
+              signature.classList.add("signature-footer");
+            }
+          }
+          page.appendChild(signature);
+        }
+      }
+
+      blocks.forEach(block => {
+        if (!page) newPage();
+        if (block.classList.contains("sec")) {
+          addSection(block);
+        } else if (block.classList.contains("sign-row")) {
+          placeSignature(block);
+        } else {
+          page.appendChild(block);
+          if (!fits() && page.children.length > 1) {
+            page.removeChild(block);
+            newPage();
+            page.appendChild(block);
+          }
+        }
+      });
+
+      pages.forEach(currentPage => {
+        currentPage.style.minHeight = "";
+        currentPage.style.height = "";
+      });
+      paper.dataset.pageCount = String(pages.length);
+    }
+
+    function updatePageBanner() {
+      const banner = document.getElementById("pageBanner");
+      if (!banner) return;
+      const paper = document.getElementById("paper");
+      const isCompact2 = paper.classList.contains("compact2");
+      const isCompact = paper.classList.contains("compact");
+      const isRelaxed = paper.classList.contains("relaxed");
+      const pages = Math.max(1, Number(paper.dataset.pageCount) || paper.querySelectorAll(".paper-page").length);
+      let note = "";
+      if (isCompact2) note = " · Auto-optimized (Level 2 compact)";
+      else if (isCompact) note = " · Auto-optimized (Compact fit)";
+      else if (isRelaxed) note = " · Relaxed spacing";
+
+      if (pages <= 2) {
+        banner.style.display = "flex";
+        banner.className = "pagebanner no-print ok";
+        banner.innerHTML = `<span>📄 <b>A4 print preview</b>: ${pages} A4 page${pages > 1 ? "s" : ""}${note}.</span>`;
+      } else {
+        banner.style.display = "flex";
+        banner.className = "pagebanner no-print warn";
+        banner.innerHTML = `<span>📄 <b>A4 print preview</b>: ${pages} pages${note}.</span>`;
+      }
+    }
+
+    function checkAndPrint() {
+      render(false);
+      clearTimeout(pageCheckTimer);
+      autoOptimizeSpacing();
+      const pdfName = getPdfName();
+      if (!pdfName) return;
+      const paper = document.getElementById("paper");
+      const pages = Math.max(1, Number(paper.dataset.pageCount) || paper.querySelectorAll(".paper-page").length);
+      if (pages <= 2) { printWithFileName(pdfName); return; }
+      const proceed = confirm(`⚠ Content spans ${pages} A4 pages.\n\nThe recommended maximum is 2 pages. Tap OK to print anyway, or Cancel to return and shorten the summary.`);
+      if (proceed) printWithFileName(pdfName);
+    }
+
+    function getPdfName() {
+      const enteredName = val("name") || prompt("Enter a name for the PDF filename (this will not be added to the summary):");
+      if (!enteredName || !enteredName.trim()) return null;
+      const cleanName = enteredName.trim().replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+      return cleanName ? `DS_${cleanName}.pdf` : null;
+    }
+
+    function printWithFileName(fileName) {
+      showTab("summary");
+      const previousTitle = document.title;
+      document.title = fileName.replace(/\.pdf$/i, "");
+      const restoreTitle = () => {
+        document.title = previousTitle;
+        window.removeEventListener("afterprint", restoreTitle);
+        document.body.classList.remove("printing");
+      };
+      window.addEventListener("afterprint", restoreTitle);
+      document.body.classList.add("printing");
+      const printDelay = isSafariBrowser() || isIOSDevice() ? 180 : 80;
+      setTimeout(() => {
+        window.print();
+        setTimeout(restoreTitle, 2000);
+      }, printDelay);
+    }
+
+    async function generatePdf(share, requestedName = "") {
+      render(false);
+      clearTimeout(pageCheckTimer);
+      autoOptimizeSpacing();
+      const paper = document.getElementById("paper");
+      const name = val("name") || requestedName || prompt("Enter a name for the PDF filename (this will not be added to the summary):");
+      if (!name || !name.trim()) return;
+      const cleanName = name.trim().replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+      if (!cleanName) return;
+      const fileName = `DS_${cleanName}.pdf`;
+
+      if (typeof html2pdf !== "function") {
+        toast("PDF generator is unavailable — using browser print.");
+        printWithFileName(fileName);
+        return;
+      }
+
+      const exportPaper = paper.cloneNode(true);
+      exportPaper.querySelectorAll(".a4-page-guide").forEach(el => el.remove());
+      exportPaper.classList.add("pdf-export-paper");
+
+      let exportPages = Array.from(exportPaper.querySelectorAll(".paper-page"));
+      if (exportPages.length === 0) {
+        const page = document.createElement("div");
+        page.className = "paper-page";
+        while (exportPaper.firstChild) page.appendChild(exportPaper.firstChild);
+        exportPaper.appendChild(page);
+        exportPages = [page];
+      }
+
+      exportPages.forEach(p => {
+        p.className = `paper-page ${paper.className}`;
+        p.style.cssText = "box-sizing:border-box !important; width:210mm !important; height:1120px !important; min-height:0 !important; max-height:1120px !important; padding:7mm 7mm 8mm !important; margin:0 !important; overflow:hidden !important; position:relative !important; box-shadow:none !important; border:0 !important; border-radius:0 !important; background:#ffffff !important; page-break-after:auto !important; break-after:auto !important;";
+      });
+
+      const isIOS = isIOSDevice();
+      const isSafari = isSafariBrowser();
+      const canvasScale = (isIOS || isSafari) ? 1.5 : 2;
+
+      try {
+        toast(share ? "Generating PDF to share..." : "Generating PDF...");
+        const opt = {
+          margin: 0,
+          filename: fileName,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: {
+            scale: canvasScale,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: 1200,
+            backgroundColor: "#ffffff"
+          },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+        };
+
+        const worker1 = html2pdf().set(opt).from(exportPages[0]);
+        await worker1.toCanvas();
+        const pdf = await worker1.toPdf().get("pdf");
+
+        while (pdf.internal.getNumberOfPages() > 1) {
+          pdf.deletePage(pdf.internal.getNumberOfPages());
+        }
+
+        for (let i = 1; i < exportPages.length; i++) {
+          const workerNext = html2pdf().set(opt).from(exportPages[i]);
+          const canvasNext = await workerNext.toCanvas().get("canvas");
+          pdf.addPage();
+          const imgData = canvasNext.toDataURL("image/jpeg", 0.98);
+          pdf.addImage(imgData, "JPEG", 0, 0, 210, 297);
+        }
+
+        const pdfBlob = pdf.output("blob");
+        let pdfFile = null;
+        try {
+          pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
+        } catch (e) {
+          pdfFile = pdfBlob;
+          pdfFile.name = fileName;
+        }
+
+        if (share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+          try {
+            await navigator.share({
+              title: `Discharge Summary — ${name}`,
+              text: `Discharge Summary for ${name}`,
+              files: [pdfFile]
+            });
+            toast("PDF shared successfully ✓");
+            return;
+          } catch (shareErr) {
+            if (shareErr.name === "AbortError") return;
+            console.warn("navigator.share failed, falling back to download:", shareErr);
+          }
+        }
+
+        const blobUrl = URL.createObjectURL(pdfBlob);
+
+        if (isIOS) {
+          const win = window.open(blobUrl, "_blank");
+          if (!win) window.location.href = blobUrl;
+          toast("PDF opened in Safari viewer — tap Share to save or send ✓");
+        } else {
+          const link = document.createElement("a");
+          link.href = blobUrl;
+          link.download = fileName;
+          link.style.display = "none";
+          document.body.appendChild(link);
+          link.click();
+          setTimeout(() => {
+            link.remove();
+            URL.revokeObjectURL(blobUrl);
+          }, 60000);
+          toast("PDF downloaded ✓");
+        }
+      } catch (e) {
+        console.error("PDF generation error:", e);
+        if (e.name !== "AbortError") {
+          toast("Direct PDF failed — opening Print");
+          printWithFileName(fileName);
+        }
+      } finally {
+        exportPaper.remove();
+      }
+    }
+
+    /* ---------- PWA install & scoped v2 service worker ---------- */
+    let deferredPrompt = null;
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById("installBtn");
+      if (btn) btn.style.display = "flex";
+    });
+    async function doInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        const btn = document.getElementById("installBtn");
+        if (btn) btn.style.display = "none";
+        return;
+      }
+      if (isIOSDevice()) {
+        alert("To install DS Builder v2 on iPhone / iPad:\n\n1. Tap the Share button ⎋ in Safari's toolbar.\n2. Scroll down and tap 'Add to Home Screen' ➕.\n3. Tap 'Add' in the top right.\n\nThe app works offline and syncs when connected!");
+        return;
+      }
+      toast("Use your browser menu → 'Add to Home screen' to install");
+    }
+    if ("serviceWorker" in navigator) {
+      const prevSwUrl = navigator.serviceWorker.controller ? (navigator.serviceWorker.controller.scriptURL || "") : "";
+      const v2SwUrl = new URL("./sw.js", window.location.href).href;
+      const hadV2Controller = prevSwUrl === v2SwUrl;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (!hadV2Controller || window.__dsV2UpdateReloading || !navigator.serviceWorker.controller) return;
+        window.__dsV2UpdateReloading = true;
+        setTimeout(async () => {
+          await saveCurrentRecordNow(false);
+          window.location.reload();
+        }, 700);
+      });
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js", { scope: "./", updateViaCache: "none" })
+          .then(registration => registration.update())
+          .catch(error => console.error("v2 Service worker registration failed:", error));
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          navigator.serviceWorker.ready.then(registration => registration.update()).catch(() => {});
+          if (currentUser && sbClient && navigator.onLine) {
+            syncNow(false);
+          }
+        }
+      });
+    }
+
+    /* ---------- Menu ---------- */
+    function toggleMenu() {
+      document.getElementById("menuDropdown").classList.toggle("open");
+    }
+    function closeMenu() {
+      document.getElementById("menuDropdown").classList.remove("open");
+    }
+    document.addEventListener("click", e => {
+      if (!e.target.closest(".menu-wrap")) closeMenu();
+    });
+
+    /* ---------- Export & Import JSON ---------- */
+    function exportDraft() {
+      const d = collectDraft();
+      const patientName = (val("name") || "patient").trim().replace(/[^a-zA-Z0-9]+/g, "_");
+      const blob = new Blob([JSON.stringify(d, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      a.href = url;
+      a.download = `DS_${patientName}_draft.json`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 60000);
+      toast("Patient draft exported as JSON ✓");
+    }
+
+    function importDraft() {
+      const inp = document.createElement("input");
+      inp.type = "file"; inp.accept = ".json,application/json";
+      inp.onchange = async () => {
+        const f = inp.files[0]; if (!f) return;
+        const text = await f.text();
+        const ok = await loadJsonTemplate(text, true);
+        if (ok) {
+          toast("Draft loaded into editor & Dashboard ✓");
+          showTab("form");
+        } else toast("Invalid draft file");
+      };
+      inp.click();
+    }
+
+    async function exportTemplate() {
+      const d = safeParse(await store.get(getDefaultsKey())) || {};
+      const blob = new Blob([JSON.stringify(d, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "ds-defaults.json";
+      a.click();
+      toast("Defaults exported as ds-defaults.json");
+    }
+
+    function importTemplate() {
+      const inp = document.createElement("input");
+      inp.type = "file"; inp.accept = ".json,application/json";
+      inp.onchange = async () => {
+        const f = inp.files[0]; if (!f) return;
+        const text = await f.text();
+        const ok = await loadJsonTemplate(text, false);
+        if (ok) toast("Template imported and applied ✓");
+        else toast("Invalid template file");
+      };
+      inp.click();
+    }
+
+    async function doLocalTemplate() {
+      if (document.getElementById("college").value || document.getElementById("preparedBy").value) {
+        if (!confirm("Load default template? Existing entries will be overwritten.")) return;
+      }
+      try {
+        const res = await fetch("../templates/default-template.json");
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const d = await res.json();
+        const ok = await loadJsonTemplate(d, false);
+        if (ok) toast("Default template loaded ✓");
+        else throw new Error("Template parsing failed");
+      } catch (e) {
+        const inp = document.createElement("input");
+        inp.type = "file"; inp.accept = ".json,application/json";
+        inp.onchange = async () => {
+          const f = inp.files[0]; if (!f) return;
+          const text = await f.text();
+          const ok = await loadJsonTemplate(text, false);
+          if (ok) toast("Template loaded ✓");
+          else toast("Invalid file");
+        };
+        inp.click();
+      }
+    }
+
+    async function loadJsonTemplate(data, startNewRecord = false) {
+      if (!data) return false;
+      const raw = typeof data === "string" ? data.trim().replace(/^\ufeff/, "") : data;
+      const parsed = typeof raw === "string" ? safeParse(raw) : raw;
+      if (!parsed || typeof parsed !== "object") return false;
+
+      let payload = parsed;
+      if (payload.draft && typeof payload.draft === "object") payload = payload.draft;
+      else if (payload.template && typeof payload.template === "object") payload = payload.template;
+      else if (payload.defaults && typeof payload.defaults === "object") payload = payload.defaults;
+      else if (Array.isArray(payload) && payload[0]) payload = payload[0];
+
+      let fields = (payload.f && typeof payload.f === "object") ? payload.f : payload;
+
+      if (startNewRecord) {
+        currentRecordId = generateUUID();
+        currentRecordStatus = "incomplete";
+        currentRecordCreatedAt = new Date().toISOString();
+        hasRecordPersisted = true;
+      }
+
+      const defaults = {};
+      DEFAULT_FIELDS.forEach(id => {
+        if (fields[id] != null && String(fields[id]).trim()) defaults[id] = fields[id];
+      });
+      if (Object.keys(defaults).length > 0) {
+        applyDefaults(defaults);
+        try { await store.set(getDefaultsKey(), JSON.stringify(defaults)); } catch (e) { }
+      }
+
+      suppressSave = true;
+      try {
+        FIELDS.forEach(id => {
+          if (fields[id] != null) setVal_(id, fields[id]);
+        });
+        SELECT_FIELDS.forEach(id => {
+          if (fields[id] != null) setVal_(id, fields[id]);
+        });
+
+        if (Array.isArray(payload.complaints)) complaints = [...payload.complaints];
+        if (Array.isArray(payload.treatment)) treatment = [...payload.treatment];
+        if (Array.isArray(payload.rxMeds)) rxMeds = [...payload.rxMeds];
+        if (Array.isArray(payload.pastHistory)) pastHistory = [...payload.pastHistory];
+        if (Array.isArray(payload.rxHistory)) rxHistory = [...payload.rxHistory];
+        if (Array.isArray(payload.invDates)) invDates = [...payload.invDates];
+        if (Array.isArray(payload.invParams)) invParams = [...payload.invParams];
+        if (payload.invSeq != null) invSeq = payload.invSeq;
+        if (payload.ynState && typeof payload.ynState === "object") {
+          ynState = { physio: "", equip: "", dress: "", ...payload.ynState };
+        }
+        ["physio", "equip", "dress"].forEach(k => setYNui(k, ynState[k] || ""));
+        if (payload.signaturePinned != null) {
+          signaturePinned = payload.signaturePinned !== false;
+        }
+        if (payload.includeEmpty && typeof payload.includeEmpty === "object") {
+          Object.keys(includeEmpty).forEach(k => delete includeEmpty[k]);
+          Object.assign(includeEmpty, payload.includeEmpty);
+        }
+        if (payload.includeEmptyLines && typeof payload.includeEmptyLines === "object") {
+          Object.keys(includeEmptyLines).forEach(k => delete includeEmptyLines[k]);
+          Object.assign(includeEmptyLines, payload.includeEmptyLines);
+        }
+
+        renderComplaints(); renderTx(); renderRx(); renderInvEditor(); renderPast(); renderRxHistory();
+        if (!val("dod") && !("dod" in fields)) setVal_("dod", todayISO());
+        render(false);
+        updateFormSectionStates();
+      } finally {
+        suppressSave = false;
+      }
+
+      await saveCurrentRecordNow(Boolean(startNewRecord));
+      return true;
+    }
+
+    async function shareDoc() {
+      await generatePdf(true);
+    }
+
+    /* live update on any form input */
+    document.addEventListener("input", e => {
+      if (e.target.closest("#dashboardTab") || e.target.closest(".modal-backdrop")) return;
+      if (e.target.closest("#invEditor") || e.target.closest(".include-toggle") || e.target.closest(".signature-pin")) return;
+      render();
+    });
+
+    /* ---------- isolated v2 persistence ---------- */
+    const FIELDS = ["college", "address", "dept", "summaryType", "name", "age", "sex", "ipno",
+      "doa", "dod", "unitPrefix", "modeOfDischarge",
+      "diagnosis", "hopi",
+      "generalExam", "vBP", "vPR", "vRR", "vSpO2", "vTemp", "vGRBS", "seCVS", "seRS", "sePA", "seCNS",
+      "invOther", "opinions", "course", "condition", "condExtra",
+      "diet", "physicalActivity", "otherNeeds", "advice", "emergencyContact", "review", "warning",
+      "preparedBy", "chief", "signDateTime"];
+    const SELECT_FIELDS = ["unitRoman"];
+    const DEFAULT_FIELDS = ["college", "address", "dept", "summaryType", "unitPrefix", "unitRoman", "chief", "preparedBy", "advice", "review", "warning"];
+    const PATIENT_FIELDS = FIELDS.filter(f => !DEFAULT_FIELDS.includes(f));
+    const SEED = {
+      advice: "Take medications as advised.\nAdequate rest and oral fluids.\nTake diet as advised.",
+      review: "Review in Medicine OPD after 1 week with reports (or earlier if needed).",
+      warning: "Fever not subsiding, breathlessness, chest pain, giddiness, reduced urine output, bleeding, or drowsiness — report to casualty immediately."
+    };
+
+    const store = (() => {
+      let dbPromise;
+      function openDb() {
+        if (dbPromise) return dbPromise;
+        dbPromise = new Promise((resolve, reject) => {
+          if (!("indexedDB" in window)) { reject(new Error("IndexedDB unavailable")); return; }
+          const request = indexedDB.open("ds-builder-v2", 1);
+          request.onupgradeneeded = () => request.result.createObjectStore("values");
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error || new Error("IndexedDB open failed"));
+        });
+        return dbPromise;
+      }
+      function fallbackGet(k) {
+        try { return localStorage.getItem(k); } catch (e) { return null; }
+      }
+      function fallbackSet(k, v) {
+        try { localStorage.setItem(k, v); } catch (e) { toast("Storage is unavailable; changes may not persist."); }
+      }
+      return {
+        async get(k) {
+          try {
+            const db = await openDb();
+            return await new Promise((resolve, reject) => {
+              const request = db.transaction("values", "readonly").objectStore("values").get(k);
+              request.onsuccess = () => resolve(request.result === undefined ? fallbackGet(k) : request.result);
+              request.onerror = () => reject(request.error);
+            });
+          } catch (e) { return fallbackGet(k); }
+        },
+        async set(k, v) {
+          try {
+            const db = await openDb();
+            await new Promise((resolve, reject) => {
+              const request = db.transaction("values", "readwrite").objectStore("values").put(v, k);
+              request.onsuccess = resolve;
+              request.onerror = () => reject(request.error);
+            });
+          } catch (e) { fallbackSet(k, v); }
+        },
+        async remove(k) {
+          try {
+            const db = await openDb();
+            await new Promise((resolve, reject) => {
+              const request = db.transaction("values", "readwrite").objectStore("values").delete(k);
+              request.onsuccess = resolve;
+              request.onerror = () => reject(request.error);
+            });
+          } catch (e) {
+            try { localStorage.removeItem(k); } catch (removeError) { toast("Could not clear stored data."); }
+          }
+        }
+      };
+    })();
+
+    async function requestPersistentStorage() {
+      if (!navigator.storage || !navigator.storage.persist) {
+        toast("Persistent storage is not supported by this browser.");
+        return;
+      }
+      try {
+        if (!confirm("Allow DS Builder v2 to request persistent browser storage so saved drafts and templates are less likely to be removed?")) return;
+        if (navigator.storage.persisted && await navigator.storage.persisted()) {
+          toast("Persistent storage is already enabled ✓");
+          return;
+        }
+        const granted = await navigator.storage.persist();
+        toast(granted ? "Persistent storage enabled ✓" : "Browser did not grant persistent storage");
+      } catch (e) {
+        toast("Could not request persistent storage.");
+      }
+    }
+
+    function safeParse(s) { try { return JSON.parse(s); } catch (e) { return null; } }
+    function setVal_(id, v) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = DISPLAY_DATE_FIELDS.has(id) ? displayDateValue(v) : (v == null ? "" : v);
+    }
+    function onLogo(e) {
+      const f = e.target.files && e.target.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { logoData = r.result; render(false); store.set("ds-v2:logo", logoData); };
+      r.readAsDataURL(f);
+    }
+
+    /* ---------- Scope keys (isolates shared-browser users & guest drafts) ---------- */
+    function getOwnerScope() {
+      return currentUser && currentUser.id ? `user:${currentUser.id}` : "guest";
+    }
+    function getRecordsKey(scope = getOwnerScope()) { return `ds-v2:records:${scope}`; }
+    function getDeletesKey(scope = getOwnerScope()) { return `ds-v2:deletes:${scope}`; }
+    function getActiveIdKey(scope = getOwnerScope()) { return `ds-v2:active:${scope}`; }
+    function getDefaultsKey(scope = getOwnerScope()) { return `ds-v2:defaults:${scope}`; }
+
+    function hasPatientContent(payload) {
+      if (!payload || !payload.f) return false;
+      const f = payload.f;
+      const keysToCheck = PATIENT_FIELDS.filter(k => k !== "dod" && k !== "modeOfDischarge");
+      if (keysToCheck.some(k => String(f[k] || "").trim().length > 0)) return true;
+      if ((payload.complaints || []).length > 0) return true;
+      if ((payload.pastHistory || []).length > 0) return true;
+      if ((payload.rxHistory || []).length > 0) return true;
+      if ((payload.treatment || []).length > 0) return true;
+      if ((payload.rxMeds || []).length > 0) return true;
+      if ((payload.invDates || []).length > 0) return true;
+      if ((payload.invParams || []).length > 0) return true;
+      return false;
+    }
+
+    function collectDraft() {
+      const f = {}; FIELDS.forEach(id => f[id] = document.getElementById(id).value);
+      SELECT_FIELDS.forEach(id => f[id] = document.getElementById(id).value);
+      return {
+        f, complaints, treatment, rxMeds, invDates, invParams, invSeq,
+        pastHistory, rxHistory, ynState, signaturePinned,
+        includeEmpty: { ...includeEmpty },
+        includeEmptyLines: { ...includeEmptyLines }
+      };
+    }
+
+    function resetEditorFieldsOnly() {
+      document.getElementById("college").value = "Government Medical College Hospital";
+      document.getElementById("address").value = "Omandurar Government Estate, Chennai - 02";
+      document.getElementById("dept").value = "Department of General Medicine";
+      document.getElementById("summaryType").selectedIndex = 0;
+      document.getElementById("unitPrefix").value = "M-";
+      document.getElementById("unitRoman").value = "IV";
+      document.getElementById("modeOfDischarge").selectedIndex = 0;
+
+      PATIENT_FIELDS.forEach(id => setVal_(id, ""));
+      setVal_("advice", SEED.advice);
+      setVal_("review", SEED.review);
+      setVal_("warning", SEED.warning);
+      setVal_("preparedBy", "");
+      setVal_("chief", "");
+
+      complaints = []; treatment = []; rxMeds = [];
+      invDates = []; invParams = []; invSeq = 0;
+      pastHistory = []; rxHistory = [];
+      ynState = { physio: "", equip: "", dress: "" };
+      ["physio", "equip", "dress"].forEach(k => setYNui(k, ""));
+      signaturePinned = true;
+      Object.keys(includeEmpty).forEach(k => delete includeEmpty[k]);
+      Object.keys(includeEmptyLines).forEach(k => delete includeEmptyLines[k]);
+    }
+
+    function restoreDraft(o, opts = {}) {
+      if (!o) return;
+      suppressSave = true;
+      try {
+        resetEditorFieldsOnly();
+        if (o.f) {
+          FIELDS.forEach(id => { if (id in o.f) setVal_(id, o.f[id]); });
+          SELECT_FIELDS.forEach(id => { if (o.f[id] != null) setVal_(id, o.f[id]); });
+        }
+        complaints = Array.isArray(o.complaints) ? [...o.complaints] : [];
+        treatment = Array.isArray(o.treatment) ? [...o.treatment] : [];
+        rxMeds = Array.isArray(o.rxMeds) ? [...o.rxMeds] : [];
+        invDates = Array.isArray(o.invDates) ? JSON.parse(JSON.stringify(o.invDates)) : [];
+        invParams = Array.isArray(o.invParams) ? JSON.parse(JSON.stringify(o.invParams)) : [];
+        invSeq = o.invSeq || 0;
+        pastHistory = Array.isArray(o.pastHistory) ? [...o.pastHistory] : [];
+        rxHistory = Array.isArray(o.rxHistory) ? [...o.rxHistory] : [];
+        ynState = { physio: "", equip: "", dress: "", ...(o.ynState || {}) };
+        signaturePinned = o.signaturePinned !== false;
+
+        if (o.includeEmpty && typeof o.includeEmpty === "object") {
+          Object.assign(includeEmpty, o.includeEmpty);
+        }
+        if (o.includeEmptyLines && typeof o.includeEmptyLines === "object") {
+          Object.assign(includeEmptyLines, o.includeEmptyLines);
+        }
+
+        renderComplaints(); renderTx(); renderRx(); renderInvEditor(); renderPast(); renderRxHistory();
+        ["physio", "equip", "dress"].forEach(k => setYNui(k, ynState[k] || ""));
+        const hasDodKey = Boolean(o.f && "dod" in o.f);
+        if (!opts.preserveDod && !val("dod") && !hasDodKey) {
+          setVal_("dod", todayISO());
+        }
+        render(false);
+        updateFormSectionStates();
+      } finally {
+        suppressSave = false;
+      }
+    }
+
+    function setYNui(key, v) {
+      const map = { physio: "ynPhysio", equip: "ynEquip", dress: "ynDress" };
+      const box = document.getElementById(map[key]);
+      if (box) [...box.children].forEach(b => b.classList.toggle("sel", Boolean(v) && b.textContent === v));
+    }
+
+    function applyDefaults(d) {
+      if (!d) return;
+      DEFAULT_FIELDS.forEach(id => { if (id in d && d[id] != null) setVal_(id, d[id]); });
+    }
+
+    async function saveDefaults() {
+      const d = {}; DEFAULT_FIELDS.forEach(id => d[id] = document.getElementById(id).value);
+      await store.set(getDefaultsKey(), JSON.stringify(d));
+      if (currentUser && sbClient && navigator.onLine) {
+        await pushUserSettingsToCloud(d);
+      }
+      toast("Saved as your defaults" + (currentUser ? " & synced ✓" : ""));
+    }
+
+    async function getActiveDefaults() {
+      let def = safeParse(await store.get(getDefaultsKey()));
+      if (!def && currentUser) {
+        def = safeParse(await store.get(getDefaultsKey("guest")));
+      }
+      return def;
+    }
+
+    /* ---------- Multi-Patient Record Persistence & Cloud Save ---------- */
+    function buildRecordFromEditor(existing = null) {
+      const payload = collectDraft();
+      const f = payload.f || {};
+      const nowIso = new Date().toISOString();
+      const diagPreview = (f.diagnosis || "")
+        .split("\n")
+        .map(s => s.trim())
+        .filter(Boolean)
+        .join(" • ")
+        .slice(0, 240);
+
+      return {
+        id: currentRecordId || generateUUID(),
+        user_id: currentUser ? currentUser.id : null,
+        status: currentRecordStatus || "incomplete",
+        patient_name: (f.name || "").trim(),
+        ip_no: (f.ipno || "").trim(),
+        doa: normalizeDateValue(f.doa),
+        dod: normalizeDateValue(f.dod),
+        unit: ((f.unitPrefix || "") + (f.unitRoman || "")).trim(),
+        diagnosis_preview: diagPreview,
+        payload,
+        created_at: (existing && existing.created_at) || currentRecordCreatedAt || nowIso,
+        updated_at: nowIso,
+        synced_at: existing ? existing.synced_at : null,
+        dirty: true
+      };
+    }
+
+    function scheduleSave() {
+      clearTimeout(saveTimer);
+      updateSaveStatusBadge("pending");
+      saveTimer = setTimeout(() => {
+        saveCurrentRecordNow(false);
+      }, 500);
+    }
+
+    async function saveCurrentRecordNow(explicit = false) {
+      if (suppressSave && !explicit) return null;
+      clearTimeout(saveTimer);
+
+      const draft = collectDraft();
+      const idx = currentRecordId ? records.findIndex(r => r.id === currentRecordId) : -1;
+
+      if (!explicit && idx === -1 && !hasRecordPersisted && !hasPatientContent(draft)) {
+        updateSaveStatusBadge(currentUser ? "synced" : "local");
+        return null;
+      }
+
+      if (!currentRecordId) currentRecordId = generateUUID();
+      if (!currentRecordCreatedAt) currentRecordCreatedAt = new Date().toISOString();
+      hasRecordPersisted = true;
+
+      const existing = idx >= 0 ? records[idx] : null;
+      const updated = buildRecordFromEditor(existing);
+
+      if (idx >= 0) {
+        records[idx] = updated;
+      } else {
+        records.unshift(updated);
+      }
+
+      await persistScopedRecords();
+      await store.set(getActiveIdKey(), updated.id);
+
+      updateActivePatientBar();
+      if (activeTab === "dashboard") renderDashboard();
+
+      if (currentUser && sbClient) {
+        if (explicit) {
+          if (navigator.onLine) {
+            await upsertRecordToSupabase(updated);
+            toast("Summary saved to Supabase ✓");
+          } else {
+            syncState = "offline";
+            updateSyncIndicators();
+            toast("Offline — draft saved on device & queued for sync");
+          }
+        } else {
+          updateSaveStatusBadge(navigator.onLine ? "syncing" : "offline");
+          clearTimeout(cloudSaveTimer);
+          cloudSaveTimer = setTimeout(() => {
+            const latest = records.find(r => r.id === updated.id);
+            if (latest && latest.dirty && currentUser && sbClient && navigator.onLine) {
+              upsertRecordToSupabase(latest);
+            }
+          }, 1200);
+        }
+      } else {
+        updateSaveStatusBadge("local");
+        if (explicit) toast("Patient draft saved on device ✓");
+      }
+
+      return updated;
+    }
+
+    async function persistScopedRecords(scope = getOwnerScope()) {
+      await store.set(getRecordsKey(scope), JSON.stringify(records));
+      await store.set(getDeletesKey(scope), JSON.stringify(pendingDeletes));
+    }
+
+    async function loadScopedRecords() {
+      const scope = getOwnerScope();
+      const raw = safeParse(await store.get(getRecordsKey(scope)));
+      const delRaw = safeParse(await store.get(getDeletesKey(scope)));
+      records = Array.isArray(raw) ? raw : [];
+      pendingDeletes = Array.isArray(delRaw) ? delRaw : [];
+    }
+
+    async function checkGuestDraftsForMigration() {
+      if (!currentUser) {
+        guestDraftsPromptVisible = false;
+        guestDraftsCount = 0;
+        return;
+      }
+      const guestRaw = safeParse(await store.get(getRecordsKey("guest")));
+      const guestList = Array.isArray(guestRaw) ? guestRaw : [];
+      guestDraftsCount = guestList.length;
+      guestDraftsPromptVisible = guestDraftsCount > 0;
+    }
+
+    async function migrateGuestDraftsToAccount() {
+      if (!currentUser) return;
+      const guestRaw = safeParse(await store.get(getRecordsKey("guest")));
+      const guestList = Array.isArray(guestRaw) ? guestRaw : [];
+      if (!guestList.length) {
+        guestDraftsPromptVisible = false;
+        renderDashboard();
+        return;
+      }
+
+      const existingIds = new Set(records.map(r => r.id));
+      let importedCount = 0;
+      guestList.forEach(item => {
+        if (!item || !item.id) return;
+        const copy = {
+          ...item,
+          id: existingIds.has(item.id) ? generateUUID() : item.id,
+          user_id: currentUser.id,
+          dirty: true
+        };
+        records.unshift(copy);
+        importedCount++;
+      });
+
+      await persistScopedRecords();
+      await store.remove(getRecordsKey("guest"));
+      await store.remove(getActiveIdKey("guest"));
+      guestDraftsPromptVisible = false;
+      guestDraftsCount = 0;
+      renderDashboard();
+      toast(`Moved ${importedCount} local draft(s) to your account`);
+      if (sbClient && navigator.onLine) await syncNow(false);
+    }
+
+    async function dismissGuestMigration() {
+      guestDraftsPromptVisible = false;
+      renderDashboard();
+    }
+
+    /* ---------- Create / Open / Toggle / Duplicate / Delete Patient Records ---------- */
+    async function newSummary(skipConfirm = false) {
+      if (activeTab !== "dashboard" && !skipConfirm) {
+        const draft = collectDraft();
+        if (hasPatientContent(draft) && !hasRecordPersisted) {
+          if (!confirm("Start a new patient? Unsaved entries in the current form will be cleared. Your saved defaults are kept.")) return;
+        }
+      }
+      if (hasRecordPersisted || hasPatientContent(collectDraft())) {
+        await saveCurrentRecordNow(false);
+      }
+
+      suppressSave = true;
+      try {
+        resetEditorFieldsOnly();
+        const def = await getActiveDefaults();
+        if (def) applyDefaults(def);
+        if (currentUser && currentUser.user_metadata && currentUser.user_metadata.full_name && !val("preparedBy")) {
+          setVal_("preparedBy", currentUser.user_metadata.full_name);
+        }
+        currentRecordId = generateUUID();
+        currentRecordStatus = "incomplete";
+        currentRecordCreatedAt = new Date().toISOString();
+        hasRecordPersisted = false;
+        setVal_("dod", todayISO());
+        renderComplaints(); renderTx(); renderRx(); renderInvEditor(); renderPast(); renderRxHistory();
+        render(false);
+      } finally {
+        suppressSave = false;
+      }
+
+      await store.remove(getActiveIdKey());
+      showTab("form");
+      const patientCard = document.querySelector('#formTab details[data-clear="patient"]');
+      if (patientCard) patientCard.open = true;
+      toast("New incomplete patient ready — defaults kept");
+    }
+
+    async function openRecord(id, targetTab = "form") {
+      await saveCurrentRecordNow(false);
+      const rec = records.find(r => r.id === id);
+      if (!rec) { toast("Patient summary not found"); return; }
+
+      currentRecordId = rec.id;
+      currentRecordStatus = rec.status || "incomplete";
+      currentRecordCreatedAt = rec.created_at || rec.updated_at || new Date().toISOString();
+      hasRecordPersisted = true;
+
+      restoreDraft(rec.payload || {}, { preserveDod: true });
+      await store.set(getActiveIdKey(), rec.id);
+      showTab(targetTab);
+    }
+
+    async function toggleRecordStatus(id) {
+      const rec = records.find(r => r.id === id);
+      if (!rec) return;
+      rec.status = rec.status === "completed" ? "incomplete" : "completed";
+      rec.updated_at = new Date().toISOString();
+      rec.dirty = true;
+      if (currentRecordId === id) {
+        currentRecordStatus = rec.status;
+        updateActivePatientBar();
+      }
+      await persistScopedRecords();
+      renderDashboard();
+      if (currentUser && sbClient && navigator.onLine) {
+        await upsertRecordToSupabase(rec);
+      }
+      toast(rec.status === "completed" ? "Marked as Completed ✓" : "Moved back to Incomplete");
+    }
+
+    async function toggleActiveStatus() {
+      currentRecordStatus = currentRecordStatus === "completed" ? "incomplete" : "completed";
+      updateActivePatientBar();
+      await saveCurrentRecordNow(true);
+    }
+
+    async function duplicateRecord(id) {
+      const src = records.find(r => r.id === id);
+      if (!src) return;
+      const nowIso = new Date().toISOString();
+      const copyPayload = JSON.parse(JSON.stringify(src.payload || {}));
+      if (!copyPayload.f) copyPayload.f = {};
+      const origName = (copyPayload.f.name || src.patient_name || "Patient").trim();
+      copyPayload.f.name = `${origName} (Copy)`;
+      const copyRec = {
+        ...src,
+        id: generateUUID(),
+        user_id: currentUser ? currentUser.id : null,
+        status: "incomplete",
+        patient_name: copyPayload.f.name,
+        payload: copyPayload,
+        created_at: nowIso,
+        updated_at: nowIso,
+        synced_at: null,
+        dirty: true
+      };
+      records.unshift(copyRec);
+      await persistScopedRecords();
+      renderDashboard();
+      if (currentUser && sbClient && navigator.onLine) {
+        await upsertRecordToSupabase(copyRec);
+      }
+      toast("Patient summary duplicated ✓");
+    }
+
+    async function deleteRecord(id) {
+      const rec = records.find(r => r.id === id);
+      if (!rec) return;
+      const label = rec.patient_name || rec.ip_no || "this patient draft";
+      if (!confirm(`Delete discharge summary for "${label}"?\n\nThis cannot be undone.`)) return;
+
+      records = records.filter(r => r.id !== id);
+      if (currentUser && !pendingDeletes.includes(id)) {
+        pendingDeletes.push(id);
+      }
+      if (currentRecordId === id) {
+        currentRecordId = generateUUID();
+        currentRecordStatus = "incomplete";
+        currentRecordCreatedAt = new Date().toISOString();
+        hasRecordPersisted = false;
+        suppressSave = true;
+        try {
+          resetEditorFieldsOnly();
+          const def = await getActiveDefaults();
+          if (def) applyDefaults(def);
+          setVal_("dod", todayISO());
+          renderComplaints(); renderTx(); renderRx(); renderInvEditor(); renderPast(); renderRxHistory();
+          render(false);
+        } finally {
+          suppressSave = false;
+        }
+        await store.remove(getActiveIdKey());
+      }
+
+      await persistScopedRecords();
+      renderDashboard();
+
+      if (currentUser && sbClient && navigator.onLine) {
+        await flushPendingDeletes();
+      }
+      toast("Patient summary deleted");
+    }
+
+    /* ---------- Active Patient Context Bar Helpers ---------- */
+    function updateActivePatientBar() {
+      const ptName = val("name") || (hasRecordPersisted ? "Unnamed Patient" : "New Patient Draft");
+      const ipNo = val("ipno");
+      const titleText = ipNo ? `${ptName} · IP: ${ipNo}` : ptName;
+
+      const titleEl = document.getElementById("activePatientTitle");
+      if (titleEl) titleEl.textContent = titleText;
+
+      const sumTitleEl = document.getElementById("summaryPatientTitle");
+      if (sumTitleEl) sumTitleEl.textContent = titleText;
+
+      const isComp = currentRecordStatus === "completed";
+      ["activeStatusBtn", "summaryStatusBtn"].forEach(id => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.classList.toggle("completed", isComp);
+        btn.classList.toggle("incomplete", !isComp);
+      });
+      const st1 = document.getElementById("activeStatusText");
+      if (st1) st1.textContent = isComp ? "✓ Completed" : "⏳ Incomplete";
+      const st2 = document.getElementById("summaryStatusText");
+      if (st2) st2.textContent = isComp ? "✓ Completed" : "⏳ Incomplete";
+
+      updateSaveStatusBadge();
+    }
+
+    function updateSaveStatusBadge(override = null) {
+      const metaEl = document.getElementById("activePatientMeta");
+      if (!metaEl) return;
+      const rec = currentRecordId ? records.find(r => r.id === currentRecordId) : null;
+      let statusMsg = "Draft ready — auto-saves locally";
+      const mode = override || (currentUser ? (rec && rec.dirty ? (navigator.onLine ? "pending" : "offline") : "synced") : "local");
+
+      if (mode === "pending") statusMsg = currentUser ? "Saving changes..." : "Unsaved changes...";
+      else if (mode === "syncing") statusMsg = "Syncing to Supabase cloud...";
+      else if (mode === "offline") statusMsg = "Saved on device (offline — queued for cloud sync)";
+      else if (mode === "synced") statusMsg = "☁ Saved & synced to Supabase";
+      else if (mode === "error") statusMsg = `⚠ Saved on device (cloud error: ${lastSyncError || "check setup"})`;
+      else if (hasRecordPersisted || (rec && rec.updated_at)) statusMsg = `📱 Saved locally on this device${rec && rec.updated_at ? " · " + formatRelativeTime(rec.updated_at) : ""}`;
+
+      metaEl.textContent = statusMsg;
+    }
+
+    /* ---------- Dashboard Rendering, Filtering & Sorting ---------- */
+    function computeRecordProgress(payload) {
+      const p = payload || {};
+      const f = p.f || {};
+      const checks = [
+        Boolean((f.name || "").trim() || (f.ipno || "").trim() || (f.age || "").trim()),
+        Boolean((f.doa || "").trim() || (f.dod || "").trim()),
+        Boolean((f.diagnosis || "").trim()),
+        Boolean((p.complaints || []).length),
+        Boolean((f.hopi || "").trim() || (p.pastHistory || []).length || (p.rxHistory || []).length),
+        Boolean((f.generalExam || "").trim() || (f.vBP || "").trim() || (f.vPR || "").trim() || (f.seCVS || "").trim() || (f.seRS || "").trim() || (f.sePA || "").trim() || (f.seCNS || "").trim()),
+        Boolean(((p.invDates || []).length && (p.invParams || []).some(row => (row.name || "").trim())) || (f.invOther || "").trim()),
+        Boolean((f.course || "").trim()),
+        Boolean((p.treatment || []).length),
+        Boolean((f.condition || "").trim() || (f.condExtra || "").trim()),
+        Boolean((p.rxMeds || []).length || (f.diet || "").trim() || (f.physicalActivity || "").trim()),
+        Boolean((f.preparedBy || "").trim() || (f.chief || "").trim() || (f.signDateTime || "").trim())
+      ];
+      const filled = checks.filter(Boolean).length;
+      const total = checks.length;
+      return { filled, total, pct: Math.round((filled / total) * 100) };
+    }
+
+    function formatRelativeTime(isoStr) {
+      if (!isoStr) return "Just now";
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return "";
+      const diffSec = Math.round((Date.now() - d.getTime()) / 1000);
+      if (diffSec < 45) return "Just now";
+      const diffMin = Math.round(diffSec / 60);
+      if (diffMin < 60) return `${diffMin}m ago`;
+      const diffHr = Math.round(diffMin / 60);
+      if (diffHr < 24) return `${diffHr}h ago`;
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const yyyy = d.getFullYear();
+      return `${dd}.${mm}.${yyyy}`;
+    }
+
+    function setDashFilter(f) {
+      dashFilter = f;
+      document.querySelectorAll(".dash-stats .stat-card[data-filter]").forEach(b => b.classList.toggle("active", b.dataset.filter === f));
+      document.querySelectorAll("#dashFilterPills .pill").forEach(b => b.classList.toggle("active", b.dataset.filter === f));
+      renderDashboard();
+    }
+
+    function setDashSearch(q) {
+      dashSearch = (q || "").trim();
+      const clr = document.getElementById("dashSearchClear");
+      if (clr) clr.style.display = dashSearch ? "block" : "none";
+      renderDashboard();
+    }
+
+    function clearDashSearch() {
+      const inp = document.getElementById("dashSearch");
+      if (inp) inp.value = "";
+      setDashSearch("");
+    }
+
+    function setDashSort(s) {
+      dashSort = s;
+      renderDashboard();
+    }
+
+    function setDashViewMode(mode) {
+      dashViewMode = mode;
+      const cBtn = document.getElementById("viewBtnCards");
+      const tBtn = document.getElementById("viewBtnTable");
+      if (cBtn) cBtn.classList.toggle("active", mode === "cards");
+      if (tBtn) tBtn.classList.toggle("active", mode === "table");
+      renderDashboard();
+    }
+
+    function getFilteredSortedRecords() {
+      const q = dashSearch.toLowerCase();
+      let list = records.filter(r => {
+        if (dashFilter === "incomplete" && r.status === "completed") return false;
+        if (dashFilter === "completed" && r.status !== "completed") return false;
+        if (!q) return true;
+        const hay = [
+          r.patient_name, r.ip_no, r.unit, r.diagnosis_preview,
+          r.doa ? fmtDate(r.doa) : "", r.dod ? fmtDate(r.dod) : ""
+        ].join(" ").toLowerCase();
+        return hay.includes(q);
+      });
+
+      list.sort((a, b) => {
+        if (dashSort === "updated_asc") return new Date(a.updated_at || 0) - new Date(b.updated_at || 0);
+        if (dashSort === "doa_desc") return (b.doa || "").localeCompare(a.doa || "");
+        if (dashSort === "dod_desc") return (b.dod || "").localeCompare(a.dod || "");
+        if (dashSort === "name_asc") return (a.patient_name || "zzz").localeCompare(b.patient_name || "zzz");
+        return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
+      });
+      return list;
+    }
+
+    function renderDashboardHeroAndAuth() {
+      const hero = document.getElementById("dashHero");
+      const authCard = document.getElementById("dashAuthCard");
+      const migBanner = document.getElementById("guestMigrationBanner");
+      const isConfigured = Boolean(sbConfig.url && sbConfig.anonKey);
+
+      if (hero) {
+        if (currentUser) {
+          const docName = (currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email || "Signed-in Doctor";
+          const dirtyCount = records.filter(r => r.dirty).length + pendingDeletes.length;
+          let badgeHTML = `<span class="role-badge ok">☁ Cloud Sync Active</span>`;
+          if (!navigator.onLine) badgeHTML = `<span class="role-badge warn">📡 Offline Mode</span>`;
+          else if (dirtyCount > 0) badgeHTML = `<span class="role-badge warn">⏳ ${dirtyCount} Pending Sync</span>`;
+
+          hero.innerHTML = `
+            <div class="dash-hero-info">
+              <h2>${esc(docName)} ${badgeHTML}</h2>
+              <p>${esc(currentUser.email || "")}${lastSyncTime ? ` · Last synced ${formatRelativeTime(lastSyncTime.toISOString())}` : " · Summaries sync automatically across mobile & desktop"}</p>
+            </div>
+            <div class="dash-hero-actions">
+              <button type="button" class="btn sm" onclick="newSummary()">+ New Patient</button>
+              <button type="button" class="btn sm out" onclick="syncNow(true)">☁ Sync Now</button>
+              <button type="button" class="btn sm out" onclick="openSupabaseSetupModal()">⚙ Setup</button>
+              <button type="button" class="btn sm out" onclick="signOutUser()">Sign Out</button>
+            </div>
+          `;
+        } else if (isConfigured) {
+          hero.innerHTML = `
+            <div class="dash-hero-info">
+              <h2>Patient Discharge Dashboard <span class="role-badge warn">Not Signed In</span></h2>
+              <p>Supabase is connected. Sign in to save incomplete discharge summaries and access them from any phone or computer.</p>
+            </div>
+            <div class="dash-hero-actions">
+              <button type="button" class="btn sm" onclick="openAuthModal('signin')">👤 Sign In / Register</button>
+              <button type="button" class="btn sm out" onclick="newSummary()">+ New Local Draft</button>
+              <button type="button" class="btn sm out" onclick="openSupabaseSetupModal()">⚙ Cloud Setup</button>
+            </div>
+          `;
+        } else {
+          hero.innerHTML = `
+            <div class="dash-hero-info">
+              <h2>Patient Discharge Dashboard <span class="role-badge">Local Device Mode</span></h2>
+              <p>Drafts are auto-saved safely on this device. Connect your Supabase project to enable multi-device doctor login &amp; cloud backup.</p>
+            </div>
+            <div class="dash-hero-actions">
+              <button type="button" class="btn sm" onclick="newSummary()">+ New Patient</button>
+              <button type="button" class="btn sm out" onclick="openSupabaseSetupModal()">☁ Connect Supabase</button>
+              <button type="button" class="btn sm out" onclick="autofillTest()">⚡ Sample Patient</button>
+            </div>
+          `;
+        }
+      }
+
+      if (authCard) {
+        if (isConfigured && !currentUser && !offlineDismissedAuthCard) {
+          authCard.style.display = "block";
+          authCard.innerHTML = buildAuthPanelHTML(true);
+        } else {
+          authCard.style.display = "none";
+          authCard.innerHTML = "";
+        }
+      }
+
+      if (migBanner) {
+        if (currentUser && guestDraftsPromptVisible && guestDraftsCount > 0) {
+          migBanner.style.display = "flex";
+          migBanner.innerHTML = `
+            <div>
+              <b>Local drafts found:</b> You have <b>${guestDraftsCount}</b> patient summary draft(s) saved in local guest mode before signing in.
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="button" class="btn sm" onclick="migrateGuestDraftsToAccount()">☁ Upload to My Account</button>
+              <button type="button" class="btn sm out" onclick="dismissGuestMigration()">Keep Local Only</button>
+            </div>
+          `;
+        } else {
+          migBanner.style.display = "none";
+        }
+      }
+    }
+
+    function renderDashboard() {
+      renderDashboardHeroAndAuth();
+      updateSyncIndicators();
+
+      const total = records.length;
+      const completed = records.filter(r => r.status === "completed").length;
+      const incomplete = total - completed;
+
+      const sTotal = document.getElementById("statTotal");
+      const sInc = document.getElementById("statIncomplete");
+      const sComp = document.getElementById("statCompleted");
+      if (sTotal) sTotal.textContent = String(total);
+      if (sInc) sInc.textContent = String(incomplete);
+      if (sComp) sComp.textContent = String(completed);
+
+      const container = document.getElementById("dashRecordsContainer");
+      if (!container) return;
+
+      const list = getFilteredSortedRecords();
+      if (!list.length) {
+        const isFiltered = Boolean(dashSearch || dashFilter !== "all");
+        container.innerHTML = isFiltered
+          ? `<div class="dash-empty">
+               <h3>No matching patient summaries</h3>
+               <p>Try clearing your search or switching back to "All" filters.</p>
+               <div class="dash-empty-actions">
+                 <button type="button" class="btn out" onclick="clearDashSearch();setDashFilter('all')">Show All (${total})</button>
+                 <button type="button" class="btn" onclick="newSummary()">+ New Patient Summary</button>
+               </div>
+             </div>`
+          : `<div class="dash-empty">
+               <h3>No patient discharge summaries yet</h3>
+               <p>Start a new discharge summary for an admitted patient. Incomplete summaries stay saved here so you can finish them whenever you return.</p>
+               <div class="dash-empty-actions">
+                 <button type="button" class="btn" onclick="newSummary()">+ Start New Patient</button>
+                 <button type="button" class="btn out" onclick="autofillTest()">⚡ Try Sample Patient</button>
+                 <button type="button" class="btn out" onclick="importDraft()">📂 Import Draft (.json)</button>
+               </div>
+             </div>`;
+        return;
+      }
+
+      const useTable = dashViewMode === "table" && window.innerWidth > 768;
+      if (useTable) {
+        container.innerHTML = renderDashboardTableHTML(list);
+      } else {
+        container.innerHTML = `<div class="dash-grid">${list.map(renderPatientCardHTML).join("")}</div>`;
+      }
+    }
+
+    function renderPatientCardHTML(r) {
+      const f = (r.payload && r.payload.f) || {};
+      const name = r.patient_name || "Unnamed Patient";
+      const ageSex = [f.age, f.sex].filter(Boolean).join(" / ");
+      const isCompleted = r.status === "completed";
+      const prog = computeRecordProgress(r.payload);
+      const isActive = currentRecordId === r.id && hasRecordPersisted;
+
+      const syncHtml = currentUser
+        ? (r.dirty
+            ? `<span class="sync-badge pending">⏳ Pending sync</span>`
+            : `<span class="sync-badge synced">☁ Synced</span>`)
+        : `<span class="sync-badge local">📱 Local only</span>`;
+
+      return `
+        <article class="patient-card${isActive ? " is-active-editing" : ""}">
+          <div class="pc-top">
+            <div class="pc-name-wrap">
+              <h3 class="pc-name">${esc(name)}</h3>
+              <div class="pc-sub">${ageSex ? esc(ageSex) + " · " : ""}${esc(f.modeOfDischarge || "Discharge")}</div>
+            </div>
+            <button type="button" class="status-pill ${isCompleted ? "completed" : "incomplete"}" onclick="toggleRecordStatus('${esc(r.id)}')" title="Click to toggle status">
+              ${isCompleted ? "✓ Completed" : "⏳ Incomplete"}
+            </button>
+          </div>
+
+          <div class="pc-meta">
+            ${r.ip_no ? `<span class="meta-chip">IP: ${esc(r.ip_no)}</span>` : ""}
+            ${r.unit ? `<span class="meta-chip">${esc(r.unit)}</span>` : ""}
+            ${r.doa ? `<span class="meta-chip">DOA: ${esc(fmtDate(r.doa))}</span>` : ""}
+            ${r.dod ? `<span class="meta-chip">DOD: ${esc(fmtDate(r.dod))}</span>` : ""}
+          </div>
+
+          <div class="pc-diag${r.diagnosis_preview ? "" : " empty-diag"}">
+            <span class="pc-diag-text">${r.diagnosis_preview ? esc(r.diagnosis_preview) : "Diagnosis not entered yet"}</span>
+          </div>
+
+          <div class="pc-progress">
+            <div class="pc-progress-head">
+              <span>Sections filled</span>
+              <span>${prog.filled}/${prog.total} (${prog.pct}%)</span>
+            </div>
+            <div class="prog-track">
+              <div class="prog-fill${isCompleted ? " complete" : ""}" style="width:${prog.pct}%"></div>
+            </div>
+          </div>
+
+          <div class="pc-foot">
+            <span>Updated ${esc(formatRelativeTime(r.updated_at))}</span>
+            ${syncHtml}
+          </div>
+
+          <div class="pc-actions">
+            <button type="button" class="btn sm btn-resume" onclick="openRecord('${esc(r.id)}','form')">${isCompleted ? "✎ Edit" : "▶ Resume"}</button>
+            <button type="button" class="btn sm out" onclick="openRecord('${esc(r.id)}','summary')">📄 Preview</button>
+            <button type="button" class="btn sm out" onclick="duplicateRecord('${esc(r.id)}')" title="Duplicate summary">⧉</button>
+            <button type="button" class="btn sm danger" onclick="deleteRecord('${esc(r.id)}')" title="Delete summary">🗑</button>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderDashboardTableHTML(list) {
+      const rows = list.map(r => {
+        const f = (r.payload && r.payload.f) || {};
+        const name = r.patient_name || "Unnamed Patient";
+        const ageSex = [f.age, f.sex].filter(Boolean).join("/");
+        const isCompleted = r.status === "completed";
+        const dates = [r.doa ? `DOA ${fmtDate(r.doa)}` : "", r.dod ? `DOD ${fmtDate(r.dod)}` : ""].filter(Boolean).join(" · ") || "—";
+        const syncIcon = currentUser ? (r.dirty ? "⏳" : "☁") : "📱";
+        return `
+          <tr>
+            <td><b>${esc(name)}</b>${ageSex ? `<br><small style="color:var(--muted)">${esc(ageSex)}</small>` : ""}</td>
+            <td>${esc(r.ip_no || "—")}</td>
+            <td>${esc(r.unit || "—")}</td>
+            <td><small>${esc(dates)}</small></td>
+            <td class="td-diag" title="${esc(r.diagnosis_preview)}">${esc(r.diagnosis_preview || "—")}</td>
+            <td>
+              <button type="button" class="status-pill ${isCompleted ? "completed" : "incomplete"}" onclick="toggleRecordStatus('${esc(r.id)}')">
+                ${isCompleted ? "Completed" : "Incomplete"}
+              </button>
+            </td>
+            <td><small>${syncIcon} ${esc(formatRelativeTime(r.updated_at))}</small></td>
+            <td>
+              <div class="td-actions">
+                <button type="button" class="btn sm" onclick="openRecord('${esc(r.id)}','form')">Resume</button>
+                <button type="button" class="btn sm out" onclick="openRecord('${esc(r.id)}','summary')">Preview</button>
+                <button type="button" class="btn sm out" onclick="duplicateRecord('${esc(r.id)}')" title="Duplicate">⧉</button>
+                <button type="button" class="btn sm danger" onclick="deleteRecord('${esc(r.id)}')" title="Delete">🗑</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      return `
+        <div class="dash-table-wrap">
+          <table class="dash-table">
+            <thead>
+              <tr>
+                <th>Patient</th>
+                <th>IP No.</th>
+                <th>Unit</th>
+                <th>Dates</th>
+                <th>Diagnosis</th>
+                <th>Status</th>
+                <th>Updated</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    /* ---------- Supabase Integration, Auth & Cloud Sync ---------- */
+    function resolveSupabaseConfig() {
+      let localUrl = "";
+      let localKey = "";
+      try {
+        localUrl = (localStorage.getItem(SB_OVERRIDE_URL_KEY) || "").trim();
+        localKey = (localStorage.getItem(SB_OVERRIDE_KEY_KEY) || "").trim();
+      } catch (e) { }
+
+      if (localUrl && localKey) {
+        return { url: localUrl, anonKey: localKey, source: "local-override" };
+      }
+      const cfg = window.DS_SUPABASE_CONFIG || {};
+      const fileUrl = String(cfg.url || "").trim();
+      const fileKey = String(cfg.anonKey || "").trim();
+      if (fileUrl && fileKey) {
+        return { url: fileUrl, anonKey: fileKey, source: "config-file" };
+      }
+      return { url: "", anonKey: "", source: "none" };
+    }
+
+    async function initSupabase() {
+      sbConfig = resolveSupabaseConfig();
+      sbClient = null;
+      currentUser = null;
+
+      if (!sbConfig.url || !sbConfig.anonKey) {
+        syncState = "local";
+        updateSyncIndicators();
+        return;
+      }
+
+      if (!window.supabase || typeof window.supabase.createClient !== "function") {
+        syncState = navigator.onLine ? "error" : "offline";
+        lastSyncError = "Supabase SDK unavailable offline";
+        try {
+          const cachedUser = safeParse(localStorage.getItem("ds-v2:last-user"));
+          if (cachedUser && cachedUser.id) currentUser = cachedUser;
+        } catch (e) { }
+        updateSyncIndicators();
+        return;
+      }
+
+      try {
+        sbClient = window.supabase.createClient(sbConfig.url, sbConfig.anonKey, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            storageKey: "ds-v2-supabase-auth"
+          }
+        });
+
+        sbClient.auth.onAuthStateChange(async (event, session) => {
+          if (event === "PASSWORD_RECOVERY") {
+            openRecoveryModal();
+          }
+          const nextUser = session && session.user ? session.user : null;
+          const prevUserId = currentUser ? currentUser.id : null;
+          const nextUserId = nextUser ? nextUser.id : null;
+          currentUser = nextUser;
+          cacheLastUser(nextUser);
+
+          if (prevUserId !== nextUserId) {
+            await handleUserScopeChange(nextUserId);
+          } else {
+            updateSyncIndicators();
+            if (activeTab === "dashboard") renderDashboardHeroAndAuth();
+          }
+        });
+
+        const { data, error } = await sbClient.auth.getSession();
+        if (!error && data && data.session && data.session.user) {
+          currentUser = data.session.user;
+          cacheLastUser(currentUser);
+        } else if (!navigator.onLine) {
+          const cachedUser = safeParse(localStorage.getItem("ds-v2:last-user"));
+          if (cachedUser && cachedUser.id) currentUser = cachedUser;
+        }
+      } catch (e) {
+        console.warn("Supabase init warning:", e);
+        lastSyncError = e.message || "Connection failed";
+        syncState = "error";
+      }
+
+      updateSyncIndicators();
+    }
+
+    function cacheLastUser(user) {
+      try {
+        if (user && user.id) {
+          localStorage.setItem("ds-v2:last-user", JSON.stringify({
+            id: user.id,
+            email: user.email,
+            user_metadata: user.user_metadata || {}
+          }));
+        } else {
+          localStorage.removeItem("ds-v2:last-user");
+        }
+      } catch (e) { }
+    }
+
+    async function handleUserScopeChange(nextUserId) {
+      await loadScopedRecords();
+      await checkGuestDraftsForMigration();
+
+      if (nextUserId) {
+        offlineDismissedAuthCard = false;
+        closeAuthModal();
+        // Reset editor cleanly if previous scope had unsaved guest view
+        currentRecordId = generateUUID();
+        currentRecordStatus = "incomplete";
+        currentRecordCreatedAt = new Date().toISOString();
+        hasRecordPersisted = false;
+        suppressSave = true;
+        try {
+          resetEditorFieldsOnly();
+          const def = await getActiveDefaults();
+          if (def) applyDefaults(def);
+          if (currentUser && currentUser.user_metadata && currentUser.user_metadata.full_name && !val("preparedBy")) {
+            setVal_("preparedBy", currentUser.user_metadata.full_name);
+          }
+          setVal_("dod", todayISO());
+          renderComplaints(); renderTx(); renderRx(); renderInvEditor(); renderPast(); renderRxHistory();
+          render(false);
+        } finally {
+          suppressSave = false;
+        }
+
+        if (navigator.onLine && sbClient) {
+          await syncNow(false);
+        }
+      } else {
+        // Signed out: isolate view cleanly back to guest scope
+        currentRecordId = generateUUID();
+        currentRecordStatus = "incomplete";
+        currentRecordCreatedAt = new Date().toISOString();
+        hasRecordPersisted = false;
+        suppressSave = true;
+        try {
+          resetEditorFieldsOnly();
+          const def = await getActiveDefaults();
+          if (def) applyDefaults(def);
+          setVal_("dod", todayISO());
+          renderComplaints(); renderTx(); renderRx(); renderInvEditor(); renderPast(); renderRxHistory();
+          render(false);
+        } finally {
+          suppressSave = false;
+        }
+      }
+      renderDashboard();
+    }
+
+    function updateSyncIndicators() {
+      const dot = document.getElementById("topbarAuthDot");
+      const txt = document.getElementById("topbarAuthText");
+      const sText = document.getElementById("statSyncText");
+      const sSub = document.getElementById("statSyncSub");
+
+      const dirtyCount = records.filter(r => r.dirty).length + pendingDeletes.length;
+      let dotClass = "offline";
+      let topLabel = "Local mode";
+      let statLabel = "Local";
+      let statSub = "Tap to connect Supabase";
+
+      if (currentUser) {
+        const displayUser = (currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email || "Doctor";
+        topLabel = displayUser.split("@")[0];
+        if (syncState === "syncing") {
+          dotClass = "syncing";
+          statLabel = "Syncing...";
+          statSub = "Updating Supabase";
+        } else if (!navigator.onLine) {
+          dotClass = "offline";
+          statLabel = "Offline";
+          statSub = dirtyCount > 0 ? `${dirtyCount} waiting to sync` : "Cached for ward use";
+        } else if (syncState === "error") {
+          dotClass = "error";
+          statLabel = "Sync Err";
+          statSub = lastSyncError ? lastSyncError.slice(0, 32) : "Tap to check setup";
+        } else if (dirtyCount > 0) {
+          dotClass = "syncing";
+          statLabel = `${dirtyCount} Pending`;
+          statSub = "Tap to sync now";
+        } else {
+          dotClass = "online";
+          statLabel = "Synced";
+          statSub = lastSyncTime ? `At ${lastSyncTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Cloud connected";
+        }
+      } else if (sbConfig.url && sbConfig.anonKey) {
+        dotClass = "offline";
+        topLabel = "Sign in";
+        statLabel = "Sign In";
+        statSub = "Cloud ready — tap here";
+      }
+
+      if (dot) dot.className = `sync-dot ${dotClass}`;
+      if (txt) txt.textContent = topLabel;
+      if (sText) sText.textContent = statLabel;
+      if (sSub) sSub.textContent = statSub;
+
+      updateSaveStatusBadge();
+    }
+
+    function handleSyncCardClick() {
+      if (!sbConfig.url || !sbConfig.anonKey) {
+        openSupabaseSetupModal();
+      } else if (!currentUser) {
+        openAuthModal("signin");
+      } else {
+        syncNow(true);
+      }
+    }
+
+    async function upsertRecordToSupabase(rec) {
+      if (!currentUser || !sbClient) return false;
+      try {
+        syncState = "syncing";
+        updateSyncIndicators();
+        const row = {
+          id: rec.id,
+          user_id: currentUser.id,
+          status: rec.status || "incomplete",
+          patient_name: rec.patient_name || "",
+          ip_no: rec.ip_no || "",
+          doa: rec.doa || "",
+          dod: rec.dod || "",
+          unit: rec.unit || "",
+          diagnosis_preview: rec.diagnosis_preview || "",
+          payload: rec.payload || {},
+          created_at: rec.created_at || rec.updated_at || new Date().toISOString(),
+          updated_at: rec.updated_at || new Date().toISOString()
+        };
+        const { error } = await sbClient
+          .from("discharge_summaries")
+          .upsert(row, { onConflict: "id" });
+
+        if (error) throw error;
+
+        rec.dirty = false;
+        rec.synced_at = new Date().toISOString();
+        lastSyncTime = new Date();
+        lastSyncError = "";
+        syncState = records.some(r => r.dirty) || pendingDeletes.length ? "pending" : "synced";
+        await persistScopedRecords();
+        updateSyncIndicators();
+        if (activeTab === "dashboard") renderDashboard();
+        return true;
+      } catch (e) {
+        console.warn("Supabase upsert failed:", e);
+        lastSyncError = e.message || "Upload failed";
+        syncState = navigator.onLine ? "error" : "offline";
+        updateSyncIndicators();
+        return false;
+      }
+    }
+
+    async function flushPendingDeletes() {
+      if (!currentUser || !sbClient || !pendingDeletes.length) return;
+      const remaining = [];
+      for (const id of pendingDeletes) {
+        const { error } = await sbClient
+          .from("discharge_summaries")
+          .delete()
+          .eq("id", id)
+          .eq("user_id", currentUser.id);
+        if (error) {
+          console.warn("Pending delete failed:", id, error);
+          remaining.push(id);
+        }
+      }
+      pendingDeletes = remaining;
+      await persistScopedRecords();
+    }
+
+    async function pushUserSettingsToCloud(explicitDefaults = null) {
+      if (!currentUser || !sbClient || !navigator.onLine) return;
+      try {
+        const defaults = explicitDefaults || safeParse(await store.get(getDefaultsKey())) || {};
+        const themeColor = localStorage.getItem("ds-v2:theme-color") || "#14425f";
+        await sbClient.from("user_settings").upsert({
+          user_id: currentUser.id,
+          defaults,
+          theme_color: themeColor,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "user_id" });
+      } catch (e) {
+        console.warn("Settings cloud push failed:", e);
+      }
+    }
+
+    async function pullUserSettingsFromCloud() {
+      if (!currentUser || !sbClient || !navigator.onLine) return;
+      try {
+        const { data, error } = await sbClient
+          .from("user_settings")
+          .select("defaults, theme_color, updated_at")
+          .eq("user_id", currentUser.id)
+          .maybeSingle();
+        if (error) return;
+        if (data) {
+          const localDef = safeParse(await store.get(getDefaultsKey()));
+          if (!localDef && data.defaults && Object.keys(data.defaults).length) {
+            await store.set(getDefaultsKey(), JSON.stringify(data.defaults));
+            applyDefaults(data.defaults);
+          }
+          if (data.theme_color) {
+            setThemeColor(data.theme_color, false);
+          }
+        } else {
+          const localDef = safeParse(await store.get(getDefaultsKey()));
+          if (localDef && Object.keys(localDef).length) {
+            await pushUserSettingsToCloud(localDef);
+          }
+        }
+      } catch (e) {
+        console.warn("Settings pull warning:", e);
+      }
+    }
+
+    async function syncNow(interactive = false) {
+      if (!sbConfig.url || !sbConfig.anonKey) {
+        if (interactive) openSupabaseSetupModal();
+        return;
+      }
+      if (!currentUser || !sbClient) {
+        if (interactive) openAuthModal("signin");
+        return;
+      }
+      if (!navigator.onLine) {
+        syncState = "offline";
+        updateSyncIndicators();
+        if (interactive) toast("You are offline — changes stay safely on device");
+        return;
+      }
+      if (syncInFlight) return;
+      syncInFlight = true;
+      syncState = "syncing";
+      updateSyncIndicators();
+
+      try {
+        await flushPendingDeletes();
+
+        const dirtyList = records.filter(r => r.dirty && !pendingDeletes.includes(r.id));
+        for (const rec of dirtyList) {
+          await upsertRecordToSupabase(rec);
+        }
+
+        const { data: remoteRows, error } = await sbClient
+          .from("discharge_summaries")
+          .select("id, user_id, status, patient_name, ip_no, doa, dod, unit, diagnosis_preview, payload, created_at, updated_at")
+          .eq("user_id", currentUser.id)
+          .order("updated_at", { ascending: false });
+
+        if (error) throw error;
+
+        const localById = new Map(records.map(r => [r.id, r]));
+        const merged = [];
+        const seenIds = new Set();
+
+        (remoteRows || []).forEach(r => {
+          if (pendingDeletes.includes(r.id)) return;
+          seenIds.add(r.id);
+          const local = localById.get(r.id);
+          if (local && local.dirty && new Date(local.updated_at || 0) > new Date(r.updated_at || 0)) {
+            merged.push(local);
+          } else {
+            merged.push({
+              id: r.id,
+              user_id: r.user_id,
+              status: r.status || "incomplete",
+              patient_name: r.patient_name || "",
+              ip_no: r.ip_no || "",
+              doa: r.doa || "",
+              dod: r.dod || "",
+              unit: r.unit || "",
+              diagnosis_preview: r.diagnosis_preview || "",
+              payload: r.payload || {},
+              created_at: r.created_at,
+              updated_at: r.updated_at,
+              synced_at: new Date().toISOString(),
+              dirty: false
+            });
+          }
+        });
+
+        // Keep any unsynced local-only dirty records so nothing is ever lost
+        records.forEach(local => {
+          if (!seenIds.has(local.id) && local.dirty && !pendingDeletes.includes(local.id)) {
+            merged.push(local);
+          }
+        });
+
+        merged.sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
+        records = merged;
+        await persistScopedRecords();
+
+        await pullUserSettingsFromCloud();
+
+        lastSyncTime = new Date();
+        lastSyncError = "";
+        syncState = records.some(r => r.dirty) || pendingDeletes.length ? "pending" : "synced";
+        renderDashboard();
+        if (interactive) toast("Synced with Supabase ✓");
+      } catch (e) {
+        console.warn("Supabase sync failed:", e);
+        lastSyncError = e.message || "Sync failed";
+        syncState = "error";
+        updateSyncIndicators();
+        if (interactive) {
+          toast(`Sync error: ${lastSyncError}`);
+        }
+      } finally {
+        syncInFlight = false;
+        updateSyncIndicators();
+      }
+    }
+
+    window.addEventListener("online", () => {
+      if (currentUser && sbClient) syncNow(false);
+      else updateSyncIndicators();
+    });
+    window.addEventListener("offline", () => {
+      syncState = "offline";
+      updateSyncIndicators();
+      if (activeTab === "dashboard") renderDashboardHeroAndAuth();
+    });
+
+    /* ---------- Auth UI & Actions ---------- */
+    function buildAuthPanelHTML(inline = false) {
+      const isSignUp = authMode === "signup";
+      const msgHtml = authFeedback
+        ? `<div class="auth-msg ${esc(authFeedback.type)}">${esc(authFeedback.text)}</div>`
+        : "";
+      const prefix = inline ? "inline" : "modal";
+
+      return `
+        <div class="${inline ? "auth-grid" : ""}">
+          ${inline ? `
+            <div class="auth-intro">
+              <h3>Doctor Sign In</h3>
+              <p>Sign in with your email to access your incomplete and completed patient discharge summaries across mobile and desktop.</p>
+              <ul class="auth-benefits">
+                <li>Save incomplete summaries mid-round and finish later</li>
+                <li>Separate private workspace per signed-in doctor</li>
+                <li>Works offline on wards &amp; auto-syncs back online</li>
+              </ul>
+            </div>
+          ` : ""}
+          <div>
+            <div class="auth-tabs" role="tablist">
+              <button type="button" class="${!isSignUp ? "active" : ""}" onclick="setAuthMode('signin')">Sign In</button>
+              <button type="button" class="${isSignUp ? "active" : ""}" onclick="setAuthMode('signup')">Create Account</button>
+            </div>
+            ${msgHtml}
+            <form onsubmit="submitAuthForm(event, '${prefix}')">
+              ${isSignUp ? `
+                <div class="field">
+                  <label for="${prefix}AuthName">Doctor Name &amp; Role (optional)</label>
+                  <input type="text" id="${prefix}AuthName" placeholder="e.g. Kavitha S. (JR)" autocomplete="name">
+                </div>
+              ` : ""}
+              <div class="field">
+                <label for="${prefix}AuthEmail">Email</label>
+                <input type="email" id="${prefix}AuthEmail" placeholder="doctor@hospital.org" autocomplete="email" required>
+              </div>
+              <div class="field">
+                <label for="${prefix}AuthPassword">Password</label>
+                <div class="password-wrap">
+                  <input type="password" id="${prefix}AuthPassword" placeholder="${isSignUp ? "Min 6 characters" : "Enter password"}" autocomplete="${isSignUp ? "new-password" : "current-password"}" minlength="6" required>
+                  <button type="button" class="password-toggle" onclick="togglePasswordVisibility('${prefix}AuthPassword', this)">Show</button>
+                </div>
+              </div>
+              <button type="submit" class="btn" style="width:100%">${isSignUp ? "Create Doctor Account" : "Sign In &amp; Sync"}</button>
+            </form>
+            <div class="auth-footer-links">
+              <button type="button" class="link-btn" onclick="requestPasswordReset('${prefix}AuthEmail')">Forgot password?</button>
+              ${inline ? `<button type="button" class="link-btn" onclick="continueOfflineMode()">Continue offline (local only)</button>` : ""}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function setAuthMode(mode) {
+      authMode = mode;
+      authFeedback = null;
+      const modalEl = document.getElementById("authModal");
+      if (modalEl && modalEl.style.display !== "none" && !currentUser) {
+        const titleEl = document.getElementById("authModalTitle");
+        if (titleEl) titleEl.textContent = authMode === "signup" ? "Create Doctor Account" : "Sign In to DS Builder v2";
+        document.getElementById("authModalBody").innerHTML = buildAuthPanelHTML(false);
+      }
+      renderDashboardHeroAndAuth();
+    }
+
+    function togglePasswordVisibility(inputId, btn) {
+      const inp = document.getElementById(inputId);
+      if (!inp) return;
+      const show = inp.type === "password";
+      inp.type = show ? "text" : "password";
+      if (btn) btn.textContent = show ? "Hide" : "Show";
+    }
+
+    function continueOfflineMode() {
+      offlineDismissedAuthCard = true;
+      renderDashboardHeroAndAuth();
+      toast("Working in local device mode");
+    }
+
+    function openAuthOrAccount() {
+      if (!sbConfig.url || !sbConfig.anonKey) {
+        openSupabaseSetupModal();
+        return;
+      }
+      openAuthModal();
+    }
+
+    function openAuthModal(preferredMode = null) {
+      if (preferredMode) authMode = preferredMode;
+      authFeedback = null;
+      const modal = document.getElementById("authModal");
+      const title = document.getElementById("authModalTitle");
+      const body = document.getElementById("authModalBody");
+
+      if (currentUser) {
+        const docName = (currentUser.user_metadata && currentUser.user_metadata.full_name) || "Doctor Account";
+        title.textContent = "Signed-in Doctor Account";
+        body.innerHTML = `
+          <div class="auth-msg ok">Signed in as <b>${esc(currentUser.email || docName)}</b></div>
+          <p class="hint" style="font-size:13px">
+            <b>Name:</b> ${esc(docName)}<br>
+            <b>Saved summaries on account:</b> ${records.length}<br>
+            <b>Pending cloud uploads:</b> ${records.filter(r => r.dirty).length + pendingDeletes.length}
+          </p>
+          <div class="modal-actions">
+            <button type="button" class="btn" onclick="syncNow(true)">☁ Sync Now</button>
+            <button type="button" class="btn out" onclick="closeAuthModal();openSupabaseSetupModal()">⚙ Cloud Setup</button>
+            <button type="button" class="btn danger" onclick="signOutUser()">Sign Out</button>
+          </div>
+        `;
+      } else {
+        title.textContent = authMode === "signup" ? "Create Doctor Account" : "Sign In to DS Builder v2";
+        body.innerHTML = buildAuthPanelHTML(false);
+      }
+
+      modal.style.display = "flex";
+    }
+
+    function closeAuthModal() {
+      document.getElementById("authModal").style.display = "none";
+    }
+
+    async function submitAuthForm(event, prefix) {
+      event.preventDefault();
+      if (!sbClient) {
+        authFeedback = { type: "err", text: "Supabase is not connected yet. Check Cloud Setup or your internet connection." };
+        renderAuthFeedback();
+        return;
+      }
+
+      const emailEl = document.getElementById(`${prefix}AuthEmail`);
+      const passEl = document.getElementById(`${prefix}AuthPassword`);
+      const nameEl = document.getElementById(`${prefix}AuthName`);
+      const email = (emailEl && emailEl.value || "").trim();
+      const password = (passEl && passEl.value) || "";
+      const fullName = (nameEl && nameEl.value || "").trim();
+
+      if (!email || !password) return;
+
+      authFeedback = { type: "info", text: authMode === "signup" ? "Creating account..." : "Signing in..." };
+      renderAuthFeedback();
+
+      try {
+        const redirectUrl = window.location.href.split("#")[0].split("?")[0];
+        if (authMode === "signup") {
+          const { data, error } = await sbClient.auth.signUp({
+            email,
+            password,
+            options: {
+              emailRedirectTo: redirectUrl,
+              data: fullName ? { full_name: fullName } : {}
+            }
+          });
+          if (error) throw error;
+          if (data && data.session) {
+            authFeedback = null;
+            toast("Account created & signed in ✓");
+            closeAuthModal();
+          } else {
+            authFeedback = {
+              type: "ok",
+              text: "Account created! Check your email inbox to confirm your address, then sign in."
+            };
+            renderAuthFeedback();
+          }
+        } else {
+          const { error } = await sbClient.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          authFeedback = null;
+          toast("Signed in ✓ Syncing summaries...");
+          closeAuthModal();
+        }
+      } catch (e) {
+        authFeedback = { type: "err", text: e.message || "Authentication failed" };
+        renderAuthFeedback();
+      }
+    }
+
+    function renderAuthFeedback() {
+      if (document.getElementById("authModal").style.display !== "none" && !currentUser) {
+        document.getElementById("authModalBody").innerHTML = buildAuthPanelHTML(false);
+      }
+      renderDashboardHeroAndAuth();
+    }
+
+    async function requestPasswordReset(emailInputId) {
+      if (!sbClient) {
+        toast("Connect Supabase first");
+        return;
+      }
+      const el = document.getElementById(emailInputId);
+      const email = ((el && el.value) || prompt("Enter the email address for your doctor account:") || "").trim();
+      if (!email) return;
+
+      try {
+        const redirectUrl = window.location.href.split("#")[0].split("?")[0];
+        const { error } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
+        if (error) throw error;
+        authFeedback = { type: "ok", text: `Password reset email sent to ${email}. Open the link on this device to set a new password.` };
+        renderAuthFeedback();
+        toast("Password reset email sent ✓");
+      } catch (e) {
+        authFeedback = { type: "err", text: e.message || "Could not send password reset email" };
+        renderAuthFeedback();
+      }
+    }
+
+    async function signOutUser() {
+      const dirtyCount = records.filter(r => r.dirty).length + pendingDeletes.length;
+      if (dirtyCount > 0 && navigator.onLine && sbClient) {
+        await syncNow(false);
+      }
+      const remainingDirty = records.filter(r => r.dirty).length;
+      if (remainingDirty > 0) {
+        if (!confirm(`You have ${remainingDirty} offline unsynced edit(s) waiting for internet.\n\nSign out anyway? (Your unsynced drafts remain cached safely for this account on this device until you sign back in.)`)) {
+          return;
+        }
+      }
+
+      if (sbClient) {
+        try { await sbClient.auth.signOut(); } catch (e) { console.warn("signOut:", e); }
+      }
+      currentUser = null;
+      cacheLastUser(null);
+      closeAuthModal();
+      await handleUserScopeChange(null);
+      toast("Signed out cleanly");
+    }
+
+    /* ---------- Password Recovery Modal ---------- */
+    function openRecoveryModal() {
+      document.getElementById("recoveryNewPassword").value = "";
+      document.getElementById("recoveryModal").style.display = "flex";
+    }
+    function closeRecoveryModal() {
+      document.getElementById("recoveryModal").style.display = "none";
+    }
+    async function submitPasswordRecovery(event) {
+      event.preventDefault();
+      if (!sbClient) return;
+      const pw = document.getElementById("recoveryNewPassword").value;
+      try {
+        const { error } = await sbClient.auth.updateUser({ password: pw });
+        if (error) throw error;
+        closeRecoveryModal();
+        toast("Password updated successfully ✓");
+      } catch (e) {
+        toast(`Could not update password: ${e.message || "error"}`);
+      }
+    }
+
+    /* ---------- Supabase Setup Modal ---------- */
+    function openSupabaseSetupModal() {
+      const cfg = resolveSupabaseConfig();
+      document.getElementById("sbUrlInput").value = cfg.url || "";
+      document.getElementById("sbKeyInput").value = cfg.anonKey || "";
+      document.getElementById("setupSqlCode").textContent = SUPABASE_SCHEMA_SQL;
+      const resBox = document.getElementById("sbTestResult");
+      resBox.style.display = "none";
+      resBox.textContent = "";
+      document.getElementById("supabaseSetupModal").style.display = "flex";
+    }
+
+    function closeSupabaseSetupModal() {
+      document.getElementById("supabaseSetupModal").style.display = "none";
+    }
+
+    async function saveSupabaseSetup(event) {
+      event.preventDefault();
+      const url = document.getElementById("sbUrlInput").value.trim().replace(/\/+$/, "");
+      const key = document.getElementById("sbKeyInput").value.trim();
+      if (!url || !key) return;
+
+      try {
+        localStorage.setItem(SB_OVERRIDE_URL_KEY, url);
+        localStorage.setItem(SB_OVERRIDE_KEY_KEY, key);
+      } catch (e) {
+        toast("Could not save settings to localStorage");
+        return;
+      }
+
+      await initSupabase();
+      await loadScopedRecords();
+      await checkGuestDraftsForMigration();
+      renderDashboard();
+      await testSupabaseConnection();
+      toast("Supabase settings saved ✓");
+    }
+
+    async function clearSupabaseSetupOverride() {
+      try {
+        localStorage.removeItem(SB_OVERRIDE_URL_KEY);
+        localStorage.removeItem(SB_OVERRIDE_KEY_KEY);
+      } catch (e) { }
+      await initSupabase();
+      await loadScopedRecords();
+      renderDashboard();
+      const cfg = resolveSupabaseConfig();
+      document.getElementById("sbUrlInput").value = cfg.url || "";
+      document.getElementById("sbKeyInput").value = cfg.anonKey || "";
+      const resBox = document.getElementById("sbTestResult");
+      resBox.style.display = "block";
+      resBox.className = "setup-status info";
+      resBox.textContent = cfg.url ? "Reset to v2/supabase-config.js values." : "Cleared browser Supabase settings (Local mode active).";
+    }
+
+    async function testSupabaseConnection() {
+      const url = document.getElementById("sbUrlInput").value.trim().replace(/\/+$/, "");
+      const key = document.getElementById("sbKeyInput").value.trim();
+      const resBox = document.getElementById("sbTestResult");
+      resBox.style.display = "block";
+
+      if (!url || !key) {
+        resBox.className = "setup-status err";
+        resBox.textContent = "Please enter both Project URL and Anon Key.";
+        return;
+      }
+      if (!window.supabase || typeof window.supabase.createClient !== "function") {
+        resBox.className = "setup-status err";
+        resBox.textContent = "Supabase JS library is not loaded (check your internet connection and reload).";
+        return;
+      }
+
+      resBox.className = "setup-status info";
+      resBox.textContent = "Testing connection & database tables...";
+
+      try {
+        const probeClient = window.supabase.createClient(url, key, { auth: { persistSession: false } });
+        const { error } = await probeClient
+          .from("discharge_summaries")
+          .select("id", { head: true, count: "exact" })
+          .limit(1);
+
+        if (!error) {
+          resBox.className = "setup-status ok";
+          resBox.textContent = "Connected ✓ — 'discharge_summaries' table is ready! You can sign in now.";
+        } else if (/relation .* does not exist|could not find the table|PGRST205/i.test(error.message + " " + (error.code || ""))) {
+          resBox.className = "setup-status err";
+          resBox.textContent = "Connected to Supabase project, but 'discharge_summaries' table wasn't found. Run the SQL schema below in Supabase SQL Editor.";
+        } else {
+          resBox.className = "setup-status ok";
+          resBox.textContent = `Supabase reachable (${error.message}). Verify the SQL schema & Auth settings below.`;
+        }
+      } catch (e) {
+        resBox.className = "setup-status err";
+        resBox.textContent = `Connection failed: ${e.message || "Check URL and Anon Key"}`;
+      }
+    }
+
+    function copySetupSQL() {
+      navigator.clipboard.writeText(SUPABASE_SCHEMA_SQL).then(
+        () => toast("Supabase SQL copied to clipboard ✓"),
+        () => toast("Copy failed — select SQL manually from box")
+      );
+    }
+
+    /* ---------- autofill sample data for testing ---------- */
+    async function autofillTest() {
+      if (hasPatientContent(collectDraft())) {
+        if (!confirm("Autofill sample test data? Current patient entries will be overwritten or saved as a sample patient.")) return;
+      }
+      if (!hasRecordPersisted) {
+        currentRecordId = generateUUID();
+        currentRecordStatus = "incomplete";
+        currentRecordCreatedAt = new Date().toISOString();
+      }
+      hasRecordPersisted = true;
+
+      suppressSave = true;
+      try {
+        setVal_("name", "Ramasamy M.");
+        setVal_("age", "52");
+        setVal_("sex", "M");
+        setVal_("ipno", "2026/04812");
+        setVal_("doa", "2026-10-15");
+        setVal_("dod", todayISO());
+        setVal_("unitPrefix", "M-");
+        setVal_("unitRoman", "IV");
+        setVal_("modeOfDischarge", "Discharge");
+
+        setVal_("diagnosis", "Type 2 Diabetes Mellitus with DKA (Resolved)\nCommunity Acquired Pneumonia (Right Lower Lobe)\nEssential Hypertension");
+
+        complaints = [
+          "H/o fever for 4 days",
+          "H/o cough with expectoration for 4 days",
+          "H/o breathlessness for 2 days"
+        ];
+        renderComplaints();
+
+        setVal_("hopi", "Patient was apparently normal 4 days ago, then developed high-grade fever with chills and cough with expectoration. Developed progressive breathlessness (MMRC Grade III) for 2 days. No history of chest pain or palpitations. Patient had nausea, vomiting and reduced oral intake for 1 day prior to admission.");
+        pastHistory = [
+          "K/C/O T2DM x 8 years on irregular medication",
+          "K/C/O Systemic Hypertension x 5 years"
+        ];
+        renderPast();
+        rxHistory = [
+          "Tab. Metformin 500 mg BD",
+          "Tab. Telmisartan 40 mg OD"
+        ];
+        renderRxHistory();
+
+        setVal_("generalExam", "Patient conscious, oriented, tachypneic, afebrile, not pale, no icterus, cyanosis, clubbing, lymphadenopathy. Mild bilateral pedal edema present.");
+        setVal_("vBP", "130/80");
+        setVal_("vPR", "88");
+        setVal_("vRR", "22");
+        setVal_("vSpO2", "96% RA");
+        setVal_("vTemp", "Afebrile");
+        setVal_("vGRBS", "164");
+        setVal_("seCVS", "S1, S2 heard, no murmurs");
+        setVal_("seRS", "Bilateral air entry present, crepitations in right infrascapular area");
+        setVal_("sePA", "Soft, non-tender, no organomegaly");
+        setVal_("seCNS", "Conscious, oriented, NFND, GCS 15/15");
+
+        invSeq = 0;
+        const d1Id = ++invSeq, d2Id = ++invSeq;
+        invDates = [
+          { id: d1Id, date: "2026-10-15" },
+          { id: d2Id, date: "2026-10-19" }
+        ];
+        invParams = [
+          { id: ++invSeq, name: "Hb", values: { [d1Id]: "11.8", [d2Id]: "12.2" } },
+          { id: ++invSeq, name: "TC", values: { [d1Id]: "14200", [d2Id]: "8600" } },
+          { id: ++invSeq, name: "Platelet", values: { [d1Id]: "2.1 L", [d2Id]: "2.4 L" } },
+          { id: ++invSeq, name: "Urea", values: { [d1Id]: "42", [d2Id]: "28" } },
+          { id: ++invSeq, name: "Creatinine", values: { [d1Id]: "1.4", [d2Id]: "0.9" } },
+          { id: ++invSeq, name: "RBS", values: { [d1Id]: "340", [d2Id]: "138" } },
+          { id: ++invSeq, name: "Na", values: { [d1Id]: "132", [d2Id]: "138" } },
+          { id: ++invSeq, name: "K", values: { [d1Id]: "4.8", [d2Id]: "4.2" } }
+        ];
+        renderInvEditor();
+        setVal_("invOther", "CXR (PA view): Right lower zone consolidation resolving.\nECG: Normal sinus rhythm, HR 86/min.\nUSG Abdomen: Grade 1 fatty liver, normal bilateral kidneys.");
+
+        setVal_("opinions", "Pulmonology opinion obtained on 16.10.2026 — advised IV antibiotics and nebulisation.\nEndocrinology opinion obtained — advised sliding scale insulin, transitioned to basal-bolus regimen.");
+        setVal_("course", "Patient admitted with diabetic ketoacidosis precipitated by community-acquired pneumonia. Evaluated with blood sugars, arterial blood gases, septic screen, and chest radiography. Initially managed in HDU with IV fluids, insulin infusion, and broad-spectrum IV antibiotics (Inj. Ceftriaxone) along with nebulisation. Acidosis resolved and blood glucose levels normalised. Transitioned to subcutaneous insulin. Cough and breathlessness settled; patient maintained adequate saturation on room air. Vitals remained stable, tolerating normal diabetic diet. Patient is being discharged in a stable condition with oral medications and glycemic control advice.");
+
+        treatment = [
+          "Inj. Ceftriaxone 1 g IV BD",
+          "Inj. Insulin (Regular) IV infusion as per protocol, transitioned to SC",
+          "Inj. Pantoprazole 40 mg IV OD",
+          "Inj. Paracetamol 1 g IV SOS",
+          "Neb. Ipratropium-Salbutamol Q8H",
+          "IV Fluids 0.9% Normal Saline"
+        ];
+        renderTx();
+
+        setVal_("condition", "Clinically stable and symptomatically improved");
+        setVal_("condExtra", "Afebrile, eupneic, hemodynamically stable, tolerating diabetic diet");
+
+        setVal_("diet", "Diabetic and salt-restricted diet");
+        setVal_("physicalActivity", "Ambulant, adequate rest");
+        ynState = { physio: "No", equip: "No", dress: "No" };
+        ["physio", "equip", "dress"].forEach(k => setYNui(k, ynState[k]));
+        setVal_("otherNeeds", "Daily foot care and regular blood glucose monitoring");
+        rxMeds = [
+          "Tab. Cefpodoxime 200 mg BD × 5 days",
+          "Tab. Metformin 500 mg BD",
+          "Tab. Glimepiride 1 mg OD before breakfast",
+          "Tab. Telmisartan 40 mg OD",
+          "Tab. Pantoprazole 40 mg OD before food × 5 days",
+          "Tab. Paracetamol 650 mg SOS for fever/bodyache"
+        ];
+        renderRx();
+        setVal_("advice", "Take medications strictly as advised.\nAdequate hydration and diabetic diet.\nMonitor fasting and post-prandial blood sugar regularly.\nAvoid skipping meals.");
+        setVal_("emergencyContact", "Casualty / Emergency Dept: 044-25305000");
+        setVal_("review", "Review in Medicine OPD after 1 week with fasting and PP blood sugar reports (or earlier if needed).");
+        setVal_("warning", "Fever, increasing breathlessness, chest pain, persistent vomiting, reduced urine output, or severe giddiness — report to Casualty immediately.");
+
+        setVal_("preparedBy", "Dr. K. Vignesh (JR)");
+        setVal_("chief", "Dr. S. Sundararajan (Unit Chief)");
+        setVal_("signDateTime", "20.10.2026, 11:30 AM");
+
+        render(false);
+      } finally {
+        suppressSave = false;
+      }
+
+      await saveCurrentRecordNow(true);
+      showTab("form");
+      toast("Sample patient added & opened ✓");
+    }
+
+    /* ---------- Initial Boot ---------- */
+    async function loadAll() {
+      const lg = await store.get("ds-v2:logo");
+      if (lg) logoData = lg;
+
+      await initSupabase();
+      await loadScopedRecords();
+      await checkGuestDraftsForMigration();
+
+      suppressSave = true;
+      try {
+        resetEditorFieldsOnly();
+        const def = await getActiveDefaults();
+        if (def) applyDefaults(def);
+
+        const activeId = await store.get(getActiveIdKey());
+        const activeRec = activeId ? records.find(r => r.id === activeId) : null;
+        if (activeRec) {
+          currentRecordId = activeRec.id;
+          currentRecordStatus = activeRec.status || "incomplete";
+          currentRecordCreatedAt = activeRec.created_at;
+          hasRecordPersisted = true;
+          restoreDraft(activeRec.payload || {}, { preserveDod: true });
+        } else {
+          currentRecordId = generateUUID();
+          currentRecordStatus = "incomplete";
+          currentRecordCreatedAt = new Date().toISOString();
+          hasRecordPersisted = false;
+          setVal_("dod", todayISO());
+          renderInvEditor();
+          render(false);
+        }
+      } finally {
+        suppressSave = false;
+      }
+
+      showTab("dashboard");
+
+      if (currentUser && sbClient && navigator.onLine) {
+        await syncNow(false);
+      }
+    }
+
+    loadAll();
+
