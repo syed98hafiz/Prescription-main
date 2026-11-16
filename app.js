@@ -103,21 +103,102 @@
       return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     }
 
-    function setThemeColor(color) {
-      if (!/^#[0-9a-f]{6}$/i.test(color)) return;
-      const rgb = color.match(/[0-9a-f]{2}/gi).map(value => parseInt(value, 16));
-      const soft = rgb.map(value => Math.round(value + (255 - value) * .88));
-      document.documentElement.removeAttribute("data-theme");
-      document.documentElement.style.setProperty("--primary", color);
-      document.documentElement.style.setProperty("--primary-soft", `rgb(${soft.join(", ")})`);
-      document.documentElement.style.setProperty("--chip", `rgb(${soft.map(value => Math.max(0, value - 12)).join(", ")})`);
-      document.documentElement.style.setProperty("--chip-ink", color);
-      const picker = document.getElementById("themeColor");
-      if (picker) picker.value = color;
-      try { localStorage.setItem("ds:theme-color", color); } catch (e) { }
+    let themeConfig = { mode: "solid", color: "#14425f", color2: "#0284c7" };
+    let savedTemplates = [];
+
+    function parseThemeString(raw) {
+      const s = String(raw || "").trim();
+      const gradMatch = s.match(/^gradient:(#[0-9a-f]{6}):(#[0-9a-f]{6})$/i);
+      if (gradMatch) {
+        return { mode: "gradient", color: gradMatch[1].toLowerCase(), color2: gradMatch[2].toLowerCase() };
+      }
+      if (/^#[0-9a-f]{6}$/i.test(s)) {
+        return { mode: "solid", color: s.toLowerCase(), color2: themeConfig.color2 || "#0284c7" };
+      }
+      return null;
     }
 
-    try { setThemeColor(localStorage.getItem("ds:theme-color") || "#14425f"); } catch (e) { setThemeColor("#14425f"); }
+    function serializeThemeString(cfg = themeConfig) {
+      if (cfg && cfg.mode === "gradient" && /^#[0-9a-f]{6}$/i.test(cfg.color) && /^#[0-9a-f]{6}$/i.test(cfg.color2)) {
+        return `gradient:${cfg.color.toLowerCase()}:${cfg.color2.toLowerCase()}`;
+      }
+      return (cfg && /^#[0-9a-f]{6}$/i.test(cfg.color)) ? cfg.color.toLowerCase() : "#14425f";
+    }
+
+    function applyThemeConfig(nextCfg) {
+      if (!nextCfg || typeof nextCfg !== "object") return;
+      const c1 = /^#[0-9a-f]{6}$/i.test(nextCfg.color) ? nextCfg.color.toLowerCase() : (themeConfig.color || "#14425f");
+      const c2 = /^#[0-9a-f]{6}$/i.test(nextCfg.color2) ? nextCfg.color2.toLowerCase() : (themeConfig.color2 || "#0284c7");
+      const mode = nextCfg.mode === "gradient" ? "gradient" : "solid";
+      themeConfig = { mode, color: c1, color2: c2 };
+
+      const rgb1 = c1.match(/[0-9a-f]{2}/gi).map(v => parseInt(v, 16));
+      const rgb2 = c2.match(/[0-9a-f]{2}/gi).map(v => parseInt(v, 16));
+      const mixRgb = mode === "gradient"
+        ? rgb1.map((v, idx) => Math.round((v + rgb2[idx]) / 2))
+        : rgb1;
+      const soft = mixRgb.map(v => Math.round(v + (255 - v) * 0.88));
+
+      document.documentElement.removeAttribute("data-theme");
+      document.documentElement.style.setProperty("--primary", c1);
+      document.documentElement.style.setProperty("--primary-accent", mode === "gradient" ? c2 : c1);
+      document.documentElement.style.setProperty(
+        "--primary-bg",
+        mode === "gradient" ? `linear-gradient(135deg, ${c1} 0%, ${c2} 100%)'`.replace(/'$/, "") : c1
+      );
+      document.documentElement.style.setProperty("--primary-soft", `rgb(${soft.join(", ")})`);
+      document.documentElement.style.setProperty("--chip", `rgb(${soft.map(v => Math.max(0, v - 12)).join(", ")})`);
+      document.documentElement.style.setProperty("--chip-ink", c1);
+
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) metaTheme.setAttribute("content", c1);
+
+      const picker1 = document.getElementById("themeColor");
+      if (picker1) picker1.value = c1;
+      const picker2 = document.getElementById("themeColor2");
+      if (picker2) picker2.value = c2;
+      const gradBtn = document.getElementById("gradToggleBtn");
+      if (gradBtn) gradBtn.classList.toggle("active", mode === "gradient");
+
+      try {
+        localStorage.setItem("ds:theme-color", serializeThemeString(themeConfig));
+        localStorage.setItem("ds:theme-config", JSON.stringify(themeConfig));
+      } catch (e) { }
+    }
+
+    function setThemeColor(color) {
+      const parsed = parseThemeString(color);
+      if (!parsed) return;
+      applyThemeConfig(parsed);
+    }
+
+    function toggleGradientTheme() {
+      const nextMode = themeConfig.mode === "gradient" ? "solid" : "gradient";
+      applyThemeConfig({ ...themeConfig, mode: nextMode });
+      toast(nextMode === "gradient" ? "Gradient theme enabled 🌈" : "Solid theme enabled 🎨");
+    }
+
+    function selectThemePreset(mode, color1, color2) {
+      applyThemeConfig({ mode, color: color1, color2: color2 || themeConfig.color2 });
+    }
+
+    function onThemeColorPickerChange() {
+      const p1 = document.getElementById("themeColor");
+      if (!p1) return;
+      applyThemeConfig({ ...themeConfig, color: p1.value });
+    }
+
+    function onThemeColor2PickerChange() {
+      const p2 = document.getElementById("themeColor2");
+      if (!p2) return;
+      applyThemeConfig({ ...themeConfig, mode: "gradient", color2: p2.value });
+    }
+
+    try {
+      const savedCfg = JSON.parse(localStorage.getItem("ds:theme-config") || "null");
+      if (savedCfg && savedCfg.color) applyThemeConfig(savedCfg);
+      else setThemeColor(localStorage.getItem("ds:theme-color") || "#14425f");
+    } catch (e) { setThemeColor("#14425f"); }
 
     /* ---------- init datalists & chips ---------- */
     function fillDatalist(id, arr) { document.getElementById(id).innerHTML = arr.map(x => `<option value="${x}">`).join(""); }
@@ -1340,10 +1421,17 @@
         if (dbPromise) return dbPromise;
         dbPromise = new Promise((resolve, reject) => {
           if (!("indexedDB" in window)) { reject(new Error("IndexedDB unavailable")); return; }
-          const request = indexedDB.open("ds-builder", 1);
-          request.onupgradeneeded = () => request.result.createObjectStore("values");
-          request.onsuccess = () => resolve(request.result);
-          request.onerror = () => reject(request.error || new Error("IndexedDB open failed"));
+          const timer = setTimeout(() => reject(new Error("IndexedDB open timeout")), 400);
+          try {
+            const request = indexedDB.open("ds-builder", 1);
+            request.onupgradeneeded = () => request.result.createObjectStore("values");
+            request.onsuccess = () => { clearTimeout(timer); resolve(request.result); };
+            request.onerror = () => { clearTimeout(timer); reject(request.error || new Error("IndexedDB open failed")); };
+            request.onblocked = () => { clearTimeout(timer); reject(new Error("IndexedDB blocked")); };
+          } catch (err) {
+            clearTimeout(timer);
+            reject(err);
+          }
         });
         return dbPromise;
       }
@@ -1351,40 +1439,43 @@
         try { return localStorage.getItem(k); } catch (e) { return null; }
       }
       function fallbackSet(k, v) {
-        try { localStorage.setItem(k, v); } catch (e) { toast("Storage is unavailable; changes may not persist."); }
+        try { localStorage.setItem(k, v); } catch (e) { }
       }
       return {
         async get(k) {
           try {
             const db = await openDb();
             return await new Promise((resolve, reject) => {
+              const timer = setTimeout(() => resolve(fallbackGet(k)), 300);
               const request = db.transaction("values", "readonly").objectStore("values").get(k);
-              request.onsuccess = () => resolve(request.result === undefined ? fallbackGet(k) : request.result);
-              request.onerror = () => reject(request.error);
+              request.onsuccess = () => { clearTimeout(timer); resolve(request.result === undefined ? fallbackGet(k) : request.result); };
+              request.onerror = () => { clearTimeout(timer); reject(request.error); };
             });
           } catch (e) { return fallbackGet(k); }
         },
         async set(k, v) {
+          fallbackSet(k, v);
           try {
             const db = await openDb();
             await new Promise((resolve, reject) => {
+              const timer = setTimeout(resolve, 300);
               const request = db.transaction("values", "readwrite").objectStore("values").put(v, k);
-              request.onsuccess = resolve;
-              request.onerror = () => reject(request.error);
+              request.onsuccess = () => { clearTimeout(timer); resolve(); };
+              request.onerror = () => { clearTimeout(timer); reject(request.error); };
             });
-          } catch (e) { fallbackSet(k, v); }
+          } catch (e) { }
         },
         async remove(k) {
+          try { localStorage.removeItem(k); } catch (e) { }
           try {
             const db = await openDb();
             await new Promise((resolve, reject) => {
+              const timer = setTimeout(resolve, 300);
               const request = db.transaction("values", "readwrite").objectStore("values").delete(k);
-              request.onsuccess = resolve;
-              request.onerror = () => reject(request.error);
+              request.onsuccess = () => { clearTimeout(timer); resolve(); };
+              request.onerror = () => { clearTimeout(timer); reject(request.error); };
             });
-          } catch (e) {
-            try { localStorage.removeItem(k); } catch (removeError) { toast("Could not clear stored data."); }
-          }
+          } catch (e) { }
         }
       };
     })();
@@ -1463,6 +1554,222 @@
     async function saveDefaults() {
       const d = {}; DEFAULT_FIELDS.forEach(id => d[id] = document.getElementById(id).value);
       await store.set("ds:defaults", JSON.stringify(d)); toast("Saved as your defaults");
+    }
+
+    /* ---------- Multi-Template Library ---------- */
+    async function loadSavedTemplates() {
+      let list = safeParse(await store.get("ds:templates"));
+      if (!Array.isArray(list)) list = [];
+      try {
+        const seenNames = new Set(list.map(t => (t && t.name || "").toLowerCase()));
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith("ds:tpl:")) {
+            const name = k.slice("ds:tpl:".length).trim();
+            if (!name || seenNames.has(name.toLowerCase())) continue;
+            const raw = safeParse(localStorage.getItem(k));
+            if (raw && typeof raw === "object") {
+              const payload = raw.draft || raw.template || raw;
+              list.push({
+                id: raw.id || ("tpl_" + Date.now() + "_" + i),
+                name,
+                kind: raw.kind || "full",
+                isDefault: Boolean(raw.isDefault),
+                updated_at: raw.updated_at || new Date().toISOString(),
+                data: payload
+              });
+              seenNames.add(name.toLowerCase());
+            }
+          }
+        }
+      } catch (e) { }
+      const seenIds = new Set(list.map(t => t && t.id));
+      savedTemplates.forEach(t => {
+        if (t && !seenIds.has(t.id) && !list.some(x => x && x.name.toLowerCase() === t.name.toLowerCase())) {
+          list.unshift(t);
+        }
+      });
+      savedTemplates = list;
+      renderSavedTemplatesUI();
+    }
+
+    async function persistSavedTemplates() {
+      await store.set("ds:templates", JSON.stringify(savedTemplates));
+      try {
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith("ds:tpl:")) keys.push(k);
+        }
+        keys.forEach(k => localStorage.removeItem(k));
+        savedTemplates.forEach(t => {
+          if (t && t.name) {
+            localStorage.setItem(`ds:tpl:${t.name}`, JSON.stringify({
+              id: t.id,
+              name: t.name,
+              kind: t.kind,
+              isDefault: Boolean(t.isDefault),
+              updated_at: t.updated_at,
+              draft: t.data
+            }));
+          }
+        });
+      } catch (e) { }
+      renderSavedTemplatesUI();
+    }
+
+    async function saveNamedTemplateFromInput(nameInputId, scopeSelectId) {
+      const inp = document.getElementById(nameInputId);
+      const sel = document.getElementById(scopeSelectId);
+      let name = (inp && inp.value || "").trim();
+      if (!name) {
+        name = (prompt("Enter a name for this template (e.g. Unit M-I, Dengue Protocol, STEMI):") || "").trim();
+      }
+      if (!name) return;
+      const kind = (sel && sel.value === "defaults") ? "defaults" : "full";
+      let data;
+      if (kind === "defaults") {
+        const d = {};
+        DEFAULT_FIELDS.forEach(id => { const el = document.getElementById(id); if (el) d[id] = el.value; });
+        data = { f: d };
+      } else {
+        data = collectDraft();
+        if (data.f) data.f = { ...data.f, name: "", age: "", sex: "", ipno: "", doa: "", dod: "" };
+      }
+      const existingIdx = savedTemplates.findIndex(t => t && t.name.toLowerCase() === name.toLowerCase());
+      if (existingIdx >= 0) {
+        savedTemplates[existingIdx] = { ...savedTemplates[existingIdx], name, kind, updated_at: new Date().toISOString(), data };
+      } else {
+        savedTemplates.unshift({ id: "tpl_" + Date.now(), name, kind, isDefault: savedTemplates.length === 0, updated_at: new Date().toISOString(), data });
+      }
+      if (inp) inp.value = "";
+      await persistSavedTemplates();
+      toast(`Template "${name}" saved (${savedTemplates.length} total) ✓`);
+    }
+
+    async function applySavedTemplate(id) {
+      const tpl = savedTemplates.find(t => t && t.id === id);
+      if (!tpl || !tpl.data) return;
+      if (tpl.kind === "defaults") {
+        const fields = (tpl.data.f && typeof tpl.data.f === "object") ? tpl.data.f : tpl.data;
+        applyDefaults(fields);
+        render();
+        scheduleSave();
+      } else {
+        await loadJsonTemplate(tpl.data);
+      }
+      toast(`Applied template "${tpl.name}" ✓`);
+    }
+
+    async function setDefaultSavedTemplate(id) {
+      const target = savedTemplates.find(t => t && t.id === id);
+      if (!target) return;
+      savedTemplates.forEach(t => { if (t) t.isDefault = (t.id === id); });
+      const fields = (target.data && target.data.f && typeof target.data.f === "object") ? target.data.f : (target.data || {});
+      const d = {};
+      DEFAULT_FIELDS.forEach(fid => { if (fields[fid] != null) d[fid] = fields[fid]; });
+      if (Object.keys(d).length > 0) {
+        await store.set("ds:defaults", JSON.stringify(d));
+        applyDefaults(d);
+      }
+      await persistSavedTemplates();
+      toast(`"${target.name}" set as default template ★`);
+    }
+
+    async function deleteSavedTemplate(id) {
+      const idx = savedTemplates.findIndex(t => t && t.id === id);
+      if (idx < 0) return;
+      const name = savedTemplates[idx].name;
+      if (!confirm(`Delete saved template "${name}"?`)) return;
+      savedTemplates.splice(idx, 1);
+      await persistSavedTemplates();
+      toast(`Deleted template "${name}"`);
+    }
+
+    function exportSingleTemplate(id) {
+      const tpl = savedTemplates.find(t => t && t.id === id);
+      if (!tpl) return;
+      const clean = tpl.name.replace(/[^a-zA-Z0-9_-]+/g, "_") || "template";
+      const blob = new Blob([JSON.stringify(tpl, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `ds-template-${clean}.json`;
+      a.click();
+      toast(`Exported "${tpl.name}"`);
+    }
+
+    function importTemplateIntoLibrary() {
+      const inp = document.createElement("input");
+      inp.type = "file";
+      inp.accept = ".json,application/json";
+      inp.multiple = true;
+      inp.onchange = async () => {
+        const files = Array.from(inp.files || []);
+        if (!files.length) return;
+        let added = 0;
+        for (const f of files) {
+          const parsed = safeParse(await f.text());
+          if (!parsed || typeof parsed !== "object") continue;
+          if (Array.isArray(parsed.templates)) {
+            parsed.templates.forEach((t, idx) => {
+              if (t && t.name && t.data) {
+                savedTemplates.unshift({
+                  id: t.id || ("tpl_" + Date.now() + "_" + idx),
+                  name: t.name,
+                  kind: t.kind || "full",
+                  isDefault: false,
+                  updated_at: t.updated_at || new Date().toISOString(),
+                  data: t.data
+                });
+                added++;
+              }
+            });
+          } else {
+            const tplName = parsed.name || f.name.replace(/\.json$/i, "") || `Imported Template ${savedTemplates.length + 1}`;
+            const payload = parsed.data || parsed.draft || parsed.template || parsed;
+            savedTemplates.unshift({
+              id: "tpl_" + Date.now() + "_" + added,
+              name: tplName,
+              kind: parsed.kind || "full",
+              isDefault: false,
+              updated_at: new Date().toISOString(),
+              data: payload
+            });
+            added++;
+          }
+        }
+        if (added > 0) {
+          await persistSavedTemplates();
+          toast(`Imported ${added} template(s) ✓`);
+        } else {
+          toast("Invalid template JSON file");
+        }
+      };
+      inp.click();
+    }
+
+    function renderSavedTemplatesUI() {
+      const box = document.getElementById("inlineTemplateList");
+      if (!box) return;
+      if (!savedTemplates.length) {
+        box.innerHTML = `<div class="hint" style="margin:4px 0">No named templates saved yet. Enter a name above and tap <b>+ Save Template</b> to save as many unit or disease templates as you need.</div>`;
+        return;
+      }
+      box.innerHTML = savedTemplates.map(t => `
+        <div class="tpl-item ${t.isDefault ? "is-default" : ""}">
+          <div class="tpl-item-info">
+            <span class="tpl-item-name">${esc(t.name)}</span>
+            <span class="tpl-badge">${t.kind === "defaults" ? "Header & Defaults" : "Full Clinical Form"}</span>
+            ${t.isDefault ? `<span class="tpl-badge default-star">★ Active Default</span>` : ""}
+          </div>
+          <div class="tpl-item-actions">
+            <button type="button" class="btn sm" onclick="applySavedTemplate('${esc(t.id)}')">Load</button>
+            <button type="button" class="btn sm out" onclick="setDefaultSavedTemplate('${esc(t.id)}')" title="Auto-apply on New Patient">★ Default</button>
+            <button type="button" class="btn sm out" onclick="exportSingleTemplate('${esc(t.id)}')" title="Download .json">⬇</button>
+            <button type="button" class="btn sm danger" onclick="deleteSavedTemplate('${esc(t.id)}')" title="Delete template">×</button>
+          </div>
+        </div>
+      `).join("");
     }
 
     async function newSummary() {
@@ -1617,6 +1924,7 @@
         return;
       }
       const lg = await store.get("ds:logo"); if (lg) logoData = lg;
+      await loadSavedTemplates();
       const def = safeParse(await store.get("ds:defaults"));
       if (def) applyDefaults(def);
       const draft = safeParse(await store.get("ds:draft"));

@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="icon-192.png">
   <link rel="icon" href="icon-192.png">
   <title>Discharge Summary Builder</title>
-  <link rel="stylesheet" href="styles.css?v=32">
+  <link rel="stylesheet" href="styles.css?v=33">
   <script src="html2pdf.bundle.min.js"></script>
 </head>
 
@@ -46,17 +46,33 @@
             <button onclick="importTemplate();closeMenu()">⬆ Import defaults <span class="beta-tag">BETA</span></button>
             <button onclick="doLocalTemplate();closeMenu()">📁 Local template <span class="beta-tag">BETA</span></button>
             <hr>
-            <div class="menu-label">Summary</div>
-            <label class="theme-picker">🎨 Theme color
-              <input id="themeColor" type="color" value="#14425f" aria-label="Choose theme color"
-                oninput="setThemeColor(this.value)">
-            </label>
+            <div class="menu-label">Theme &amp; Summary</div>
+            <div class="theme-panel" onclick="event.stopPropagation()">
+              <div class="theme-mode-row">
+                <span>🎨 Theme</span>
+                <div class="theme-pickers-group">
+                  <input id="themeColor" type="color" value="#14425f" title="Primary color" aria-label="Choose primary theme color" oninput="onThemeColorPickerChange()">
+                  <input id="themeColor2" type="color" value="#0284c7" title="Gradient second color" aria-label="Choose gradient second color" oninput="onThemeColor2PickerChange()">
+                  <button type="button" id="gradToggleBtn" class="grad-toggle-pill" onclick="toggleGradientTheme()">🌈 Gradient</button>
+                </div>
+              </div>
+              <div class="theme-swatches" aria-label="Theme presets">
+                <button type="button" class="theme-swatch" title="Classic Navy (Solid)" style="background:#14425f" onclick="selectThemePreset('solid','#14425f','#0284c7')"></button>
+                <button type="button" class="theme-swatch" title="Ocean Breeze (Gradient)" style="background:linear-gradient(135deg,#14425f,#0284c7)" onclick="selectThemePreset('gradient','#14425f','#0284c7')"></button>
+                <button type="button" class="theme-swatch" title="Royal Indigo (Gradient)" style="background:linear-gradient(135deg,#1e3a8a,#7c3aed)" onclick="selectThemePreset('gradient','#1e3a8a','#7c3aed')"></button>
+                <button type="button" class="theme-swatch" title="Emerald Teal (Gradient)" style="background:linear-gradient(135deg,#065f46,#0d9488)" onclick="selectThemePreset('gradient','#065f46','#0d9488')"></button>
+                <button type="button" class="theme-swatch" title="Sunset Rose (Gradient)" style="background:linear-gradient(135deg,#881337,#e11d48)" onclick="selectThemePreset('gradient','#881337','#e11d48')"></button>
+                <button type="button" class="theme-swatch" title="Midnight Plum (Gradient)" style="background:linear-gradient(135deg,#1e1b4b,#be185d)" onclick="selectThemePreset('gradient','#1e1b4b','#be185d')"></button>
+                <button type="button" class="theme-swatch" title="Slate Steel (Gradient)" style="background:linear-gradient(135deg,#1e293b,#475569)" onclick="selectThemePreset('gradient','#1e293b','#475569')"></button>
+              </div>
+            </div>
             <button class="install-btn" id="installBtn" onclick="doInstall();closeMenu()">📲 Install app</button>
             <button onclick="shareDoc();closeMenu()">📤 Share PDF (WhatsApp, etc.)</button>
             <button onclick="copyText();closeMenu()">📋 Copy text</button>
             <button onclick="checkAndPrint();closeMenu()">🖨️ Print / Save PDF</button>
             <hr>
             <div class="menu-label">Manage</div>
+            <a href="v2/">☁ Dashboard &amp; Cloud Sync (v2)</a>
             <button onclick="autofillTest();closeMenu()">⚡ Autofill test data</button>
             <button onclick="requestPersistentStorage();closeMenu()">💾 Enable persistent storage <span class="beta-tag">BETA</span></button>
             <button onclick="newSummary();closeMenu()">🆕 New patient</button>
@@ -71,17 +87,23 @@
   <div class="wrap" id="formTab">
 
     <details class="card" data-clear="setup">
-      <summary><span class="section-number">1.</span> Setup &amp; defaults <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">1.</span> Setup, defaults &amp; saved templates <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
-        <p class="hint" style="margin-top:0">Fill your <b>college, unit, chief</b> and the standard <b>advice / warning
-            / review</b> lines once, then tap <b>Save as my defaults</b>. They auto-fill every new summary and survive a
-          refresh. Everything you type also auto-saves as a draft.</p>
+        <p class="hint" style="margin-top:0">Fill your <b>college, unit, chief</b> and standard <b>advice / warning / review</b> lines once, then tap <b>Save as my defaults</b> — or save <b>multiple named templates</b> below for different units, diseases, or doctors.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn" onclick="saveDefaults()">Save as my defaults</button>
-          <button class="btn out" onclick="newSummary()">New patient (keep defaults)</button>
+          <button type="button" class="btn" onclick="saveDefaults()">Save as my defaults</button>
+          <button type="button" class="btn out" onclick="importTemplateIntoLibrary()">⬆ Import .json Template</button>
+          <button type="button" class="btn out" onclick="newSummary()">New patient (keep defaults)</button>
         </div>
-        <p class="hint">Defaults kept: college, address, department, summary type, unit, chief, prepared-by, and the
-          advice / warning / review templates. Set unit &amp; chief in the sections below, then save.</p>
+        <div class="tpl-save-bar">
+          <input type="text" id="inlineTplName" placeholder="Template name (e.g. Unit M-I, Dengue Protocol, STEMI)">
+          <select id="inlineTplScope" aria-label="Template scope">
+            <option value="full">Full form template (Header + Clinical + Rx)</option>
+            <option value="defaults">Header &amp; defaults only (Unit, Chief, Advice)</option>
+          </select>
+          <button type="button" class="btn sm" onclick="saveNamedTemplateFromInput('inlineTplName','inlineTplScope')">+ Save Template</button>
+        </div>
+        <div id="inlineTemplateList" class="tpl-list"></div>
       </div>
     </details>
 
@@ -479,7 +501,7 @@ Take diet as advised.</textarea>
     <div class="paper" id="paper"></div>
   </div>
 
-  <script src="app.js?v=32"></script>
+  <script src="app.js?v=33"></script>
 </body>
 
 </html>

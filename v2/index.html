@@ -14,10 +14,10 @@
   <link rel="apple-touch-icon" sizes="180x180" href="../icon-192.png">
   <link rel="icon" href="../icon-192.png">
   <title>DS Builder v2 — Dashboard &amp; Discharge Summary</title>
-  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="stylesheet" href="styles.css?v=4">
   <script src="../html2pdf.bundle.min.js"></script>
-  <script src="supabase.min.js?v=3"></script>
-  <script src="supabase-config.js?v=3"></script>
+  <script src="supabase.min.js?v=4"></script>
+  <script src="supabase-config.js?v=4"></script>
 </head>
 
 <body>
@@ -52,19 +52,36 @@
             <button onclick="openAuthOrAccount();closeMenu()">👤 Account / Sign in</button>
             <button onclick="openSupabaseSetupModal();closeMenu()">⚙ Supabase cloud setup</button>
             <hr>
-            <div class="menu-label">Template <span class="beta-tag">BETA</span></div>
+            <div class="menu-label">Templates &amp; Drafts</div>
+            <button onclick="openTemplatesModal();closeMenu()">🗂 Saved templates manager</button>
+            <button onclick="openTemplatesModal(true);closeMenu()">➕ Save current as template</button>
             <button onclick="exportDraft();closeMenu()">💾 Export patient draft (.json)</button>
             <button onclick="importDraft();closeMenu()">📂 Import patient draft (.json)</button>
             <hr>
-            <button onclick="exportTemplate();closeMenu()">⬇ Export defaults <span class="beta-tag">BETA</span></button>
-            <button onclick="importTemplate();closeMenu()">⬆ Import defaults <span class="beta-tag">BETA</span></button>
-            <button onclick="doLocalTemplate();closeMenu()">📁 Local template <span class="beta-tag">BETA</span></button>
+            <button onclick="exportTemplate();closeMenu()">⬇ Export defaults (.json)</button>
+            <button onclick="importTemplate();closeMenu()">⬆ Import template (.json)</button>
+            <button onclick="doLocalTemplate();closeMenu()">📁 Load built-in template</button>
             <hr>
-            <div class="menu-label">Summary</div>
-            <label class="theme-picker">🎨 Theme color
-              <input id="themeColor" type="color" value="#14425f" aria-label="Choose theme color"
-                oninput="setThemeColor(this.value)">
-            </label>
+            <div class="menu-label">Theme &amp; Summary</div>
+            <div class="theme-panel" onclick="event.stopPropagation()">
+              <div class="theme-mode-row">
+                <span>🎨 Theme</span>
+                <div class="theme-pickers-group">
+                  <input id="themeColor" type="color" value="#14425f" title="Primary color" aria-label="Choose primary theme color" oninput="onThemeColorPickerChange()">
+                  <input id="themeColor2" type="color" value="#0284c7" title="Gradient second color" aria-label="Choose gradient second color" oninput="onThemeColor2PickerChange()">
+                  <button type="button" id="gradToggleBtn" class="grad-toggle-pill" onclick="toggleGradientTheme()">🌈 Gradient</button>
+                </div>
+              </div>
+              <div class="theme-swatches" aria-label="Theme presets">
+                <button type="button" class="theme-swatch" title="Classic Navy (Solid)" style="background:#14425f" onclick="selectThemePreset('solid','#14425f','#0284c7')"></button>
+                <button type="button" class="theme-swatch" title="Ocean Breeze (Gradient)" style="background:linear-gradient(135deg,#14425f,#0284c7)" onclick="selectThemePreset('gradient','#14425f','#0284c7')"></button>
+                <button type="button" class="theme-swatch" title="Royal Indigo (Gradient)" style="background:linear-gradient(135deg,#1e3a8a,#7c3aed)" onclick="selectThemePreset('gradient','#1e3a8a','#7c3aed')"></button>
+                <button type="button" class="theme-swatch" title="Emerald Teal (Gradient)" style="background:linear-gradient(135deg,#065f46,#0d9488)" onclick="selectThemePreset('gradient','#065f46','#0d9488')"></button>
+                <button type="button" class="theme-swatch" title="Sunset Rose (Gradient)" style="background:linear-gradient(135deg,#881337,#e11d48)" onclick="selectThemePreset('gradient','#881337','#e11d48')"></button>
+                <button type="button" class="theme-swatch" title="Midnight Plum (Gradient)" style="background:linear-gradient(135deg,#1e1b4b,#be185d)" onclick="selectThemePreset('gradient','#1e1b4b','#be185d')"></button>
+                <button type="button" class="theme-swatch" title="Slate Steel (Gradient)" style="background:linear-gradient(135deg,#1e293b,#475569)" onclick="selectThemePreset('gradient','#1e293b','#475569')"></button>
+              </div>
+            </div>
             <button class="install-btn" id="installBtn" onclick="doInstall();closeMenu()">📲 Install app</button>
             <button onclick="shareDoc();closeMenu()">📤 Share PDF (WhatsApp, etc.)</button>
             <button onclick="copyText();closeMenu()">📋 Copy text</button>
@@ -173,17 +190,24 @@
     </div>
 
     <details class="card" data-clear="setup">
-      <summary><span class="section-number">1.</span> Setup &amp; defaults <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
+      <summary><span class="section-number">1.</span> Setup, defaults &amp; saved templates <button class="section-clear" type="button" onclick="clearFormSection(event, this)">Clear</button></summary>
       <div class="body">
-        <p class="hint" style="margin-top:0">Fill your <b>college, unit, chief</b> and the standard <b>advice / warning
-            / review</b> lines once, then tap <b>Save as my defaults</b>. They auto-fill every new summary and survive a
-          refresh. Defaults also sync with your Supabase account when signed in.</p>
+        <p class="hint" style="margin-top:0">Fill your <b>college, unit, chief</b> and standard <b>advice / warning / review</b> lines once, then tap <b>Save as my defaults</b> — or save <b>multiple named templates</b> below for different units, diseases, or doctors.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn" onclick="saveDefaults()">Save as my defaults</button>
-          <button class="btn out" onclick="newSummary()">New patient (keep defaults)</button>
+          <button type="button" class="btn" onclick="saveDefaults()">Save as my defaults</button>
+          <button type="button" class="btn out" onclick="openTemplatesModal()">🗂 Manage Templates (<span id="savedTplCountBadge">0</span>)</button>
+          <button type="button" class="btn out" onclick="newSummary()">New patient (keep defaults)</button>
         </div>
-        <p class="hint">Defaults kept: college, address, department, summary type, unit, chief, prepared-by, and the
-          advice / warning / review templates. Set unit &amp; chief in the sections below, then save.</p>
+
+        <div class="tpl-save-bar">
+          <input type="text" id="inlineTplName" placeholder="Template name (e.g. Unit M-I, Dengue Protocol, STEMI)">
+          <select id="inlineTplScope" aria-label="Template scope">
+            <option value="full">Full form template (Header + Clinical + Rx)</option>
+            <option value="defaults">Header &amp; defaults only (Unit, Chief, Advice)</option>
+          </select>
+          <button type="button" class="btn sm" onclick="saveNamedTemplateFromInput('inlineTplName','inlineTplScope')">+ Save Template</button>
+        </div>
+        <div id="inlineTemplateList" class="tpl-list"></div>
       </div>
     </details>
 
@@ -634,14 +658,51 @@ Take diet as advised.</textarea>
         </form>
 
         <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+        <div class="setup-sql-head" style="margin-bottom:10px">
+          <div>
+            <b>Email Confirmation &amp; Redirect URL Setup</b>
+            <p class="hint" style="margin:2px 0 0">If confirmation emails redirect to <code>localhost:3000</code>, copy your live App URL below and set it as <b>Site URL</b> &amp; <b>Redirect URL</b> in <b>Supabase → Authentication → URL Configuration</b> (or disable <i>Confirm email</i> under <b>Authentication → Providers → Email</b>).</p>
+          </div>
+          <button type="button" class="btn sm out" onclick="copyAppRedirectUrl()">📋 Copy App URL</button>
+        </div>
+
+        <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
         <div class="setup-sql-head">
           <div>
-            <b>Database Setup SQL</b>
-            <p class="hint" style="margin:2px 0 0">Run once in <b>Supabase → SQL Editor</b> to create <code>discharge_summaries</code> &amp; <code>user_settings</code> with per-user Row Level Security.</p>
+            <b>Database Setup SQL (Optional — Auto-Fallback Active)</b>
+            <p class="hint" style="margin:2px 0 0">Cloud sync works immediately via your Supabase Auth account even before running this SQL. Run once in <b>Supabase → SQL Editor</b> to enable dedicated <code>discharge_summaries</code> &amp; <code>user_settings</code> tables.</p>
           </div>
           <button type="button" class="btn sm out" onclick="copySetupSQL()">📋 Copy SQL</button>
         </div>
         <pre class="sql-preview" id="setupSqlCode"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SAVED TEMPLATES MANAGER MODAL ================= -->
+  <div class="modal-backdrop no-print" id="templatesModal" style="display:none" onclick="if(event.target===this) closeTemplatesModal()">
+    <div class="modal-card modal-wide" role="dialog" aria-modal="true" aria-labelledby="templatesModalTitle">
+      <div class="modal-head">
+        <h2 id="templatesModalTitle">🗂 Saved Templates Library</h2>
+        <button type="button" class="modal-close" onclick="closeTemplatesModal()" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint" style="margin-top:0;font-size:13px">
+          Save multiple templates for different units, doctors, or standard disease protocols (e.g., Dengue, STEMI, COPD, Unit M-I). Templates save on this device and sync to your Supabase account.
+        </p>
+        <div class="tpl-save-bar" style="margin-top:0">
+          <input type="text" id="modalTplName" placeholder="Template name (e.g. Unit M-II Defaults, Acute STEMI)">
+          <select id="modalTplScope" aria-label="Template scope">
+            <option value="full">Full form template (Header + Clinical + Rx)</option>
+            <option value="defaults">Header &amp; defaults only (Unit, Chief, Advice)</option>
+          </select>
+          <button type="button" class="btn sm" onclick="saveNamedTemplateFromInput('modalTplName','modalTplScope')">+ Save Current Form</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button type="button" class="btn sm out" onclick="importTemplateIntoLibrary()">⬆ Import .json into Library</button>
+          <button type="button" class="btn sm out" onclick="exportAllTemplates()">⬇ Export All Templates (.json)</button>
+        </div>
+        <div id="modalTemplateList" class="tpl-list" style="margin-top:14px"></div>
       </div>
     </div>
   </div>
@@ -668,7 +729,7 @@ Take diet as advised.</textarea>
     </div>
   </div>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 
 </html>

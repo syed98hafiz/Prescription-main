@@ -2,6 +2,8 @@
       --ink: #1b2733;
       --muted: #5b6b7a;
       --primary: #14425f;
+      --primary-accent: #14425f;
+      --primary-bg: #14425f;
       --primary-soft: #e6eef4;
       --line: #d3dce4;
       --chip: #d9e8f2;
@@ -48,7 +50,7 @@
       position: sticky;
       top: 0;
       z-index: 10;
-      background: var(--primary);
+      background: var(--primary-bg, var(--primary));
       color: #fff;
       display: flex;
       align-items: center;
@@ -1720,4 +1722,175 @@
         size: A4 portrait;
         margin: 0;
       }
+    }
+
+    /* ---------- Gradient Theme & Multi-Template Manager Styles ---------- */
+    .btn:not(.out):not(.danger) {
+      background: var(--primary-bg, var(--primary));
+      border-color: var(--primary);
+    }
+
+    .theme-panel {
+      padding: 8px 16px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .theme-mode-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .theme-pickers-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .theme-pickers-group input[type="color"] {
+      width: 30px;
+      height: 24px;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .grad-toggle-pill {
+      border: 1px solid var(--line);
+      background: #f5f8fa;
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      cursor: pointer;
+      width: auto !important;
+      display: inline-flex !important;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .grad-toggle-pill.active {
+      background: var(--primary-bg, var(--primary));
+      color: #fff !important;
+      border-color: var(--primary);
+    }
+
+    .theme-swatches {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .theme-swatch {
+      width: 22px !important;
+      height: 22px !important;
+      padding: 0 !important;
+      border-radius: 50% !important;
+      border: 2px solid #fff !important;
+      box-shadow: 0 0 0 1px var(--line);
+      cursor: pointer;
+      flex: 0 0 22px;
+      transition: transform .12s ease;
+    }
+
+    .theme-swatch:hover {
+      transform: scale(1.14);
+    }
+
+    .tpl-save-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 10px;
+    }
+
+    .tpl-save-bar input[type="text"] {
+      flex: 1 1 180px;
+      min-width: 140px;
+    }
+
+    .tpl-save-bar select {
+      flex: 0 1 210px;
+      width: auto;
+    }
+
+    .tpl-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .tpl-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      font-size: 13px;
+    }
+
+    .tpl-item.is-default {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .tpl-item-info {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+      flex: 1 1 180px;
+    }
+
+    .tpl-item-name {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .tpl-badge {
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 999px;
+      background: var(--chip);
+      color: var(--chip-ink);
+    }
+
+    .tpl-badge.default-star {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+    }
+
+    .tpl-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .btn.sm {
+      padding: 5px 10px;
+      font-size: 12px;
+      border-radius: 6px;
     }

@@ -103,8 +103,11 @@
     let lastSyncTime = null;
     let cloudSaveTimer = null;
     let syncInFlight = false;
+    let suppressAuthReload = false;
     let guestDraftsPromptVisible = false;
     let guestDraftsCount = 0;
+    let savedTemplates = [];
+    let themeConfig = { mode: "solid", color: "#14425f", color2: "#0284c7" };
 
     const SUPABASE_SCHEMA_SQL = `-- Run once in Supabase Dashboard -> SQL Editor -> New query
 create table if not exists public.discharge_summaries (
@@ -244,24 +247,113 @@ create policy "Users can delete own settings"
       return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     }
 
-    function setThemeColor(color, syncToCloud = true) {
-      if (!/^#[0-9a-f]{6}$/i.test(color)) return;
-      const rgb = color.match(/[0-9a-f]{2}/gi).map(value => parseInt(value, 16));
-      const soft = rgb.map(value => Math.round(value + (255 - value) * .88));
+    function parseThemeString(raw) {
+      const s = String(raw || "").trim();
+      const gradMatch = s.match(/^gradient:(#[0-9a-f]{6}):(#[0-9a-f]{6})$/i);
+      if (gradMatch) {
+        return { mode: "gradient", color: gradMatch[1].toLowerCase(), color2: gradMatch[2].toLowerCase() };
+      }
+      if (/^#[0-9a-f]{6}$/i.test(s)) {
+        return { mode: "solid", color: s.toLowerCase(), color2: themeConfig.color2 || "#0284c7" };
+      }
+      return null;
+    }
+
+    function serializeThemeString(cfg = themeConfig) {
+      if (cfg && cfg.mode === "gradient" && /^#[0-9a-f]{6}$/i.test(cfg.color) && /^#[0-9a-f]{6}$/i.test(cfg.color2)) {
+        return `gradient:${cfg.color.toLowerCase()}:${cfg.color2.toLowerCase()}`;
+      }
+      return (cfg && /^#[0-9a-f]{6}$/i.test(cfg.color)) ? cfg.color.toLowerCase() : "#14425f";
+    }
+
+    function applyThemeConfig(nextCfg, syncToCloud = true) {
+      if (!nextCfg || typeof nextCfg !== "object") return;
+      const c1 = /^#[0-9a-f]{6}$/i.test(nextCfg.color) ? nextCfg.color.toLowerCase() : (themeConfig.color || "#14425f");
+      const c2 = /^#[0-9a-f]{6}$/i.test(nextCfg.color2) ? nextCfg.color2.toLowerCase() : (themeConfig.color2 || "#0284c7");
+      const mode = nextCfg.mode === "gradient" ? "gradient" : "solid";
+      themeConfig = { mode, color: c1, color2: c2 };
+
+      const rgb1 = c1.match(/[0-9a-f]{2}/gi).map(v => parseInt(v, 16));
+      const rgb2 = c2.match(/[0-9a-f]{2}/gi).map(v => parseInt(v, 16));
+      const mixRgb = mode === "gradient"
+        ? rgb1.map((v, idx) => Math.round((v + rgb2[idx]) / 2))
+        : rgb1;
+      const soft = mixRgb.map(v => Math.round(v + (255 - v) * 0.88));
+
       document.documentElement.removeAttribute("data-theme");
-      document.documentElement.style.setProperty("--primary", color);
+      document.documentElement.style.setProperty("--primary", c1);
+      document.documentElement.style.setProperty("--primary-accent", mode === "gradient" ? c2 : c1);
+      document.documentElement.style.setProperty(
+        "--primary-bg",
+        mode === "gradient" ? `linear-gradient(135deg, ${c1} 0%, ${c2} 100%)` : c1
+      );
       document.documentElement.style.setProperty("--primary-soft", `rgb(${soft.join(", ")})`);
-      document.documentElement.style.setProperty("--chip", `rgb(${soft.map(value => Math.max(0, value - 12)).join(", ")})`);
-      document.documentElement.style.setProperty("--chip-ink", color);
-      const picker = document.getElementById("themeColor");
-      if (picker) picker.value = color;
-      try { localStorage.setItem("ds-v2:theme-color", color); } catch (e) { }
+      document.documentElement.style.setProperty("--chip", `rgb(${soft.map(v => Math.max(0, v - 12)).join(", ")})`);
+      document.documentElement.style.setProperty("--chip-ink", c1);
+
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) metaTheme.setAttribute("content", c1);
+
+      const picker1 = document.getElementById("themeColor");
+      if (picker1) picker1.value = c1;
+      const picker2 = document.getElementById("themeColor2");
+      if (picker2) picker2.value = c2;
+      const gradBtn = document.getElementById("gradToggleBtn");
+      if (gradBtn) gradBtn.classList.toggle("active", mode === "gradient");
+
+      const encoded = serializeThemeString(themeConfig);
+      try {
+        localStorage.setItem("ds-v2:theme-color", encoded);
+        localStorage.setItem("ds-v2:theme-config", JSON.stringify(themeConfig));
+      } catch (e) { }
+
       if (syncToCloud && currentUser && sbClient && navigator.onLine) {
         pushUserSettingsToCloud().catch(() => {});
       }
     }
 
-    try { setThemeColor(localStorage.getItem("ds-v2:theme-color") || "#14425f", false); } catch (e) { setThemeColor("#14425f", false); }
+    function setThemeColor(colorOrEncoded, syncToCloud = true) {
+      const parsed = parseThemeString(colorOrEncoded);
+      if (!parsed) return;
+      applyThemeConfig(parsed, syncToCloud);
+    }
+
+    function setThemeGradient(color1, color2, syncToCloud = true) {
+      applyThemeConfig({ mode: "gradient", color: color1, color2: color2 || themeConfig.color2 }, syncToCloud);
+    }
+
+    function toggleGradientTheme() {
+      const nextMode = themeConfig.mode === "gradient" ? "solid" : "gradient";
+      applyThemeConfig({ ...themeConfig, mode: nextMode }, true);
+      toast(nextMode === "gradient" ? "Gradient theme enabled 🌈" : "Solid theme enabled 🎨");
+    }
+
+    function selectThemePreset(mode, color1, color2) {
+      applyThemeConfig({ mode, color: color1, color2: color2 || themeConfig.color2 }, true);
+    }
+
+    function onThemeColorPickerChange() {
+      const p1 = document.getElementById("themeColor");
+      if (!p1) return;
+      applyThemeConfig({ ...themeConfig, color: p1.value }, true);
+    }
+
+    function onThemeColor2PickerChange() {
+      const p2 = document.getElementById("themeColor2");
+      if (!p2) return;
+      applyThemeConfig({ ...themeConfig, mode: "gradient", color2: p2.value }, true);
+    }
+
+    try {
+      const savedCfg = safeParse(localStorage.getItem("ds-v2:theme-config"));
+      if (savedCfg && savedCfg.color) {
+        applyThemeConfig(savedCfg, false);
+      } else {
+        setThemeColor(localStorage.getItem("ds-v2:theme-color") || "#14425f", false);
+      }
+    } catch (e) {
+      setThemeColor("#14425f", false);
+    }
 
     /* ---------- init datalists & chips ---------- */
     function fillDatalist(id, arr) { document.getElementById(id).innerHTML = arr.map(x => `<option value="${x}">`).join(""); }
@@ -1472,10 +1564,17 @@ create policy "Users can delete own settings"
         if (dbPromise) return dbPromise;
         dbPromise = new Promise((resolve, reject) => {
           if (!("indexedDB" in window)) { reject(new Error("IndexedDB unavailable")); return; }
-          const request = indexedDB.open("ds-builder-v2", 1);
-          request.onupgradeneeded = () => request.result.createObjectStore("values");
-          request.onsuccess = () => resolve(request.result);
-          request.onerror = () => reject(request.error || new Error("IndexedDB open failed"));
+          const timer = setTimeout(() => reject(new Error("IndexedDB open timeout")), 400);
+          try {
+            const request = indexedDB.open("ds-builder-v2", 1);
+            request.onupgradeneeded = () => request.result.createObjectStore("values");
+            request.onsuccess = () => { clearTimeout(timer); resolve(request.result); };
+            request.onerror = () => { clearTimeout(timer); reject(request.error || new Error("IndexedDB open failed")); };
+            request.onblocked = () => { clearTimeout(timer); reject(new Error("IndexedDB blocked")); };
+          } catch (err) {
+            clearTimeout(timer);
+            reject(err);
+          }
         });
         return dbPromise;
       }
@@ -1483,40 +1582,43 @@ create policy "Users can delete own settings"
         try { return localStorage.getItem(k); } catch (e) { return null; }
       }
       function fallbackSet(k, v) {
-        try { localStorage.setItem(k, v); } catch (e) { toast("Storage is unavailable; changes may not persist."); }
+        try { localStorage.setItem(k, v); } catch (e) { }
       }
       return {
         async get(k) {
           try {
             const db = await openDb();
             return await new Promise((resolve, reject) => {
+              const timer = setTimeout(() => resolve(fallbackGet(k)), 300);
               const request = db.transaction("values", "readonly").objectStore("values").get(k);
-              request.onsuccess = () => resolve(request.result === undefined ? fallbackGet(k) : request.result);
-              request.onerror = () => reject(request.error);
+              request.onsuccess = () => { clearTimeout(timer); resolve(request.result === undefined ? fallbackGet(k) : request.result); };
+              request.onerror = () => { clearTimeout(timer); reject(request.error); };
             });
           } catch (e) { return fallbackGet(k); }
         },
         async set(k, v) {
+          fallbackSet(k, v);
           try {
             const db = await openDb();
             await new Promise((resolve, reject) => {
+              const timer = setTimeout(resolve, 300);
               const request = db.transaction("values", "readwrite").objectStore("values").put(v, k);
-              request.onsuccess = resolve;
-              request.onerror = () => reject(request.error);
+              request.onsuccess = () => { clearTimeout(timer); resolve(); };
+              request.onerror = () => { clearTimeout(timer); reject(request.error); };
             });
-          } catch (e) { fallbackSet(k, v); }
+          } catch (e) { }
         },
         async remove(k) {
+          try { localStorage.removeItem(k); } catch (e) { }
           try {
             const db = await openDb();
             await new Promise((resolve, reject) => {
+              const timer = setTimeout(resolve, 300);
               const request = db.transaction("values", "readwrite").objectStore("values").delete(k);
-              request.onsuccess = resolve;
-              request.onerror = () => reject(request.error);
+              request.onsuccess = () => { clearTimeout(timer); resolve(); };
+              request.onerror = () => { clearTimeout(timer); reject(request.error); };
             });
-          } catch (e) {
-            try { localStorage.removeItem(k); } catch (removeError) { toast("Could not clear stored data."); }
-          }
+          } catch (e) { }
         }
       };
     })();
@@ -1674,11 +1776,325 @@ create policy "Users can delete own settings"
     }
 
     async function getActiveDefaults() {
+      const defTpl = savedTemplates.find(t => t && t.isDefault && t.data);
+      if (defTpl) {
+        const fields = (defTpl.data.f && typeof defTpl.data.f === "object") ? defTpl.data.f : defTpl.data;
+        const d = {};
+        DEFAULT_FIELDS.forEach(id => { if (fields[id] != null) d[id] = fields[id]; });
+        if (Object.keys(d).length > 0) return d;
+      }
       let def = safeParse(await store.get(getDefaultsKey()));
       if (!def && currentUser) {
         def = safeParse(await store.get(getDefaultsKey("guest")));
       }
+      if (def && typeof def === "object") {
+        const cleaned = { ...def };
+        delete cleaned.__templates;
+        delete cleaned.__theme_config;
+        return cleaned;
+      }
       return def;
+    }
+
+    /* ---------- Multi-Template Library (Save Many Templates + Cloud Sync) ---------- */
+    function getTemplatesKey(scopeOverride = null) {
+      const scope = scopeOverride || getOwnerScope();
+      return `ds-v2:templates:${scope}`;
+    }
+
+    async function loadSavedTemplates() {
+      let list = safeParse(await store.get(getTemplatesKey()));
+      if (!Array.isArray(list) && currentUser) {
+        list = safeParse(await store.get(getTemplatesKey("guest")));
+      }
+      if (!Array.isArray(list)) list = [];
+
+      // Also sync any templates stored in localStorage under ds:tpl:* (from Template Library page)
+      try {
+        const seenNames = new Set(list.map(t => (t && t.name || "").toLowerCase()));
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith("ds:tpl:")) {
+            const name = k.slice("ds:tpl:".length).trim();
+            if (!name || seenNames.has(name.toLowerCase())) continue;
+            const raw = safeParse(localStorage.getItem(k));
+            if (raw && typeof raw === "object") {
+              const payload = raw.draft || raw.template || raw;
+              list.push({
+                id: raw.id || generateUUID(),
+                name,
+                kind: raw.kind || "full",
+                department: (payload.f && payload.f.dept) || payload.dept || "",
+                isDefault: Boolean(raw.isDefault),
+                updated_at: raw.updated_at || new Date().toISOString(),
+                data: payload
+              });
+              seenNames.add(name.toLowerCase());
+            }
+          }
+        }
+      } catch (e) { }
+
+      // Merge with any in-memory templates added during boot so nothing is overwritten
+      const seenIds = new Set(list.map(t => t && t.id));
+      savedTemplates.forEach(t => {
+        if (t && !seenIds.has(t.id) && !list.some(x => x && x.name.toLowerCase() === t.name.toLowerCase())) {
+          list.unshift(t);
+        }
+      });
+
+      savedTemplates = list;
+      renderSavedTemplatesUI();
+    }
+
+    async function persistSavedTemplates(syncCloud = true) {
+      await store.set(getTemplatesKey(), JSON.stringify(savedTemplates));
+      try {
+        // Mirror to ds:tpl:* in localStorage so /templates/ page stays in sync
+        const existingKeys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith("ds:tpl:")) existingKeys.push(k);
+        }
+        existingKeys.forEach(k => localStorage.removeItem(k));
+        savedTemplates.forEach(t => {
+          if (t && t.name) {
+            localStorage.setItem(`ds:tpl:${t.name}`, JSON.stringify({
+              id: t.id,
+              name: t.name,
+              kind: t.kind,
+              isDefault: Boolean(t.isDefault),
+              updated_at: t.updated_at,
+              draft: t.data
+            }));
+          }
+        });
+      } catch (e) { }
+
+      renderSavedTemplatesUI();
+      if (syncCloud && currentUser && sbClient && navigator.onLine) {
+        pushUserSettingsToCloud().catch(() => {});
+      }
+    }
+
+    async function saveNamedTemplateFromInput(nameInputId, scopeSelectId) {
+      const inp = document.getElementById(nameInputId);
+      const sel = document.getElementById(scopeSelectId);
+      let name = (inp && inp.value || "").trim();
+      if (!name) {
+        name = (prompt("Enter a name for this template (e.g. Unit M-I Defaults, Dengue Protocol, STEMI):") || "").trim();
+      }
+      if (!name) return;
+
+      const kind = (sel && sel.value === "defaults") ? "defaults" : "full";
+      let data;
+      if (kind === "defaults") {
+        const d = {};
+        DEFAULT_FIELDS.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) d[id] = el.value;
+        });
+        data = { f: d };
+      } else {
+        data = collectDraft();
+        // Clear patient-identifying fields so templates are reusable across patients
+        if (data.f) {
+          data.f = { ...data.f, name: "", age: "", sex: "", ipno: "", doa: "", dod: "" };
+        }
+      }
+
+      const nowIso = new Date().toISOString();
+      const existingIdx = savedTemplates.findIndex(t => t && t.name.toLowerCase() === name.toLowerCase());
+      if (existingIdx >= 0) {
+        savedTemplates[existingIdx] = {
+          ...savedTemplates[existingIdx],
+          name,
+          kind,
+          department: val("dept") || "",
+          updated_at: nowIso,
+          data
+        };
+      } else {
+        savedTemplates.unshift({
+          id: generateUUID(),
+          name,
+          kind,
+          department: val("dept") || "",
+          isDefault: savedTemplates.length === 0,
+          updated_at: nowIso,
+          data
+        });
+      }
+
+      if (inp) inp.value = "";
+      await persistSavedTemplates(true);
+      toast(`Template "${name}" saved (${savedTemplates.length} total) ✓`);
+    }
+
+    async function applySavedTemplate(id) {
+      const tpl = savedTemplates.find(t => t && t.id === id);
+      if (!tpl || !tpl.data) return;
+      if (tpl.kind === "defaults") {
+        const fields = (tpl.data.f && typeof tpl.data.f === "object") ? tpl.data.f : tpl.data;
+        applyDefaults(fields);
+        render();
+        scheduleSave();
+      } else {
+        await loadJsonTemplate(tpl.data, false);
+      }
+      closeTemplatesModal();
+      toast(`Applied template "${tpl.name}" ✓`);
+    }
+
+    async function setDefaultSavedTemplate(id) {
+      const target = savedTemplates.find(t => t && t.id === id);
+      if (!target) return;
+      savedTemplates.forEach(t => { if (t) t.isDefault = (t.id === id); });
+      const fields = (target.data && target.data.f && typeof target.data.f === "object") ? target.data.f : (target.data || {});
+      const d = {};
+      DEFAULT_FIELDS.forEach(fid => { if (fields[fid] != null) d[fid] = fields[fid]; });
+      if (Object.keys(d).length > 0) {
+        await store.set(getDefaultsKey(), JSON.stringify(d));
+        applyDefaults(d);
+      }
+      await persistSavedTemplates(true);
+      toast(`"${target.name}" set as default template ★`);
+    }
+
+    async function deleteSavedTemplate(id) {
+      const idx = savedTemplates.findIndex(t => t && t.id === id);
+      if (idx < 0) return;
+      const name = savedTemplates[idx].name;
+      if (!confirm(`Delete saved template "${name}"?`)) return;
+      savedTemplates.splice(idx, 1);
+      await persistSavedTemplates(true);
+      toast(`Deleted template "${name}"`);
+    }
+
+    function exportSingleTemplate(id) {
+      const tpl = savedTemplates.find(t => t && t.id === id);
+      if (!tpl) return;
+      const clean = tpl.name.replace(/[^a-zA-Z0-9_-]+/g, "_") || "template";
+      const blob = new Blob([JSON.stringify(tpl, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `ds-template-${clean}.json`;
+      a.click();
+      toast(`Exported "${tpl.name}"`);
+    }
+
+    function exportAllTemplates() {
+      if (!savedTemplates.length) {
+        toast("No saved templates to export yet");
+        return;
+      }
+      const blob = new Blob([JSON.stringify({ version: 2, templates: savedTemplates }, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `ds-templates-bundle-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      toast(`Exported ${savedTemplates.length} template(s) ✓`);
+    }
+
+    function importTemplateIntoLibrary() {
+      const inp = document.createElement("input");
+      inp.type = "file";
+      inp.accept = ".json,application/json";
+      inp.multiple = true;
+      inp.onchange = async () => {
+        const files = Array.from(inp.files || []);
+        if (!files.length) return;
+        let added = 0;
+        for (const f of files) {
+          const parsed = safeParse(await f.text());
+          if (!parsed || typeof parsed !== "object") continue;
+          if (Array.isArray(parsed.templates)) {
+            parsed.templates.forEach(t => {
+              if (t && t.name && t.data) {
+                savedTemplates.unshift({
+                  id: t.id || generateUUID(),
+                  name: t.name,
+                  kind: t.kind || "full",
+                  department: t.department || "",
+                  isDefault: false,
+                  updated_at: t.updated_at || new Date().toISOString(),
+                  data: t.data
+                });
+                added++;
+              }
+            });
+          } else {
+            const tplName = parsed.name || f.name.replace(/\.json$/i, "") || `Imported Template ${savedTemplates.length + 1}`;
+            const payload = parsed.data || parsed.draft || parsed.template || parsed;
+            savedTemplates.unshift({
+              id: generateUUID(),
+              name: tplName,
+              kind: parsed.kind || "full",
+              department: (payload.f && payload.f.dept) || payload.dept || "",
+              isDefault: false,
+              updated_at: new Date().toISOString(),
+              data: payload
+            });
+            added++;
+          }
+        }
+        if (added > 0) {
+          await persistSavedTemplates(true);
+          toast(`Imported ${added} template(s) into library ✓`);
+        } else {
+          toast("Could not parse template JSON file");
+        }
+      };
+      inp.click();
+    }
+
+    function openTemplatesModal(focusInput = false) {
+      renderSavedTemplatesUI();
+      const modal = document.getElementById("templatesModal");
+      if (modal) modal.style.display = "flex";
+      if (focusInput) {
+        setTimeout(() => {
+          const inp = document.getElementById("modalTplName");
+          if (inp) inp.focus();
+        }, 60);
+      }
+    }
+
+    function closeTemplatesModal() {
+      const modal = document.getElementById("templatesModal");
+      if (modal) modal.style.display = "none";
+    }
+
+    function renderSavedTemplatesUI() {
+      const countBadge = document.getElementById("savedTplCountBadge");
+      if (countBadge) countBadge.textContent = String(savedTemplates.length);
+
+      const buildListHTML = () => {
+        if (!savedTemplates.length) {
+          return `<div class="hint" style="margin:4px 0">No named templates saved yet. Enter a name above and tap <b>+ Save Template</b> to save as many unit or disease templates as you need.</div>`;
+        }
+        return savedTemplates.map(t => `
+          <div class="tpl-item ${t.isDefault ? "is-default" : ""}">
+            <div class="tpl-item-info">
+              <span class="tpl-item-name">${esc(t.name)}</span>
+              <span class="tpl-badge">${t.kind === "defaults" ? "Header & Defaults" : "Full Clinical Form"}</span>
+              ${t.isDefault ? `<span class="tpl-badge default-star">★ Active Default</span>` : ""}
+            </div>
+            <div class="tpl-item-actions">
+              <button type="button" class="btn sm" onclick="applySavedTemplate('${esc(t.id)}')">Load</button>
+              <button type="button" class="btn sm out" onclick="setDefaultSavedTemplate('${esc(t.id)}')" title="Auto-apply on New Patient">★ Default</button>
+              <button type="button" class="btn sm out" onclick="exportSingleTemplate('${esc(t.id)}')" title="Download .json">⬇</button>
+              <button type="button" class="btn sm danger" onclick="deleteSavedTemplate('${esc(t.id)}')" title="Delete template">×</button>
+            </div>
+          </div>
+        `).join("");
+      };
+
+      const html = buildListHTML();
+      const inlineBox = document.getElementById("inlineTemplateList");
+      if (inlineBox) inlineBox.innerHTML = html;
+      const modalBox = document.getElementById("modalTemplateList");
+      if (modalBox) modalBox.innerHTML = html;
     }
 
     /* ---------- Multi-Patient Record Persistence & Cloud Save ---------- */
@@ -2398,7 +2814,91 @@ create policy "Users can delete own settings"
       return { url: "", anonKey: "", source: "none" };
     }
 
+    function isMissingTableError(err) {
+      if (!err) return false;
+      const msg = `${err.code || ""} ${err.message || ""} ${err.details || ""}`;
+      return /PGRST205|42P01|could not find the table|relation .* does not exist|schema cache/i.test(msg);
+    }
+
+    async function readCloudAuthMeta(forceRefresh = false) {
+      if (!currentUser || !sbClient) return { summaries: [], deleted_ids: [], defaults: null, templates: null, theme_color: null };
+      if (forceRefresh && navigator.onLine) {
+        try {
+          const { data, error } = await sbClient.auth.getUser();
+          if (!error && data && data.user) {
+            currentUser = data.user;
+            cacheLastUser(currentUser);
+          }
+        } catch (e) { }
+      }
+      const meta = (currentUser && currentUser.user_metadata && currentUser.user_metadata.ds_cloud_v2) || {};
+      return {
+        summaries: Array.isArray(meta.summaries) ? meta.summaries : [],
+        deleted_ids: Array.isArray(meta.deleted_ids) ? meta.deleted_ids : [],
+        defaults: (meta.defaults && typeof meta.defaults === "object") ? meta.defaults : null,
+        templates: Array.isArray(meta.templates) ? meta.templates : null,
+        theme_color: meta.theme_color || null
+      };
+    }
+
+    async function writeCloudAuthMeta(patch) {
+      if (!currentUser || !sbClient || !navigator.onLine) return false;
+      const cur = await readCloudAuthMeta(false);
+      const nextStore = {
+        summaries: patch.summaries !== undefined ? patch.summaries.slice(0, 60) : cur.summaries,
+        deleted_ids: patch.deleted_ids !== undefined ? patch.deleted_ids.slice(-100) : cur.deleted_ids,
+        defaults: patch.defaults !== undefined ? patch.defaults : cur.defaults,
+        templates: patch.templates !== undefined ? patch.templates.slice(0, 40) : cur.templates,
+        theme_color: patch.theme_color !== undefined ? patch.theme_color : cur.theme_color,
+        updated_at: new Date().toISOString()
+      };
+      suppressAuthReload = true;
+      try {
+        const { data, error } = await sbClient.auth.updateUser({
+          data: { ds_cloud_v2: nextStore }
+        });
+        if (error) throw error;
+        if (data && data.user) {
+          currentUser = data.user;
+          cacheLastUser(currentUser);
+        }
+        return true;
+      } finally {
+        suppressAuthReload = false;
+      }
+    }
+
+    function detectAndCleanAuthUrlErrors() {
+      try {
+        const hash = window.location.hash ? window.location.hash.slice(1) : "";
+        const search = window.location.search ? window.location.search.slice(1) : "";
+        const hParams = new URLSearchParams(hash);
+        const sParams = new URLSearchParams(search);
+        const errCode = hParams.get("error_code") || sParams.get("error_code") || "";
+        const errDesc = hParams.get("error_description") || sParams.get("error_description") || "";
+        const err = hParams.get("error") || sParams.get("error") || "";
+
+        if (err || errCode || errDesc) {
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, "", window.location.pathname);
+          }
+          if (/otp_expired/i.test(errCode) || /expired|invalid/i.test(errDesc)) {
+            authFeedback = {
+              type: "info",
+              text: "That confirmation link expired or was already used. Please sign in directly with your email and password below, or tap 'Resend confirmation' / enter your 6-digit code."
+            };
+          } else {
+            authFeedback = {
+              type: "err",
+              text: (errDesc || err || "Authentication link error").replace(/\+/g, " ")
+            };
+          }
+        }
+      } catch (e) { }
+    }
+
     async function initSupabase() {
+      detectAndCleanAuthUrlErrors();
       sbConfig = resolveSupabaseConfig();
       sbClient = null;
       currentUser = null;
@@ -2430,7 +2930,21 @@ create policy "Users can delete own settings"
           }
         });
 
+        // Support token_hash query param links (?token_hash=...&type=signup)
+        try {
+          const sParams = new URLSearchParams(window.location.search);
+          const tokenHash = sParams.get("token_hash");
+          const otpType = sParams.get("type") || "signup";
+          if (tokenHash) {
+            await sbClient.auth.verifyOtp({ token_hash: tokenHash, type: otpType });
+            if (window.history && window.history.replaceState) {
+              window.history.replaceState(null, "", window.location.pathname);
+            }
+          }
+        } catch (e) { }
+
         sbClient.auth.onAuthStateChange(async (event, session) => {
+          if (suppressAuthReload && event === "USER_UPDATED") return;
           if (event === "PASSWORD_RECOVERY") {
             openRecoveryModal();
           }
@@ -2481,6 +2995,7 @@ create policy "Users can delete own settings"
 
     async function handleUserScopeChange(nextUserId) {
       await loadScopedRecords();
+      await loadSavedTemplates();
       await checkGuestDraftsForMigration();
 
       if (nextUserId) {
@@ -2614,7 +3129,16 @@ create policy "Users can delete own settings"
           .from("discharge_summaries")
           .upsert(row, { onConflict: "id" });
 
-        if (error) throw error;
+        if (error) {
+          if (isMissingTableError(error)) {
+            const meta = await readCloudAuthMeta(false);
+            const list = meta.summaries.filter(item => item && item.id !== row.id);
+            list.unshift(row);
+            await writeCloudAuthMeta({ summaries: list });
+          } else {
+            throw error;
+          }
+        }
 
         rec.dirty = false;
         rec.synced_at = new Date().toISOString();
@@ -2637,6 +3161,8 @@ create policy "Users can delete own settings"
     async function flushPendingDeletes() {
       if (!currentUser || !sbClient || !pendingDeletes.length) return;
       const remaining = [];
+      let usedMetaFallback = false;
+      const deletedViaMeta = [];
       for (const id of pendingDeletes) {
         const { error } = await sbClient
           .from("discharge_summaries")
@@ -2644,8 +3170,23 @@ create policy "Users can delete own settings"
           .eq("id", id)
           .eq("user_id", currentUser.id);
         if (error) {
-          console.warn("Pending delete failed:", id, error);
-          remaining.push(id);
+          if (isMissingTableError(error)) {
+            usedMetaFallback = true;
+            deletedViaMeta.push(id);
+          } else {
+            console.warn("Pending delete failed:", id, error);
+            remaining.push(id);
+          }
+        }
+      }
+      if (usedMetaFallback && deletedViaMeta.length) {
+        try {
+          const meta = await readCloudAuthMeta(false);
+          const delSet = new Set([...(meta.deleted_ids || []), ...deletedViaMeta]);
+          const nextSummaries = (meta.summaries || []).filter(r => r && !delSet.has(r.id));
+          await writeCloudAuthMeta({ summaries: nextSummaries, deleted_ids: Array.from(delSet) });
+        } catch (e) {
+          remaining.push(...deletedViaMeta);
         }
       }
       pendingDeletes = remaining;
@@ -2655,14 +3196,27 @@ create policy "Users can delete own settings"
     async function pushUserSettingsToCloud(explicitDefaults = null) {
       if (!currentUser || !sbClient || !navigator.onLine) return;
       try {
-        const defaults = explicitDefaults || safeParse(await store.get(getDefaultsKey())) || {};
-        const themeColor = localStorage.getItem("ds-v2:theme-color") || "#14425f";
-        await sbClient.from("user_settings").upsert({
+        const rawDef = explicitDefaults || safeParse(await store.get(getDefaultsKey())) || {};
+        const defaultsPayload = {
+          ...rawDef,
+          __templates: savedTemplates,
+          __theme_config: themeConfig
+        };
+        const themeColor = serializeThemeString(themeConfig);
+        const { error } = await sbClient.from("user_settings").upsert({
           user_id: currentUser.id,
-          defaults,
+          defaults: defaultsPayload,
           theme_color: themeColor,
           updated_at: new Date().toISOString()
         }, { onConflict: "user_id" });
+
+        if (error && isMissingTableError(error)) {
+          await writeCloudAuthMeta({
+            defaults: rawDef,
+            templates: savedTemplates,
+            theme_color: themeColor
+          });
+        }
       } catch (e) {
         console.warn("Settings cloud push failed:", e);
       }
@@ -2676,20 +3230,50 @@ create policy "Users can delete own settings"
           .select("defaults, theme_color, updated_at")
           .eq("user_id", currentUser.id)
           .maybeSingle();
-        if (error) return;
+
+        if (error) {
+          if (isMissingTableError(error)) {
+            const meta = await readCloudAuthMeta(false);
+            if (meta.defaults && Object.keys(meta.defaults).length) {
+              const localDef = safeParse(await store.get(getDefaultsKey()));
+              if (!localDef) {
+                await store.set(getDefaultsKey(), JSON.stringify(meta.defaults));
+                applyDefaults(meta.defaults);
+              }
+            }
+            if (Array.isArray(meta.templates) && meta.templates.length && !savedTemplates.length) {
+              savedTemplates = meta.templates;
+              await persistSavedTemplates(false);
+            }
+            if (meta.theme_color) {
+              setThemeColor(meta.theme_color, false);
+            }
+          }
+          return;
+        }
+
         if (data) {
+          const remoteDef = { ...(data.defaults || {}) };
+          const remoteTemplates = Array.isArray(remoteDef.__templates) ? remoteDef.__templates : null;
+          delete remoteDef.__templates;
+          delete remoteDef.__theme_config;
+
           const localDef = safeParse(await store.get(getDefaultsKey()));
-          if (!localDef && data.defaults && Object.keys(data.defaults).length) {
-            await store.set(getDefaultsKey(), JSON.stringify(data.defaults));
-            applyDefaults(data.defaults);
+          if (!localDef && Object.keys(remoteDef).length) {
+            await store.set(getDefaultsKey(), JSON.stringify(remoteDef));
+            applyDefaults(remoteDef);
+          }
+          if (remoteTemplates && remoteTemplates.length && !savedTemplates.length) {
+            savedTemplates = remoteTemplates;
+            await persistSavedTemplates(false);
           }
           if (data.theme_color) {
             setThemeColor(data.theme_color, false);
           }
         } else {
           const localDef = safeParse(await store.get(getDefaultsKey()));
-          if (localDef && Object.keys(localDef).length) {
-            await pushUserSettingsToCloud(localDef);
+          if ((localDef && Object.keys(localDef).length) || savedTemplates.length) {
+            await pushUserSettingsToCloud(localDef || {});
           }
         }
       } catch (e) {
@@ -2725,13 +3309,27 @@ create policy "Users can delete own settings"
           await upsertRecordToSupabase(rec);
         }
 
-        const { data: remoteRows, error } = await sbClient
+        let remoteRows = [];
+        let usingMetaFallback = false;
+
+        const { data: tableRows, error } = await sbClient
           .from("discharge_summaries")
           .select("id, user_id, status, patient_name, ip_no, doa, dod, unit, diagnosis_preview, payload, created_at, updated_at")
           .eq("user_id", currentUser.id)
           .order("updated_at", { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          if (isMissingTableError(error)) {
+            usingMetaFallback = true;
+            const meta = await readCloudAuthMeta(true);
+            const delSet = new Set(meta.deleted_ids || []);
+            remoteRows = (meta.summaries || []).filter(r => r && !delSet.has(r.id));
+          } else {
+            throw error;
+          }
+        } else {
+          remoteRows = tableRows || [];
+        }
 
         const localById = new Map(records.map(r => [r.id, r]));
         const merged = [];
@@ -2746,7 +3344,7 @@ create policy "Users can delete own settings"
           } else {
             merged.push({
               id: r.id,
-              user_id: r.user_id,
+              user_id: r.user_id || currentUser.id,
               status: r.status || "incomplete",
               patient_name: r.patient_name || "",
               ip_no: r.ip_no || "",
@@ -2763,16 +3361,39 @@ create policy "Users can delete own settings"
           }
         });
 
-        // Keep any unsynced local-only dirty records so nothing is ever lost
+        // Keep any unsynced local-only records so nothing is ever lost
         records.forEach(local => {
-          if (!seenIds.has(local.id) && local.dirty && !pendingDeletes.includes(local.id)) {
-            merged.push(local);
+          if (!seenIds.has(local.id) && !pendingDeletes.includes(local.id)) {
+            merged.push({ ...local, dirty: false, synced_at: new Date().toISOString() });
           }
         });
 
         merged.sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
         records = merged;
         await persistScopedRecords();
+
+        if (usingMetaFallback) {
+          const localDef = safeParse(await store.get(getDefaultsKey())) || {};
+          await writeCloudAuthMeta({
+            summaries: records.map(r => ({
+              id: r.id,
+              user_id: currentUser.id,
+              status: r.status || "incomplete",
+              patient_name: r.patient_name || "",
+              ip_no: r.ip_no || "",
+              doa: r.doa || "",
+              dod: r.dod || "",
+              unit: r.unit || "",
+              diagnosis_preview: r.diagnosis_preview || "",
+              payload: r.payload || {},
+              created_at: r.created_at,
+              updated_at: r.updated_at
+            })),
+            defaults: localDef,
+            templates: savedTemplates,
+            theme_color: serializeThemeString(themeConfig)
+          });
+        }
 
         await pullUserSettingsFromCloud();
 
@@ -2854,8 +3475,17 @@ create policy "Users can delete own settings"
             </form>
             <div class="auth-footer-links">
               <button type="button" class="link-btn" onclick="requestPasswordReset('${prefix}AuthEmail')">Forgot password?</button>
+              <button type="button" class="link-btn" onclick="resendConfirmationEmail('${prefix}AuthEmail')">Resend confirmation</button>
               ${inline ? `<button type="button" class="link-btn" onclick="continueOfflineMode()">Continue offline (local only)</button>` : ""}
             </div>
+            <details class="auth-rescue-box">
+              <summary>Got a <code>localhost:3000</code> email link or 6-digit OTP code?</summary>
+              <p class="hint" style="margin:6px 0">If your confirmation email opened <code>http://localhost:3000/#...</code> or gave a 6-digit code, paste the full URL or 6-digit code below:</p>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <input type="text" id="${prefix}AuthRescueInput" placeholder="Paste localhost:3000/#... URL or 6-digit OTP" style="flex:1;min-width:160px;font-size:12px">
+                <button type="button" class="btn sm" onclick="verifyOtpOrRedirectInput('${prefix}')">Verify &amp; Sign In</button>
+              </div>
+            </details>
           </div>
         </div>
       `;
@@ -2993,6 +3623,131 @@ create policy "Users can delete own settings"
       renderDashboardHeroAndAuth();
     }
 
+    async function resendConfirmationEmail(emailInputId) {
+      if (!sbClient) {
+        toast("Connect Supabase first");
+        return;
+      }
+      const el = document.getElementById(emailInputId);
+      const email = ((el && el.value) || prompt("Enter the email address to resend confirmation:") || "").trim();
+      if (!email) return;
+
+      try {
+        const redirectUrl = window.location.href.split("#")[0].split("?")[0];
+        const { error } = await sbClient.auth.resend({
+          type: "signup",
+          email,
+          options: { emailRedirectTo: redirectUrl }
+        });
+        if (error) throw error;
+        authFeedback = {
+          type: "ok",
+          text: `Confirmation email resent to ${email}. If the link opens localhost:3000, paste that URL in the box below!`
+        };
+        renderAuthFeedback();
+        toast("Confirmation email resent ✓");
+      } catch (e) {
+        authFeedback = { type: "err", text: e.message || "Could not resend confirmation email" };
+        renderAuthFeedback();
+      }
+    }
+
+    async function verifyOtpOrRedirectInput(prefix) {
+      if (!sbClient) {
+        toast("Connect Supabase first");
+        return;
+      }
+      const rescueEl = document.getElementById(`${prefix}AuthRescueInput`);
+      const emailEl = document.getElementById(`${prefix}AuthEmail`);
+      const raw = (rescueEl && rescueEl.value || "").trim();
+      if (!raw) {
+        toast("Paste the localhost:3000 URL or 6-digit OTP code first");
+        return;
+      }
+
+      try {
+        // Case 1: User pasted a URL containing #access_token=... or ?token_hash=... or #error=...
+        if (/^https?:\/\//i.test(raw) || raw.includes("access_token=") || raw.includes("token_hash=") || raw.includes("error_code=")) {
+          const hashPart = raw.includes("#") ? raw.split("#").slice(1).join("#") : "";
+          const queryPart = raw.includes("?") ? raw.split("?")[1].split("#")[0] : "";
+          const hParams = new URLSearchParams(hashPart);
+          const qParams = new URLSearchParams(queryPart);
+
+          const errCode = hParams.get("error_code") || qParams.get("error_code");
+          const errDesc = hParams.get("error_description") || qParams.get("error_description");
+          if (errCode || errDesc) {
+            authFeedback = {
+              type: "info",
+              text: `That link reported "${(errDesc || errCode).replace(/\+/g, " ")}". Your account may already be confirmed — try signing in directly with your password above, or click "Resend confirmation".`
+            };
+            renderAuthFeedback();
+            return;
+          }
+
+          const accessToken = hParams.get("access_token") || qParams.get("access_token");
+          const refreshToken = hParams.get("refresh_token") || qParams.get("refresh_token");
+          if (accessToken && refreshToken) {
+            const { error } = await sbClient.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            });
+            if (error) throw error;
+            authFeedback = null;
+            closeAuthModal();
+            toast("Email confirmed & signed in ✓");
+            return;
+          }
+
+          const tokenHash = qParams.get("token_hash") || hParams.get("token_hash");
+          const type = qParams.get("type") || hParams.get("type") || "signup";
+          if (tokenHash) {
+            const { error } = await sbClient.auth.verifyOtp({ token_hash: tokenHash, type });
+            if (error) throw error;
+            authFeedback = null;
+            closeAuthModal();
+            toast("Email verified & signed in ✓");
+            return;
+          }
+
+          throw new Error("No active session token found in that URL. Try signing in with your email and password.");
+        }
+
+        // Case 2: User entered a 6-digit OTP token
+        const email = ((emailEl && emailEl.value) || prompt("Enter your email address for this OTP code:") || "").trim();
+        if (!email) return;
+
+        let verified = false;
+        let lastErr = null;
+        for (const otpType of ["signup", "email", "recovery", "magiclink"]) {
+          const { data, error } = await sbClient.auth.verifyOtp({
+            email,
+            token: raw,
+            type: otpType
+          });
+          if (!error && data && data.session) {
+            verified = true;
+            break;
+          }
+          lastErr = error;
+        }
+        if (!verified) throw (lastErr || new Error("Invalid or expired code"));
+        authFeedback = null;
+        closeAuthModal();
+        toast("Code verified & signed in ✓");
+      } catch (e) {
+        authFeedback = { type: "err", text: e.message || "Verification failed" };
+        renderAuthFeedback();
+      }
+    }
+
+    function copyAppRedirectUrl() {
+      const appUrl = window.location.href.split("#")[0].split("?")[0];
+      navigator.clipboard.writeText(appUrl).then(
+        () => toast(`Copied App URL: ${appUrl} ✓`),
+        () => prompt("Copy your App Redirect URL:", appUrl)
+      );
+    }
+
     async function requestPasswordReset(emailInputId) {
       if (!sbClient) {
         toast("Connect Supabase first");
@@ -3092,6 +3847,7 @@ create policy "Users can delete own settings"
 
       await initSupabase();
       await loadScopedRecords();
+      await loadSavedTemplates();
       await checkGuestDraftsForMigration();
       renderDashboard();
       await testSupabaseConnection();
@@ -3146,9 +3902,9 @@ create policy "Users can delete own settings"
         if (!error) {
           resBox.className = "setup-status ok";
           resBox.textContent = "Connected ✓ — 'discharge_summaries' table is ready! You can sign in now.";
-        } else if (/relation .* does not exist|could not find the table|PGRST205/i.test(error.message + " " + (error.code || ""))) {
-          resBox.className = "setup-status err";
-          resBox.textContent = "Connected to Supabase project, but 'discharge_summaries' table wasn't found. Run the SQL schema below in Supabase SQL Editor.";
+        } else if (isMissingTableError(error)) {
+          resBox.className = "setup-status ok";
+          resBox.textContent = "Connected to Supabase ✓ — Cloud sync is active (using Auth account storage until you run the optional SQL schema below).";
         } else {
           resBox.className = "setup-status ok";
           resBox.textContent = `Supabase reachable (${error.message}). Verify the SQL schema & Auth settings below.`;
@@ -3298,6 +4054,7 @@ create policy "Users can delete own settings"
 
       await initSupabase();
       await loadScopedRecords();
+      await loadSavedTemplates();
       await checkGuestDraftsForMigration();
 
       suppressSave = true;
@@ -3334,5 +4091,5 @@ create policy "Users can delete own settings"
       }
     }
 
-    loadAll();
+    window.__DS_V2_BOOT_PROMISE__ = loadAll();
 

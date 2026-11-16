@@ -1,11 +1,11 @@
-const CACHE = "ds-v2-cache-v3";
+const CACHE = "ds-v2-cache-v4";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=3",
-  "./app.js?v=3",
-  "./supabase.min.js?v=3",
-  "./supabase-config.js?v=3",
+  "./styles.css?v=4",
+  "./app.js?v=4",
+  "./supabase.min.js?v=4",
+  "./supabase-config.js?v=4",
   "./manifest.json"
 ];
 
