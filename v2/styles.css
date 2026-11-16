@@ -2980,3 +2980,271 @@ input[type=search] {
   color: var(--primary);
   user-select: none;
 }
+
+/* ============================================================================
+ * FIGMA DESIGN SYSTEM LOGIC — TOKENS, AUTO-LAYOUT, ELEVATION & MICRO-STATES
+ * (Variables, 4px/8px Spacing Scale, Component Variants & Focus Ring System)
+ * ============================================================================ */
+:root {
+  /* Spacing Scale (4px / 8px Figma Auto-Layout Grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Corner Radius Tokens */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
+
+  /* Elevation & Layered Shadow Tokens */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 2px 6px -1px rgba(15, 23, 42, 0.07), 0 1px 3px -1px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 8px 20px -4px rgba(15, 23, 42, 0.09), 0 2px 6px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 18px 36px -8px rgba(15, 23, 42, 0.16), 0 6px 14px -4px rgba(15, 23, 42, 0.06);
+  --shadow-topbar: 0 4px 18px rgba(15, 23, 42, 0.14);
+
+  /* Semantic Surface & Focus Tokens */
+  --surface-canvas: #eef2f6;
+  --surface-card: #ffffff;
+  --surface-subtle: #f8fafc;
+  --surface-hover: #f1f5f9;
+  --border-subtle: #dbe3ec;
+  --ring-focus: 0 0 0 3px var(--primary-soft);
+
+  /* Motion Tokens */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 150ms;
+  --dur-norm: 220ms;
+}
+
+body {
+  background: var(--surface-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Topbar & Segmented Navigation Polish */
+.topbar {
+  box-shadow: var(--shadow-topbar);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tabs {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  gap: 2px;
+}
+
+.tabs button {
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+
+.tabs button.active {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}
+
+.actions button {
+  border-radius: var(--radius-sm);
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+
+.actions button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.14);
+}
+
+.actions button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Accordion Form Cards — Auto-Layout & Elevation States */
+.card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  margin-bottom: var(--space-3);
+  transition: border-color var(--dur-norm) var(--ease-out), box-shadow var(--dur-norm) var(--ease-out);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+details.card[open] {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.card > summary {
+  padding: 13px 16px;
+  border-radius: var(--radius-lg);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+details.card[open] > summary {
+  border-bottom: 1px solid var(--border-subtle);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  background: var(--surface-subtle);
+}
+
+.card .section-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 800;
+  margin-right: 4px;
+}
+
+.card .body {
+  padding: var(--space-4);
+}
+
+/* Form Controls & Accessible Focus Ring System */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="url"],
+input[type="date"],
+input[type="number"]:not(.empty-lines-input),
+textarea,
+select {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+
+input[type="text"]:hover,
+input[type="email"]:hover,
+input[type="password"]:hover,
+input[type="url"]:hover,
+input[type="date"]:hover,
+textarea:hover,
+select:hover {
+  border-color: #b4c2d0;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="url"]:focus,
+input[type="date"]:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--ring-focus);
+  background: #ffffff;
+}
+
+/* Interactive Buttons, Chips & Tactile States */
+.btn {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), filter var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+  filter: brightness(1.04);
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.chip {
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+
+.chip:hover {
+  transform: translateY(-1px);
+  border-color: var(--primary);
+}
+
+.chip:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Dashboard Cards, Stat Strip & Modals Polish */
+.dash-hero,
+.dash-auth-card,
+.dash-toolbar {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  border-color: var(--border-subtle);
+}
+
+.stat-card {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  border-color: var(--border-subtle);
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.patient-card {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  border-color: var(--border-subtle);
+  transition: transform var(--dur-norm) var(--ease-out), box-shadow var(--dur-norm) var(--ease-out), border-color var(--dur-norm) var(--ease-out);
+}
+
+.patient-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.modal-card {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  animation: dsModalIn var(--dur-norm) var(--ease-out);
+}
+
+.menu-dropdown {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-subtle);
+}
+
+@keyframes dsModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
