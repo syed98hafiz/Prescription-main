@@ -401,8 +401,9 @@ create policy "Users can delete own settings"
       const t = document.getElementById("ccText").value.trim();
       if (!t) return;
       const d = document.getElementById("ccDur").value.trim();
-      const u = document.getElementById("ccUnit").value;
-      complaints.push(d ? `H/o ${t} for ${d} ${u}` : `H/o ${t}`);
+      const u = document.getElementById("ccUnit").value.trim();
+      const durPart = [d, u].filter(Boolean).join(" ");
+      complaints.push(d && durPart ? `H/o ${t} for ${durPart}` : `H/o ${t}`);
       document.getElementById("ccText").value = ""; document.getElementById("ccDur").value = "";
       renderComplaints(); render();
     }
@@ -426,7 +427,7 @@ create policy "Users can delete own settings"
       const parts = [n, document.getElementById("rxhDose").value.trim(), document.getElementById("rxhFreq").value].filter(Boolean);
       rxHistory.push(parts.join(" "));
       ["rxhName", "rxhDose"].forEach(id => document.getElementById(id).value = "");
-      document.getElementById("rxhFreq").value = "";
+      setVal_("rxhFreq", "");
       renderRxHistory(); render();
     }
     function renderRxHistory() {
@@ -486,7 +487,9 @@ create policy "Users can delete own settings"
         el.value = "";
       });
       section.querySelectorAll("select").forEach(el => {
-        el.selectedIndex = 0;
+        el.value = "";
+        if (el.selectedIndex < 0) el.selectedIndex = 0;
+        syncEditableSelectUI(el, true);
       });
 
       if (key === "complaints") complaints = [];
@@ -532,7 +535,7 @@ create policy "Users can delete own settings"
         document.getElementById("txRoute").value, document.getElementById("txFreq").value].filter(Boolean);
       treatment.push(parts.join(" "));
       ["txName", "txDose"].forEach(id => document.getElementById(id).value = "");
-      document.getElementById("txRoute").value = ""; document.getElementById("txFreq").value = "";
+      setVal_("txRoute", ""); setVal_("txFreq", "");
       renderTx(); render();
     }
     function renderTx() {
@@ -547,7 +550,7 @@ create policy "Users can delete own settings"
         document.getElementById("rxFreq").value, document.getElementById("rxDur").value.trim()].filter(Boolean);
       rxMeds.push(parts.join(" "));
       ["rxName", "rxDose", "rxDur"].forEach(id => document.getElementById(id).value = "");
-      document.getElementById("rxFreq").value = "";
+      setVal_("rxFreq", "");
       renderRx(); render();
     }
     function renderRx() {
@@ -1641,11 +1644,130 @@ create policy "Users can delete own settings"
       }
     }
 
+    function ensureSelectOption(selectEl, valStr) {
+      if (!selectEl || selectEl.tagName !== "SELECT") return;
+      if (valStr == null || valStr === "" || valStr === "__custom__") return;
+      const exists = Array.from(selectEl.options).some(opt => opt.value === valStr);
+      if (exists) return;
+      const opt = document.createElement("option");
+      opt.value = valStr;
+      opt.textContent = valStr;
+      opt.dataset.custom = "1";
+      const customTrigger = Array.from(selectEl.options).find(o => o.value === "__custom__");
+      if (customTrigger) selectEl.insertBefore(opt, customTrigger);
+      else selectEl.appendChild(opt);
+    }
+
+    function syncEditableSelectUI(selectEl, forceSelectMode = false) {
+      if (!selectEl || !selectEl._comboUI) return;
+      const { selectBox, inputWrap, customInp } = selectEl._comboUI;
+      customInp.value = selectEl.value === "__custom__" ? "" : (selectEl.value || "");
+      if (forceSelectMode) {
+        selectBox.style.display = "flex";
+        inputWrap.style.display = "none";
+      }
+    }
+
+    function initEditableSelects() {
+      document.querySelectorAll("select.editable-select").forEach(selectEl => {
+        if (selectEl.dataset.comboInit) return;
+        selectEl.dataset.comboInit = "1";
+        selectEl.dataset.prevVal = selectEl.value || "";
+
+        const wrap = document.createElement("div");
+        wrap.className = "combo-select-wrap";
+        selectEl.parentNode.insertBefore(wrap, selectEl);
+
+        const selectBox = document.createElement("div");
+        selectBox.className = "combo-select-box";
+        wrap.appendChild(selectBox);
+        selectBox.appendChild(selectEl);
+
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "combo-edit-btn";
+        editBtn.title = "Type a custom value";
+        editBtn.setAttribute("aria-label", "Type a custom value");
+        editBtn.textContent = "✎";
+        selectBox.appendChild(editBtn);
+
+        const inputWrap = document.createElement("div");
+        inputWrap.className = "combo-input-wrap";
+        inputWrap.style.display = "none";
+        const customInp = document.createElement("input");
+        customInp.type = "text";
+        customInp.className = "combo-custom-input";
+        customInp.placeholder = "Type custom...";
+        const backBtn = document.createElement("button");
+        backBtn.type = "button";
+        backBtn.className = "combo-back-btn";
+        backBtn.title = "Back to list";
+        backBtn.setAttribute("aria-label", "Back to dropdown list");
+        backBtn.textContent = "▾";
+        inputWrap.appendChild(customInp);
+        inputWrap.appendChild(backBtn);
+        wrap.appendChild(inputWrap);
+
+        selectEl._comboUI = { wrap, selectBox, inputWrap, customInp, editBtn, backBtn };
+
+        const openCustomMode = (seedVal = "") => {
+          customInp.value = seedVal;
+          selectBox.style.display = "none";
+          inputWrap.style.display = "flex";
+          customInp.focus();
+          customInp.select();
+        };
+
+        const closeCustomMode = () => {
+          inputWrap.style.display = "none";
+          selectBox.style.display = "flex";
+        };
+
+        selectEl.addEventListener("change", () => {
+          if (selectEl.value === "__custom__") {
+            const prev = selectEl.dataset.prevVal || "";
+            selectEl.value = prev;
+            openCustomMode(prev);
+          } else {
+            selectEl.dataset.prevVal = selectEl.value;
+          }
+        });
+
+        editBtn.addEventListener("click", () => {
+          openCustomMode(selectEl.value || "");
+        });
+
+        backBtn.addEventListener("click", () => {
+          closeCustomMode();
+        });
+
+        customInp.addEventListener("input", () => {
+          const v = customInp.value;
+          if (v.trim()) ensureSelectOption(selectEl, v);
+          selectEl.value = v.trim() ? v : "";
+          selectEl.dataset.prevVal = selectEl.value;
+          selectEl.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+
+        customInp.addEventListener("keydown", e => {
+          if (e.key === "Escape") closeCustomMode();
+        });
+      });
+    }
+
     function safeParse(s) { try { return JSON.parse(s); } catch (e) { return null; } }
     function setVal_(id, v) {
       const el = document.getElementById(id);
       if (!el) return;
-      el.value = DISPLAY_DATE_FIELDS.has(id) ? displayDateValue(v) : (v == null ? "" : v);
+      const normalized = DISPLAY_DATE_FIELDS.has(id) ? displayDateValue(v) : (v == null ? "" : String(v));
+      if (el.tagName === "SELECT") {
+        ensureSelectOption(el, normalized);
+        el.value = normalized;
+        el.dataset.prevVal = normalized;
+        syncEditableSelectUI(el, normalized === "");
+      } else {
+        el.value = normalized;
+      }
     }
     function onLogo(e) {
       const f = e.target.files && e.target.files[0]; if (!f) return;
@@ -1693,12 +1815,13 @@ create policy "Users can delete own settings"
       document.getElementById("college").value = "Government Medical College Hospital";
       document.getElementById("address").value = "Omandurar Government Estate, Chennai - 02";
       document.getElementById("dept").value = "Department of General Medicine";
-      document.getElementById("summaryType").selectedIndex = 0;
+      setVal_("summaryType", "Discharge Summary");
       document.getElementById("unitPrefix").value = "M-";
-      document.getElementById("unitRoman").value = "IV";
-      document.getElementById("modeOfDischarge").selectedIndex = 0;
+      setVal_("unitRoman", "IV");
+      setVal_("ccUnit", "days");
 
       PATIENT_FIELDS.forEach(id => setVal_(id, ""));
+      setVal_("modeOfDischarge", "Discharge");
       setVal_("advice", SEED.advice);
       setVal_("review", SEED.review);
       setVal_("warning", SEED.warning);
@@ -4055,5 +4178,6 @@ create policy "Users can delete own settings"
       }
     }
 
+    initEditableSelects();
     window.__DS_V2_BOOT_PROMISE__ = loadAll();
 

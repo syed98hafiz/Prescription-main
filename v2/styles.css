@@ -3232,9 +3232,187 @@ select:focus {
 }
 
 .menu-dropdown {
+  width: 312px;
+  max-width: calc(100vw - 20px);
+  max-height: calc(100vh - 72px);
+  overflow-y: auto;
+  padding: 10px;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   border-color: var(--border-subtle);
+}
+
+#menuDropdown .menu-label {
+  padding: 4px 2px 6px;
+  font-size: 10.5px;
+  letter-spacing: .55px;
+}
+
+#menuDropdown hr {
+  margin: 8px 0;
+}
+
+.menu-tile-grid {
+  display: grid;
+  gap: 6px;
+  padding: 0 0 8px;
+}
+
+.menu-tile-grid.cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.menu-tile-grid.cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.menu-tile-grid.cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+#menuDropdown .menu-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 58px;
+  padding: 8px 5px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  color: var(--ink);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+
+#menuDropdown .menu-tile:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-xs);
+}
+
+#menuDropdown .menu-tile:active {
+  transform: translateY(0) scale(0.97);
+}
+
+#menuDropdown .menu-tile.install-btn {
+  display: none;
+}
+
+.tile-icon {
+  font-size: 17px;
+  line-height: 1.1;
+}
+
+.tile-label {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+#menuDropdown .theme-panel {
+  padding: 4px 2px 6px;
+}
+
+.menu-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 8px 4px 2px;
+  border-top: 1px solid var(--line);
+}
+
+#menuDropdown .menu-footer-link {
+  width: auto;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+#menuDropdown .menu-footer-link:hover {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+#menuDropdown .gh-subtle-link,
+.gh-subtle-link {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 28px !important;
+  height: 28px;
+  padding: 0 !important;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  opacity: 0.55;
+  text-decoration: none;
+  transition: opacity var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+
+#menuDropdown .gh-subtle-link:hover,
+.gh-subtle-link:hover {
+  opacity: 1;
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+
+/* ---------- Editable Combo-Selects (Dropdown + Custom Typing) ---------- */
+.combo-select-wrap {
+  width: 100%;
+}
+
+.combo-select-box,
+.combo-input-wrap {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  gap: 4px;
+}
+
+.combo-select-box select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.combo-custom-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.combo-edit-btn,
+.combo-back-btn {
+  flex: 0 0 26px;
+  width: 26px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.combo-edit-btn:hover,
+.combo-back-btn:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 @keyframes dsModalIn {

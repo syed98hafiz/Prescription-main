@@ -14,10 +14,10 @@
   <link rel="apple-touch-icon" sizes="180x180" href="../icon-192.png">
   <link rel="icon" href="../icon-192.png">
   <title>DS Builder v2 — Dashboard &amp; Discharge Summary</title>
-  <link rel="stylesheet" href="styles.css?v=6">
+  <link rel="stylesheet" href="styles.css?v=7">
   <script src="../html2pdf.bundle.min.js"></script>
-  <script src="supabase.min.js?v=6"></script>
-  <script src="supabase-config.js?v=6"></script>
+  <script src="supabase.min.js?v=7"></script>
+  <script src="supabase-config.js?v=7"></script>
 </head>
 
 <body>
@@ -46,23 +46,66 @@
           <div class="menu-dropdown" id="menuDropdown">
 
             <div class="menu-label">Cloud &amp; Dashboard</div>
-            <button onclick="showTab('dashboard');closeMenu()">🏠 Patient Dashboard</button>
-            <button onclick="saveCurrentRecordNow(true);closeMenu()">💾 Save current patient draft</button>
-            <button onclick="syncNow(true);closeMenu()">☁ Sync with Supabase</button>
-            <button onclick="openAuthOrAccount();closeMenu()">👤 Account / Sign in</button>
-            <button onclick="openSupabaseSetupModal();closeMenu()">⚙ Supabase cloud setup</button>
+            <div class="menu-tile-grid cols-4">
+              <button type="button" class="menu-tile" onclick="showTab('dashboard');closeMenu()" title="Patient Dashboard">
+                <span class="tile-icon">🏠</span><span class="tile-label">Home</span>
+              </button>
+              <button type="button" class="menu-tile" onclick="saveCurrentRecordNow(true);closeMenu()" title="Save current patient draft">
+                <span class="tile-icon">💾</span><span class="tile-label">Save</span>
+              </button>
+              <button type="button" class="menu-tile" onclick="syncNow(true);closeMenu()" title="Sync with Supabase">
+                <span class="tile-icon">☁</span><span class="tile-label">Sync</span>
+              </button>
+              <button type="button" class="menu-tile" onclick="openAuthOrAccount();closeMenu()" title="Account / Sign in">
+                <span class="tile-icon">👤</span><span class="tile-label">Account</span>
+              </button>
+            </div>
+
+            <div class="menu-label">Template <span class="beta-tag">BETA</span></div>
+            <div class="menu-tile-grid cols-3">
+              <button type="button" class="menu-tile" onclick="importTemplate();closeMenu()" title="Import template (.json)">
+                <span class="tile-icon">⬆</span><span class="tile-label">Import</span>
+              </button>
+              <button type="button" class="menu-tile" onclick="exportTemplate();closeMenu()" title="Export defaults (.json)">
+                <span class="tile-icon">⬇</span><span class="tile-label">Export</span>
+              </button>
+              <button type="button" class="menu-tile" onclick="doLocalTemplate();closeMenu()" title="Load built-in template">
+                <span class="tile-icon">📁</span><span class="tile-label">Load</span>
+              </button>
+            </div>
+            <div class="menu-tile-grid cols-2" style="padding-top:0">
+              <button type="button" class="menu-tile" onclick="openTemplatesModal();closeMenu()" title="Open saved templates library">
+                <span class="tile-icon">🗂</span><span class="tile-label">Templates Library</span>
+              </button>
+              <button type="button" class="menu-tile" onclick="openTemplatesModal(true);closeMenu()" title="Save current form as template">
+                <span class="tile-icon">➕</span><span class="tile-label">Save Template</span>
+              </button>
+            </div>
+
+            <div class="menu-label">Patient Draft &amp; Output</div>
+            <div class="menu-tile-grid cols-3">
+              <button type="button" class="menu-tile" onclick="importDraft();closeMenu()" title="Import patient draft (.json)">
+                <span class="tile-icon">📂</span><span class="tile-label">Import Draft</span>
+              </button>
+              <button type="button" class="menu-tile" onclick="exportDraft();closeMenu()" title="Export patient draft (.json)">
+                <span class="tile-icon">📤</span><span class="tile-label">Export Draft</span>
+              </button>
+              <button type="button" class="menu-tile" onclick="copyText();closeMenu()" title="Copy summary text">
+                <span class="tile-icon">📋</span><span class="tile-label">Copy Text</span>
+              </button>
+              <button type="button" class="menu-tile" onclick="checkAndPrint();closeMenu()" title="Print / Save PDF">
+                <span class="tile-icon">🖨️</span><span class="tile-label">Print / PDF</span>
+              </button>
+              <button type="button" class="menu-tile" onclick="shareDoc();closeMenu()" title="Share PDF via WhatsApp, Email, etc.">
+                <span class="tile-icon">📲</span><span class="tile-label">Share PDF</span>
+              </button>
+              <button type="button" class="menu-tile" onclick="newSummary();closeMenu()" title="New patient">
+                <span class="tile-icon">🆕</span><span class="tile-label">New Patient</span>
+              </button>
+            </div>
+
             <hr>
-            <div class="menu-label">Templates &amp; Drafts</div>
-            <button onclick="openTemplatesModal();closeMenu()">🗂 Saved templates manager</button>
-            <button onclick="openTemplatesModal(true);closeMenu()">➕ Save current as template</button>
-            <button onclick="exportDraft();closeMenu()">💾 Export patient draft (.json)</button>
-            <button onclick="importDraft();closeMenu()">📂 Import patient draft (.json)</button>
-            <hr>
-            <button onclick="exportTemplate();closeMenu()">⬇ Export defaults (.json)</button>
-            <button onclick="importTemplate();closeMenu()">⬆ Import template (.json)</button>
-            <button onclick="doLocalTemplate();closeMenu()">📁 Load built-in template</button>
-            <hr>
-            <div class="menu-label">Theme &amp; Summary</div>
+            <div class="menu-label">Theme &amp; Appearance</div>
             <div class="theme-panel" onclick="event.stopPropagation()">
               <div class="theme-mode-row">
                 <span>🎨 Theme</span>
@@ -82,16 +125,32 @@
                 <button type="button" class="theme-swatch" title="Slate Steel (Gradient)" style="background:linear-gradient(135deg,#1e293b,#475569)" onclick="selectThemePreset('gradient','#1e293b','#475569')"></button>
               </div>
             </div>
-            <button class="install-btn" id="installBtn" onclick="doInstall();closeMenu()">📲 Install app</button>
-            <button onclick="shareDoc();closeMenu()">📤 Share PDF (WhatsApp, etc.)</button>
-            <button onclick="copyText();closeMenu()">📋 Copy text</button>
-            <button onclick="checkAndPrint();closeMenu()">🖨️ Print / Save PDF</button>
+
             <hr>
-            <div class="menu-label">Manage</div>
-            <button onclick="autofillTest();closeMenu()">⚡ Autofill test data</button>
-            <button onclick="requestPersistentStorage();closeMenu()">💾 Enable persistent storage <span class="beta-tag">BETA</span></button>
-            <button onclick="newSummary();closeMenu()">🆕 New patient</button>
-            <a href="../templates/" target="_blank">🗂 Template library <span class="beta-tag">BETA</span></a>
+            <div class="menu-label">Tools &amp; Setup</div>
+            <div class="menu-tile-grid cols-3">
+              <button type="button" class="menu-tile" onclick="autofillTest();closeMenu()" title="Autofill sample test patient">
+                <span class="tile-icon">⚡</span><span class="tile-label">Test Data</span>
+              </button>
+              <button type="button" class="menu-tile" onclick="openSupabaseSetupModal();closeMenu()" title="Supabase cloud setup">
+                <span class="tile-icon">⚙</span><span class="tile-label">Cloud Setup</span>
+              </button>
+              <button type="button" class="menu-tile" onclick="requestPersistentStorage();closeMenu()" title="Enable persistent browser storage">
+                <span class="tile-icon">🔒</span><span class="tile-label">Keep Data</span>
+              </button>
+            </div>
+            <div class="menu-tile-grid cols-2" style="padding-top:0">
+              <button type="button" class="menu-tile install-btn" id="installBtn" onclick="doInstall();closeMenu()" style="grid-column:span 2">
+                <span class="tile-icon">📲</span><span class="tile-label">Install App</span>
+              </button>
+            </div>
+
+            <div class="menu-footer">
+              <a href="../templates/" target="_blank" class="menu-footer-link">🗂 Template library <span class="beta-tag">BETA</span></a>
+              <a href="https://github.com/syed98hafiz/Prescription-main" target="_blank" rel="noopener noreferrer" class="gh-subtle-link" title="GitHub Repository" aria-label="GitHub Repository">
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -228,10 +287,12 @@
           <p class="hint">Shows top-left of the summary. Saved with your defaults. Leave empty for a plain box.</p>
         </div>
         <div class="field"><label>Summary type</label>
-          <select id="summaryType">
-            <option>Discharge Summary</option>
+          <select id="summaryType" class="editable-select">
+            <option value=""></option>
+            <option selected>Discharge Summary</option>
             <option>Discharge Summary (At Request)</option>
             <option>Discharge Summary (AMA)</option>
+            <option value="__custom__">✎ Type custom…</option>
           </select>
         </div>
       </div>
@@ -244,11 +305,12 @@
         <div class="row">
           <div><label>Age</label><input type="text" id="age" placeholder="e.g. 45"></div>
           <div><label>Sex</label>
-            <select id="sex">
-              <option value=""></option>
+            <select id="sex" class="editable-select">
+              <option value="" selected></option>
               <option>M</option>
               <option>F</option>
               <option>Other</option>
+              <option value="__custom__">✎ Type custom…</option>
             </select>
           </div>
           <div><label>IP No.</label><input type="text" id="ipno"></div>
@@ -268,7 +330,8 @@
         <div class="unit-row">
           <div><label>Prefix</label><input type="text" id="unitPrefix" value="M-"></div>
           <div><label>Roman numeral</label>
-            <select id="unitRoman">
+            <select id="unitRoman" class="editable-select">
+              <option value=""></option>
               <option>I</option>
               <option>II</option>
               <option>III</option>
@@ -279,17 +342,20 @@
               <option>VIII</option>
               <option>IX</option>
               <option>X</option>
+              <option value="__custom__">✎ Type custom…</option>
             </select>
           </div>
         </div>
         <div class="field" style="margin-top:12px">
           <label>Mode of Discharge</label>
-          <select id="modeOfDischarge">
-            <option>Discharge</option>
+          <select id="modeOfDischarge" class="editable-select">
+            <option value=""></option>
+            <option selected>Discharge</option>
             <option>At Request Discharge</option>
             <option>LAMA</option>
             <option>Absconded</option>
             <option>Death</option>
+            <option value="__custom__">✎ Type custom…</option>
           </select>
         </div>
       </div>
@@ -313,13 +379,15 @@
             <datalist id="ccList"></datalist>
           </div>
           <div style="max-width:80px"><label>For</label><input type="text" id="ccDur" placeholder="4"></div>
-          <div style="max-width:100px"><label>Unit</label>
-            <select id="ccUnit">
-              <option>days</option>
+          <div style="max-width:110px"><label>Unit</label>
+            <select id="ccUnit" class="editable-select">
+              <option value=""></option>
+              <option selected>days</option>
               <option>weeks</option>
               <option>months</option>
               <option>hours</option>
               <option>year</option>
+              <option value="__custom__">✎ Type custom…</option>
             </select>
           </div>
           <div style="flex:0"><button class="btn sm" onclick="addComplaint()">Add</button></div>
@@ -348,15 +416,16 @@
         <div class="addrow">
           <div style="flex:2"><input type="text" id="rxhName" list="drugList" placeholder="Tab. Metformin"></div>
           <div style="max-width:80px"><input type="text" id="rxhDose" placeholder="500 mg"></div>
-          <div style="max-width:80px">
-            <select id="rxhFreq">
-              <option value=""></option>
+          <div style="max-width:96px">
+            <select id="rxhFreq" class="editable-select">
+              <option value="" selected></option>
               <option>OD</option>
               <option>BD</option>
               <option>TDS</option>
               <option>QID</option>
               <option>HS</option>
               <option>SOS</option>
+              <option value="__custom__">✎ Type custom…</option>
             </select>
           </div>
           <div style="flex:0"><button class="btn sm" onclick="addRxHistory()">Add</button></div>
@@ -458,9 +527,9 @@
             <datalist id="drugList"></datalist>
           </div>
           <div style="max-width:90px"><label>Dose</label><input type="text" id="txDose" placeholder="1 g"></div>
-          <div style="max-width:90px"><label>Route</label>
-            <select id="txRoute">
-              <option value=""></option>
+          <div style="max-width:96px"><label>Route</label>
+            <select id="txRoute" class="editable-select">
+              <option value="" selected></option>
               <option>IV</option>
               <option>IM</option>
               <option>PO</option>
@@ -468,11 +537,12 @@
               <option>Neb</option>
               <option>PR</option>
               <option>SL</option>
+              <option value="__custom__">✎ Type custom…</option>
             </select>
           </div>
-          <div style="max-width:90px"><label>Freq</label>
-            <select id="txFreq">
-              <option value=""></option>
+          <div style="max-width:96px"><label>Freq</label>
+            <select id="txFreq" class="editable-select">
+              <option value="" selected></option>
               <option>OD</option>
               <option>BD</option>
               <option>TDS</option>
@@ -483,6 +553,7 @@
               <option>Q12H</option>
               <option>SOS</option>
               <option>Stat</option>
+              <option value="__custom__">✎ Type custom…</option>
             </select>
           </div>
           <div style="flex:0"><button class="btn sm" onclick="addTx()">Add</button></div>
@@ -544,15 +615,16 @@
         <div class="addrow">
           <div style="flex:2"><input type="text" id="rxName" list="drugList" placeholder="Tab. Paracetamol"></div>
           <div style="max-width:80px"><input type="text" id="rxDose" placeholder="650 mg"></div>
-          <div style="max-width:80px">
-            <select id="rxFreq">
-              <option value=""></option>
+          <div style="max-width:96px">
+            <select id="rxFreq" class="editable-select">
+              <option value="" selected></option>
               <option>OD</option>
               <option>BD</option>
               <option>TDS</option>
               <option>QID</option>
               <option>HS</option>
               <option>SOS</option>
+              <option value="__custom__">✎ Type custom…</option>
             </select>
           </div>
           <div style="max-width:90px"><input type="text" id="rxDur" placeholder="× 5 days"></div>
@@ -592,9 +664,12 @@ Take diet as advised.</textarea>
       </div>
     </details>
 
-    <p class="hint no-print" style="text-align:center;padding-bottom:20px">
-      Tip: switch to <b>View summary</b> to check spacing, then <b>Print / PDF</b>. Return to <b>Dashboard</b> anytime
-      to switch patients or resume incomplete summaries across devices.
+    <p class="hint no-print" style="text-align:center;padding-bottom:20px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">
+      <span>Tip: switch to <b>View summary</b> to check spacing, then <b>Print / PDF</b>. Return to <b>Dashboard</b> anytime
+      to switch patients or resume incomplete summaries across devices.</span>
+      <a href="https://github.com/syed98hafiz/Prescription-main" target="_blank" rel="noopener noreferrer" class="gh-subtle-link" title="GitHub Repository" aria-label="GitHub Repository">
+        <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+      </a>
     </p>
   </div>
 
@@ -720,7 +795,7 @@ Take diet as advised.</textarea>
     </div>
   </div>
 
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
 </body>
 
 </html>
