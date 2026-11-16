@@ -2556,15 +2556,15 @@ create policy "Users can delete own settings"
       const metaEl = document.getElementById("activePatientMeta");
       if (!metaEl) return;
       const rec = currentRecordId ? records.find(r => r.id === currentRecordId) : null;
-      let statusMsg = "Draft ready — auto-saves locally";
+      let statusMsg = "Auto-save ready";
       const mode = override || (currentUser ? (rec && rec.dirty ? (navigator.onLine ? "pending" : "offline") : "synced") : "local");
 
-      if (mode === "pending") statusMsg = currentUser ? "Saving changes..." : "Unsaved changes...";
-      else if (mode === "syncing") statusMsg = "Syncing to Supabase cloud...";
-      else if (mode === "offline") statusMsg = "Saved on device (offline — queued for cloud sync)";
-      else if (mode === "synced") statusMsg = "☁ Saved & synced to Supabase";
-      else if (mode === "error") statusMsg = `⚠ Saved on device (cloud error: ${lastSyncError || "check setup"})`;
-      else if (hasRecordPersisted || (rec && rec.updated_at)) statusMsg = `📱 Saved locally on this device${rec && rec.updated_at ? " · " + formatRelativeTime(rec.updated_at) : ""}`;
+      if (mode === "pending") statusMsg = currentUser ? "Saving..." : "Unsaved changes";
+      else if (mode === "syncing") statusMsg = "Syncing...";
+      else if (mode === "offline") statusMsg = "Saved · Offline queue";
+      else if (mode === "synced") statusMsg = "☁ Synced";
+      else if (mode === "error") statusMsg = `⚠ Local only · ${lastSyncError || "Sync error"}`;
+      else if (hasRecordPersisted || (rec && rec.updated_at)) statusMsg = `📱 Saved${rec && rec.updated_at ? " · " + formatRelativeTime(rec.updated_at) : ""}`;
 
       metaEl.textContent = statusMsg;
     }
@@ -2673,20 +2673,20 @@ create policy "Users can delete own settings"
 
       if (hero) {
         if (currentUser) {
-          const docName = (currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email || "Signed-in Doctor";
+          const docName = (currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email || "Doctor";
           const dirtyCount = records.filter(r => r.dirty).length + pendingDeletes.length;
-          let badgeHTML = `<span class="role-badge ok">☁ Cloud Sync Active</span>`;
-          if (!navigator.onLine) badgeHTML = `<span class="role-badge warn">📡 Offline Mode</span>`;
-          else if (dirtyCount > 0) badgeHTML = `<span class="role-badge warn">⏳ ${dirtyCount} Pending Sync</span>`;
+          let badgeHTML = `<span class="role-badge ok">☁ Synced</span>`;
+          if (!navigator.onLine) badgeHTML = `<span class="role-badge warn">📡 Offline</span>`;
+          else if (dirtyCount > 0) badgeHTML = `<span class="role-badge warn">⏳ ${dirtyCount} Pending</span>`;
 
           hero.innerHTML = `
             <div class="dash-hero-info">
               <h2>${esc(docName)} ${badgeHTML}</h2>
-              <p>${esc(currentUser.email || "")}${lastSyncTime ? ` · Last synced ${formatRelativeTime(lastSyncTime.toISOString())}` : " · Summaries sync automatically across mobile & desktop"}</p>
+              <p>${esc(currentUser.email || "")}${lastSyncTime ? ` · Synced ${formatRelativeTime(lastSyncTime.toISOString())}` : " · Cloud Workspace"}</p>
             </div>
             <div class="dash-hero-actions">
               <button type="button" class="btn sm" onclick="newSummary()">+ New Patient</button>
-              <button type="button" class="btn sm out" onclick="syncNow(true)">☁ Sync Now</button>
+              <button type="button" class="btn sm out" onclick="syncNow(true)">☁ Sync</button>
               <button type="button" class="btn sm out" onclick="openSupabaseSetupModal()">⚙ Setup</button>
               <button type="button" class="btn sm out" onclick="signOutUser()">Sign Out</button>
             </div>
@@ -2694,25 +2694,25 @@ create policy "Users can delete own settings"
         } else if (isConfigured) {
           hero.innerHTML = `
             <div class="dash-hero-info">
-              <h2>Patient Discharge Dashboard <span class="role-badge warn">Not Signed In</span></h2>
-              <p>Supabase is connected. Sign in to save incomplete discharge summaries and access them from any phone or computer.</p>
+              <h2>Clinical Workspace <span class="role-badge warn">Guest Session</span></h2>
+              <p>Cloud Ready · Sign in to sync across devices</p>
             </div>
             <div class="dash-hero-actions">
-              <button type="button" class="btn sm" onclick="openAuthModal('signin')">👤 Sign In / Register</button>
-              <button type="button" class="btn sm out" onclick="newSummary()">+ New Local Draft</button>
-              <button type="button" class="btn sm out" onclick="openSupabaseSetupModal()">⚙ Cloud Setup</button>
+              <button type="button" class="btn sm" onclick="openAuthModal('signin')">👤 Sign In</button>
+              <button type="button" class="btn sm out" onclick="newSummary()">+ New Patient</button>
+              <button type="button" class="btn sm out" onclick="openSupabaseSetupModal()">⚙ Cloud</button>
             </div>
           `;
         } else {
           hero.innerHTML = `
             <div class="dash-hero-info">
-              <h2>Patient Discharge Dashboard <span class="role-badge">Local Device Mode</span></h2>
-              <p>Drafts are auto-saved safely on this device. Connect your Supabase project to enable multi-device doctor login &amp; cloud backup.</p>
+              <h2>Clinical Workspace <span class="role-badge">Local Storage</span></h2>
+              <p>On-device auto-save · Cloud sync unconfigured</p>
             </div>
             <div class="dash-hero-actions">
               <button type="button" class="btn sm" onclick="newSummary()">+ New Patient</button>
-              <button type="button" class="btn sm out" onclick="openSupabaseSetupModal()">☁ Connect Supabase</button>
-              <button type="button" class="btn sm out" onclick="autofillTest()">⚡ Sample Patient</button>
+              <button type="button" class="btn sm out" onclick="openSupabaseSetupModal()">☁ Cloud Setup</button>
+              <button type="button" class="btn sm out" onclick="autofillTest()">⚡ Sample Data</button>
             </div>
           `;
         }
@@ -2733,11 +2733,11 @@ create policy "Users can delete own settings"
           migBanner.style.display = "flex";
           migBanner.innerHTML = `
             <div>
-              <b>Local drafts found:</b> You have <b>${guestDraftsCount}</b> patient summary draft(s) saved in local guest mode before signing in.
+              <b>${guestDraftsCount} local draft${guestDraftsCount > 1 ? "s" : ""} detected</b> · Merge into cloud account?
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button type="button" class="btn sm" onclick="migrateGuestDraftsToAccount()">☁ Upload to My Account</button>
-              <button type="button" class="btn sm out" onclick="dismissGuestMigration()">Keep Local Only</button>
+              <button type="button" class="btn sm" onclick="migrateGuestDraftsToAccount()">☁ Import to Account</button>
+              <button type="button" class="btn sm out" onclick="dismissGuestMigration()">Keep Local</button>
             </div>
           `;
         } else {
@@ -2769,20 +2769,20 @@ create policy "Users can delete own settings"
         const isFiltered = Boolean(dashSearch || dashFilter !== "all");
         container.innerHTML = isFiltered
           ? `<div class="dash-empty">
-               <h3>No matching patient summaries</h3>
-               <p>Try clearing your search or switching back to "All" filters.</p>
+               <h3>No matching records</h3>
+               <p>Adjust search query or status filter.</p>
                <div class="dash-empty-actions">
-                 <button type="button" class="btn out" onclick="clearDashSearch();setDashFilter('all')">Show All (${total})</button>
-                 <button type="button" class="btn" onclick="newSummary()">+ New Patient Summary</button>
+                 <button type="button" class="btn out" onclick="clearDashSearch();setDashFilter('all')">Reset Filters (${total})</button>
+                 <button type="button" class="btn" onclick="newSummary()">+ New Patient</button>
                </div>
              </div>`
           : `<div class="dash-empty">
-               <h3>No patient discharge summaries yet</h3>
-               <p>Start a new discharge summary for an admitted patient. Incomplete summaries stay saved here so you can finish them whenever you return.</p>
+               <h3>No patient records</h3>
+               <p>Create a new discharge summary, load sample data, or import a JSON record.</p>
                <div class="dash-empty-actions">
-                 <button type="button" class="btn" onclick="newSummary()">+ Start New Patient</button>
-                 <button type="button" class="btn out" onclick="autofillTest()">⚡ Try Sample Patient</button>
-                 <button type="button" class="btn out" onclick="importDraft()">📂 Import Draft (.json)</button>
+                 <button type="button" class="btn" onclick="newSummary()">+ New Patient</button>
+                 <button type="button" class="btn out" onclick="autofillTest()">⚡ Sample Data</button>
+                 <button type="button" class="btn out" onclick="importDraft()">📂 Import JSON</button>
                </div>
              </div>`;
         return;
@@ -2806,9 +2806,9 @@ create policy "Users can delete own settings"
 
       const syncHtml = currentUser
         ? (r.dirty
-            ? `<span class="sync-badge pending">⏳ Pending sync</span>`
+            ? `<span class="sync-badge pending">⏳ Pending</span>`
             : `<span class="sync-badge synced">☁ Synced</span>`)
-        : `<span class="sync-badge local">📱 Local only</span>`;
+        : `<span class="sync-badge local">📱 Local</span>`;
 
       return `
         <article class="patient-card${isActive ? " is-active-editing" : ""}">
@@ -2830,13 +2830,13 @@ create policy "Users can delete own settings"
           </div>
 
           <div class="pc-diag${r.diagnosis_preview ? "" : " empty-diag"}">
-            <span class="pc-diag-text">${r.diagnosis_preview ? esc(r.diagnosis_preview) : "Diagnosis not entered yet"}</span>
+            <span class="pc-diag-text">${r.diagnosis_preview ? esc(r.diagnosis_preview) : "No diagnosis recorded"}</span>
           </div>
 
           <div class="pc-progress">
             <div class="pc-progress-head">
-              <span>Sections filled</span>
-              <span>${prog.filled}/${prog.total} (${prog.pct}%)</span>
+              <span>Completion</span>
+              <span>${prog.filled}/${prog.total} · ${prog.pct}%</span>
             </div>
             <div class="prog-track">
               <div class="prog-fill${isCompleted ? " complete" : ""}" style="width:${prog.pct}%"></div>
@@ -2844,7 +2844,7 @@ create policy "Users can delete own settings"
           </div>
 
           <div class="pc-foot">
-            <span>Updated ${esc(formatRelativeTime(r.updated_at))}</span>
+            <span>${esc(formatRelativeTime(r.updated_at))}</span>
             ${syncHtml}
           </div>
 
@@ -3182,39 +3182,39 @@ create policy "Users can delete own settings"
 
       const dirtyCount = records.filter(r => r.dirty).length + pendingDeletes.length;
       let dotClass = "offline";
-      let topLabel = "Local mode";
+      let topLabel = "Local";
       let statLabel = "Local";
-      let statSub = "Tap to connect Supabase";
+      let statSub = "Configure";
 
       if (currentUser) {
         const displayUser = (currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email || "Doctor";
         topLabel = displayUser.split("@")[0];
         if (syncState === "syncing") {
           dotClass = "syncing";
-          statLabel = "Syncing...";
-          statSub = "Updating Supabase";
+          statLabel = "Syncing";
+          statSub = "In progress";
         } else if (!navigator.onLine) {
           dotClass = "offline";
           statLabel = "Offline";
-          statSub = dirtyCount > 0 ? `${dirtyCount} waiting to sync` : "Cached for ward use";
+          statSub = dirtyCount > 0 ? `${dirtyCount} queued` : "Local cache";
         } else if (syncState === "error") {
           dotClass = "error";
-          statLabel = "Sync Err";
-          statSub = lastSyncError ? lastSyncError.slice(0, 32) : "Tap to check setup";
+          statLabel = "Error";
+          statSub = "Check setup";
         } else if (dirtyCount > 0) {
           dotClass = "syncing";
           statLabel = `${dirtyCount} Pending`;
-          statSub = "Tap to sync now";
+          statSub = "Sync now";
         } else {
           dotClass = "online";
           statLabel = "Synced";
-          statSub = lastSyncTime ? `At ${lastSyncTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Cloud connected";
+          statSub = lastSyncTime ? lastSyncTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Active";
         }
       } else if (sbConfig.url && sbConfig.anonKey) {
         dotClass = "offline";
         topLabel = "Sign in";
-        statLabel = "Sign In";
-        statSub = "Cloud ready — tap here";
+        statLabel = "Ready";
+        statSub = "Sign in";
       }
 
       if (dot) dot.className = `sync-dot ${dotClass}`;
@@ -3578,13 +3578,14 @@ create policy "Users can delete own settings"
         <div class="${inline ? "auth-grid" : ""}">
           ${inline ? `
             <div class="auth-intro">
-              <h3>Doctor Sign In</h3>
-              <p>Sign in with your email to access your incomplete and completed patient discharge summaries across mobile and desktop.</p>
-              <ul class="auth-benefits">
-                <li>Save incomplete summaries mid-round and finish later</li>
-                <li>Separate private workspace per signed-in doctor</li>
-                <li>Works offline on wards &amp; auto-syncs back online</li>
-              </ul>
+              <div class="auth-eyebrow">CLOUD SYNC</div>
+              <h3>Doctor Workspace</h3>
+              <p>Multi-device access for patient records and clinical templates.</p>
+              <div class="auth-feature-pills">
+                <span class="auth-feat-pill">☁ Real-time Cloud Sync</span>
+                <span class="auth-feat-pill">🔒 Per-Doctor Isolation</span>
+                <span class="auth-feat-pill">📡 Offline Ward Cache</span>
+              </div>
             </div>
           ` : ""}
           <div>
@@ -3631,7 +3632,7 @@ create policy "Users can delete own settings"
             <div class="auth-footer-links">
               <button type="button" class="link-btn" onclick="requestPasswordReset('${prefix}AuthEmail')">Forgot password?</button>
               <button type="button" class="link-btn" onclick="resendConfirmationEmail('${prefix}AuthEmail')">Resend confirmation</button>
-              ${inline ? `<button type="button" class="link-btn" onclick="continueOfflineMode()">Continue offline (local only)</button>` : ""}
+              ${inline ? `<button type="button" class="link-btn" onclick="continueOfflineMode()">Local-only mode</button>` : ""}
             </div>
           </div>
         </div>

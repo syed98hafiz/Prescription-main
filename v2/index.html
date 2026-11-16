@@ -14,10 +14,10 @@
   <link rel="apple-touch-icon" sizes="180x180" href="../icon-192.png">
   <link rel="icon" href="../icon-192.png">
   <title>DS Builder v2 — Dashboard &amp; Discharge Summary</title>
-  <link rel="stylesheet" href="styles.css?v=7">
+  <link rel="stylesheet" href="styles.css?v=8">
   <script src="../html2pdf.bundle.min.js"></script>
-  <script src="supabase.min.js?v=7"></script>
-  <script src="supabase-config.js?v=7"></script>
+  <script src="supabase.min.js?v=8"></script>
+  <script src="supabase-config.js?v=8"></script>
 </head>
 
 <body>
@@ -174,22 +174,22 @@
       <button type="button" class="stat-card active" data-filter="all" onclick="setDashFilter('all')">
         <span class="stat-label">All Patients</span>
         <span class="stat-val" id="statTotal">0</span>
-        <span class="stat-sub">Saved charts</span>
+        <span class="stat-sub">Total records</span>
       </button>
       <button type="button" class="stat-card warn" data-filter="incomplete" onclick="setDashFilter('incomplete')">
         <span class="stat-label">Incomplete</span>
         <span class="stat-val" id="statIncomplete">0</span>
-        <span class="stat-sub">In progress</span>
+        <span class="stat-sub">Active drafts</span>
       </button>
       <button type="button" class="stat-card ok" data-filter="completed" onclick="setDashFilter('completed')">
         <span class="stat-label">Completed</span>
         <span class="stat-val" id="statCompleted">0</span>
-        <span class="stat-sub">Ready to print</span>
+        <span class="stat-sub">Finalized</span>
       </button>
       <button type="button" class="stat-card cloud" id="statSyncCard" onclick="handleSyncCardClick()">
         <span class="stat-label">Cloud Sync</span>
         <span class="stat-val stat-val-sm" id="statSyncText">Local</span>
-        <span class="stat-sub" id="statSyncSub">Tap to configure</span>
+        <span class="stat-sub" id="statSyncSub">Configure</span>
       </button>
     </section>
 
@@ -197,7 +197,7 @@
     <section class="dash-toolbar">
       <div class="dash-search-box">
         <span class="dash-search-icon" aria-hidden="true">🔍</span>
-        <input type="text" id="dashSearch" placeholder="Search name, IP No., diagnosis, unit..." oninput="setDashSearch(this.value)" autocomplete="off">
+        <input type="text" id="dashSearch" placeholder="Search patient, IP No., diagnosis, unit..." oninput="setDashSearch(this.value)" autocomplete="off">
         <button type="button" id="dashSearchClear" class="dash-search-clear" style="display:none" onclick="clearDashSearch()" title="Clear search">×</button>
       </div>
       <div class="dash-controls-row">
@@ -208,17 +208,17 @@
         </div>
         <div class="dash-right-controls">
           <select id="dashSort" aria-label="Sort patient summaries" onchange="setDashSort(this.value)">
-            <option value="updated_desc">Last edited (Newest)</option>
-            <option value="updated_asc">Last edited (Oldest)</option>
-            <option value="doa_desc">DOA (Newest)</option>
-            <option value="dod_desc">DOD (Newest)</option>
-            <option value="name_asc">Name (A–Z)</option>
+            <option value="updated_desc">Updated: Newest</option>
+            <option value="updated_asc">Updated: Oldest</option>
+            <option value="doa_desc">Admission Date</option>
+            <option value="dod_desc">Discharge Date</option>
+            <option value="name_asc">Patient Name (A–Z)</option>
           </select>
           <div class="dash-view-toggle desktop-only" role="group" aria-label="Layout view">
             <button type="button" id="viewBtnCards" class="active" onclick="setDashViewMode('cards')" title="Card view">▦ Cards</button>
             <button type="button" id="viewBtnTable" onclick="setDashViewMode('table')" title="Table view">☰ Table</button>
           </div>
-          <button type="button" class="btn dash-new-btn" onclick="newSummary()">+ New patient</button>
+          <button type="button" class="btn dash-new-btn" onclick="newSummary()">+ New Patient</button>
         </div>
       </div>
     </section>
@@ -237,7 +237,7 @@
         <button type="button" class="btn sm out" onclick="showTab('dashboard')">← Dashboard</button>
         <div class="apb-info">
           <div class="apb-title" id="activePatientTitle">New Patient Draft</div>
-          <div class="apb-meta" id="activePatientMeta">Auto-saves on device</div>
+          <div class="apb-meta" id="activePatientMeta">Auto-save ready</div>
         </div>
       </div>
       <div class="apb-right">
@@ -795,7 +795,7 @@ Take diet as advised.</textarea>
     </div>
   </div>
 
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 
 </html>

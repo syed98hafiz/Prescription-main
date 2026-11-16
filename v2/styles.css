@@ -3426,3 +3426,272 @@ select:focus {
   }
 }
 
+/* ---------- Auth Feature Pills (Concise Clinical Auth Card) ---------- */
+.auth-eyebrow {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.auth-feature-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.auth-feat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--ink);
+}
+
+/* ============================================================================
+ * DESKTOP-ONLY PROFESSIONAL SAAS WORKSPACE (Mobile <= 768px untouched)
+ * ============================================================================ */
+@media (min-width: 769px) {
+  .topbar {
+    padding: 10px 28px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .topbar-left {
+    justify-self: start;
+    min-width: 0;
+  }
+
+  .topbar-right {
+    display: contents;
+  }
+
+  .topbar .tabs {
+    justify-self: center;
+    background: rgba(255, 255, 255, 0.12);
+    padding: 4px;
+    border-radius: 10px;
+  }
+
+  .topbar .tabs button {
+    padding: 6px 14px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .topbar .actions {
+    justify-self: end;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .topbar .actions button {
+    white-space: nowrap;
+  }
+
+  .dash-wrap {
+    max-width: 1280px;
+    padding: 24px 32px 48px;
+  }
+
+  /* Compact Executive Workspace Bar */
+  .dash-hero {
+    padding: 12px 20px;
+    margin-bottom: 16px;
+    border-left-width: 4px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .dash-hero-info {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .dash-hero-info h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  .dash-hero-info p {
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+
+  /* Sleek Desktop Inline Auth Card */
+  .dash-auth-card {
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+
+  .auth-grid {
+    grid-template-columns: 1fr 1.15fr;
+    gap: 28px;
+    align-items: center;
+  }
+
+  /* Horizontal KPI Metric Cards */
+  .dash-stats {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 2px;
+    padding: 14px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-label {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+  }
+
+  .stat-sub {
+    grid-column: 1;
+    grid-row: 2;
+    font-size: 11.5px;
+  }
+
+  .stat-val {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    font-size: 28px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    line-height: 1;
+  }
+
+  .stat-val.stat-val-sm {
+    font-size: 15px;
+    padding-top: 0;
+    font-weight: 800;
+    background: var(--surface-subtle);
+    border: 1px solid var(--border-subtle);
+    padding: 5px 10px;
+    border-radius: 8px;
+  }
+
+  /* Single-Row Horizontal Command Bar */
+  .dash-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 14px;
+    margin-bottom: 18px;
+  }
+
+  .dash-search-box {
+    flex: 1 1 280px;
+    max-width: 400px;
+  }
+
+  .dash-search-box input {
+    padding: 7px 32px 7px 34px;
+    font-size: 13.5px;
+    background: var(--surface-subtle);
+  }
+
+  .dash-controls-row {
+    flex: 0 1 auto;
+    gap: 10px;
+    flex-wrap: nowrap;
+  }
+
+  .dash-filter-pills {
+    background: var(--surface-subtle);
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+    gap: 2px;
+    flex-wrap: nowrap;
+  }
+
+  .dash-filter-pills .pill {
+    border: 0;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    background: transparent;
+  }
+
+  .dash-filter-pills .pill.active {
+    background: var(--primary-bg, var(--primary));
+    color: #fff;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .dash-right-controls {
+    flex-wrap: nowrap;
+  }
+
+  /* Desktop Patient Cards Grid & Empty State */
+  .dash-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 16px;
+  }
+
+  .patient-card {
+    padding: 16px 18px;
+    gap: 11px;
+  }
+
+  .dash-empty {
+    padding: 48px 24px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1160px) {
+  .topbar {
+    padding: 9px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .dash-toolbar {
+    flex-wrap: wrap;
+  }
+}
+
+@media (min-width: 1024px) {
+  #formTab.wrap {
+    max-width: 1020px;
+    padding: 22px 28px 48px;
+  }
+}
+
