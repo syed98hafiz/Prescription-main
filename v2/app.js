@@ -2930,12 +2930,18 @@ create policy "Users can delete own settings"
           }
         });
 
-        // Support token_hash query param links (?token_hash=...&type=signup)
+        // Automatically complete standard email confirmation callbacks (?code=... or ?token_hash=...)
         try {
           const sParams = new URLSearchParams(window.location.search);
+          const code = sParams.get("code");
           const tokenHash = sParams.get("token_hash");
           const otpType = sParams.get("type") || "signup";
-          if (tokenHash) {
+          if (code && typeof sbClient.auth.exchangeCodeForSession === "function") {
+            await sbClient.auth.exchangeCodeForSession(code);
+            if (window.history && window.history.replaceState) {
+              window.history.replaceState(null, "", window.location.pathname);
+            }
+          } else if (tokenHash) {
             await sbClient.auth.verifyOtp({ token_hash: tokenHash, type: otpType });
             if (window.history && window.history.replaceState) {
               window.history.replaceState(null, "", window.location.pathname);
@@ -3427,8 +3433,19 @@ create policy "Users can delete own settings"
     });
 
     /* ---------- Auth UI & Actions ---------- */
+    let pendingVerifyEmail = "";
+
+    function getCanonicalAuthRedirectUrl() {
+      const host = window.location.hostname || "";
+      if (!host || host === "localhost" || host === "127.0.0.1" || window.location.protocol === "file:") {
+        return "https://syed98hafiz.github.io/Prescription-main/v2/";
+      }
+      return window.location.origin + window.location.pathname;
+    }
+
     function buildAuthPanelHTML(inline = false) {
       const isSignUp = authMode === "signup";
+      const isVerify = authMode === "verify";
       const msgHtml = authFeedback
         ? `<div class="auth-msg ${esc(authFeedback.type)}">${esc(authFeedback.text)}</div>`
         : "";
@@ -3449,43 +3466,50 @@ create policy "Users can delete own settings"
           ` : ""}
           <div>
             <div class="auth-tabs" role="tablist">
-              <button type="button" class="${!isSignUp ? "active" : ""}" onclick="setAuthMode('signin')">Sign In</button>
+              <button type="button" class="${authMode === "signin" ? "active" : ""}" onclick="setAuthMode('signin')">Sign In</button>
               <button type="button" class="${isSignUp ? "active" : ""}" onclick="setAuthMode('signup')">Create Account</button>
+              ${isVerify ? `<button type="button" class="active" onclick="setAuthMode('verify')">Verify Email</button>` : ""}
             </div>
             ${msgHtml}
-            <form onsubmit="submitAuthForm(event, '${prefix}')">
-              ${isSignUp ? `
+            ${isVerify ? `
+              <form onsubmit="submitVerifyOtpForm(event, '${prefix}')">
                 <div class="field">
-                  <label for="${prefix}AuthName">Doctor Name &amp; Role (optional)</label>
-                  <input type="text" id="${prefix}AuthName" placeholder="e.g. Kavitha S. (JR)" autocomplete="name">
+                  <label for="${prefix}AuthEmail">Email</label>
+                  <input type="email" id="${prefix}AuthEmail" value="${esc(pendingVerifyEmail)}" placeholder="doctor@hospital.org" autocomplete="email" required>
                 </div>
-              ` : ""}
-              <div class="field">
-                <label for="${prefix}AuthEmail">Email</label>
-                <input type="email" id="${prefix}AuthEmail" placeholder="doctor@hospital.org" autocomplete="email" required>
-              </div>
-              <div class="field">
-                <label for="${prefix}AuthPassword">Password</label>
-                <div class="password-wrap">
-                  <input type="password" id="${prefix}AuthPassword" placeholder="${isSignUp ? "Min 6 characters" : "Enter password"}" autocomplete="${isSignUp ? "new-password" : "current-password"}" minlength="6" required>
-                  <button type="button" class="password-toggle" onclick="togglePasswordVisibility('${prefix}AuthPassword', this)">Show</button>
+                <div class="field">
+                  <label for="${prefix}AuthOtpCode">Verification Code</label>
+                  <input type="text" id="${prefix}AuthOtpCode" inputmode="numeric" placeholder="Enter 6-digit code from email" autocomplete="one-time-code" required>
                 </div>
-              </div>
-              <button type="submit" class="btn" style="width:100%">${isSignUp ? "Create Doctor Account" : "Sign In &amp; Sync"}</button>
-            </form>
+                <button type="submit" class="btn" style="width:100%">Verify &amp; Sign In</button>
+              </form>
+            ` : `
+              <form onsubmit="submitAuthForm(event, '${prefix}')">
+                ${isSignUp ? `
+                  <div class="field">
+                    <label for="${prefix}AuthName">Doctor Name &amp; Role (optional)</label>
+                    <input type="text" id="${prefix}AuthName" placeholder="e.g. Kavitha S. (JR)" autocomplete="name">
+                  </div>
+                ` : ""}
+                <div class="field">
+                  <label for="${prefix}AuthEmail">Email</label>
+                  <input type="email" id="${prefix}AuthEmail" value="${esc(pendingVerifyEmail)}" placeholder="doctor@hospital.org" autocomplete="email" required>
+                </div>
+                <div class="field">
+                  <label for="${prefix}AuthPassword">Password</label>
+                  <div class="password-wrap">
+                    <input type="password" id="${prefix}AuthPassword" placeholder="${isSignUp ? "Min 6 characters" : "Enter password"}" autocomplete="${isSignUp ? "new-password" : "current-password"}" minlength="6" required>
+                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('${prefix}AuthPassword', this)">Show</button>
+                  </div>
+                </div>
+                <button type="submit" class="btn" style="width:100%">${isSignUp ? "Create Doctor Account" : "Sign In &amp; Sync"}</button>
+              </form>
+            `}
             <div class="auth-footer-links">
               <button type="button" class="link-btn" onclick="requestPasswordReset('${prefix}AuthEmail')">Forgot password?</button>
               <button type="button" class="link-btn" onclick="resendConfirmationEmail('${prefix}AuthEmail')">Resend confirmation</button>
               ${inline ? `<button type="button" class="link-btn" onclick="continueOfflineMode()">Continue offline (local only)</button>` : ""}
             </div>
-            <details class="auth-rescue-box">
-              <summary>Got a <code>localhost:3000</code> email link or 6-digit OTP code?</summary>
-              <p class="hint" style="margin:6px 0">If your confirmation email opened <code>http://localhost:3000/#...</code> or gave a 6-digit code, paste the full URL or 6-digit code below:</p>
-              <div style="display:flex;gap:6px;flex-wrap:wrap">
-                <input type="text" id="${prefix}AuthRescueInput" placeholder="Paste localhost:3000/#... URL or 6-digit OTP" style="flex:1;min-width:160px;font-size:12px">
-                <button type="button" class="btn sm" onclick="verifyOtpOrRedirectInput('${prefix}')">Verify &amp; Sign In</button>
-              </div>
-            </details>
           </div>
         </div>
       `;
@@ -3497,7 +3521,7 @@ create policy "Users can delete own settings"
       const modalEl = document.getElementById("authModal");
       if (modalEl && modalEl.style.display !== "none" && !currentUser) {
         const titleEl = document.getElementById("authModalTitle");
-        if (titleEl) titleEl.textContent = authMode === "signup" ? "Create Doctor Account" : "Sign In to DS Builder v2";
+        if (titleEl) titleEl.textContent = authMode === "signup" ? "Create Doctor Account" : (authMode === "verify" ? "Verify Email" : "Sign In to DS Builder v2");
         document.getElementById("authModalBody").innerHTML = buildAuthPanelHTML(false);
       }
       renderDashboardHeroAndAuth();
@@ -3576,12 +3600,13 @@ create policy "Users can delete own settings"
       const fullName = (nameEl && nameEl.value || "").trim();
 
       if (!email || !password) return;
+      pendingVerifyEmail = email;
 
       authFeedback = { type: "info", text: authMode === "signup" ? "Creating account..." : "Signing in..." };
       renderAuthFeedback();
 
       try {
-        const redirectUrl = window.location.href.split("#")[0].split("?")[0];
+        const redirectUrl = getCanonicalAuthRedirectUrl();
         if (authMode === "signup") {
           const { data, error } = await sbClient.auth.signUp({
             email,
@@ -3597,9 +3622,10 @@ create policy "Users can delete own settings"
             toast("Account created & signed in ✓");
             closeAuthModal();
           } else {
+            authMode = "verify";
             authFeedback = {
               type: "ok",
-              text: "Account created! Check your email inbox to confirm your address, then sign in."
+              text: "Check your email to confirm your account (click the link in the email or enter the verification code below)."
             };
             renderAuthFeedback();
           }
@@ -3612,6 +3638,39 @@ create policy "Users can delete own settings"
         }
       } catch (e) {
         authFeedback = { type: "err", text: e.message || "Authentication failed" };
+        renderAuthFeedback();
+      }
+    }
+
+    async function submitVerifyOtpForm(event, prefix) {
+      event.preventDefault();
+      if (!sbClient) return;
+      const emailEl = document.getElementById(`${prefix}AuthEmail`);
+      const codeEl = document.getElementById(`${prefix}AuthOtpCode`);
+      const email = ((emailEl && emailEl.value) || pendingVerifyEmail || "").trim();
+      const token = (codeEl && codeEl.value || "").trim();
+      if (!email || !token) return;
+
+      authFeedback = { type: "info", text: "Verifying..." };
+      renderAuthFeedback();
+
+      try {
+        let verified = false;
+        let lastErr = null;
+        for (const otpType of ["signup", "email", "recovery", "magiclink"]) {
+          const { data, error } = await sbClient.auth.verifyOtp({ email, token, type: otpType });
+          if (!error && data && data.session) {
+            verified = true;
+            break;
+          }
+          lastErr = error;
+        }
+        if (!verified) throw (lastErr || new Error("Invalid or expired verification code"));
+        authFeedback = null;
+        closeAuthModal();
+        toast("Email verified & signed in ✓");
+      } catch (e) {
+        authFeedback = { type: "err", text: e.message || "Verification failed" };
         renderAuthFeedback();
       }
     }
@@ -3629,11 +3688,12 @@ create policy "Users can delete own settings"
         return;
       }
       const el = document.getElementById(emailInputId);
-      const email = ((el && el.value) || prompt("Enter the email address to resend confirmation:") || "").trim();
+      const email = ((el && el.value) || pendingVerifyEmail || prompt("Enter your email address to resend confirmation:") || "").trim();
       if (!email) return;
+      pendingVerifyEmail = email;
 
       try {
-        const redirectUrl = window.location.href.split("#")[0].split("?")[0];
+        const redirectUrl = getCanonicalAuthRedirectUrl();
         const { error } = await sbClient.auth.resend({
           type: "signup",
           email,
@@ -3642,110 +3702,14 @@ create policy "Users can delete own settings"
         if (error) throw error;
         authFeedback = {
           type: "ok",
-          text: `Confirmation email resent to ${email}. If the link opens localhost:3000, paste that URL in the box below!`
+          text: `Confirmation email sent to ${email}. Click the link in your email to sign in.`
         };
         renderAuthFeedback();
-        toast("Confirmation email resent ✓");
+        toast("Confirmation email sent ✓");
       } catch (e) {
         authFeedback = { type: "err", text: e.message || "Could not resend confirmation email" };
         renderAuthFeedback();
       }
-    }
-
-    async function verifyOtpOrRedirectInput(prefix) {
-      if (!sbClient) {
-        toast("Connect Supabase first");
-        return;
-      }
-      const rescueEl = document.getElementById(`${prefix}AuthRescueInput`);
-      const emailEl = document.getElementById(`${prefix}AuthEmail`);
-      const raw = (rescueEl && rescueEl.value || "").trim();
-      if (!raw) {
-        toast("Paste the localhost:3000 URL or 6-digit OTP code first");
-        return;
-      }
-
-      try {
-        // Case 1: User pasted a URL containing #access_token=... or ?token_hash=... or #error=...
-        if (/^https?:\/\//i.test(raw) || raw.includes("access_token=") || raw.includes("token_hash=") || raw.includes("error_code=")) {
-          const hashPart = raw.includes("#") ? raw.split("#").slice(1).join("#") : "";
-          const queryPart = raw.includes("?") ? raw.split("?")[1].split("#")[0] : "";
-          const hParams = new URLSearchParams(hashPart);
-          const qParams = new URLSearchParams(queryPart);
-
-          const errCode = hParams.get("error_code") || qParams.get("error_code");
-          const errDesc = hParams.get("error_description") || qParams.get("error_description");
-          if (errCode || errDesc) {
-            authFeedback = {
-              type: "info",
-              text: `That link reported "${(errDesc || errCode).replace(/\+/g, " ")}". Your account may already be confirmed — try signing in directly with your password above, or click "Resend confirmation".`
-            };
-            renderAuthFeedback();
-            return;
-          }
-
-          const accessToken = hParams.get("access_token") || qParams.get("access_token");
-          const refreshToken = hParams.get("refresh_token") || qParams.get("refresh_token");
-          if (accessToken && refreshToken) {
-            const { error } = await sbClient.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken
-            });
-            if (error) throw error;
-            authFeedback = null;
-            closeAuthModal();
-            toast("Email confirmed & signed in ✓");
-            return;
-          }
-
-          const tokenHash = qParams.get("token_hash") || hParams.get("token_hash");
-          const type = qParams.get("type") || hParams.get("type") || "signup";
-          if (tokenHash) {
-            const { error } = await sbClient.auth.verifyOtp({ token_hash: tokenHash, type });
-            if (error) throw error;
-            authFeedback = null;
-            closeAuthModal();
-            toast("Email verified & signed in ✓");
-            return;
-          }
-
-          throw new Error("No active session token found in that URL. Try signing in with your email and password.");
-        }
-
-        // Case 2: User entered a 6-digit OTP token
-        const email = ((emailEl && emailEl.value) || prompt("Enter your email address for this OTP code:") || "").trim();
-        if (!email) return;
-
-        let verified = false;
-        let lastErr = null;
-        for (const otpType of ["signup", "email", "recovery", "magiclink"]) {
-          const { data, error } = await sbClient.auth.verifyOtp({
-            email,
-            token: raw,
-            type: otpType
-          });
-          if (!error && data && data.session) {
-            verified = true;
-            break;
-          }
-          lastErr = error;
-        }
-        if (!verified) throw (lastErr || new Error("Invalid or expired code"));
-        authFeedback = null;
-        closeAuthModal();
-        toast("Code verified & signed in ✓");
-      } catch (e) {
-        authFeedback = { type: "err", text: e.message || "Verification failed" };
-        renderAuthFeedback();
-      }
-    }
-
-    function copyAppRedirectUrl() {
-      const appUrl = window.location.href.split("#")[0].split("?")[0];
-      navigator.clipboard.writeText(appUrl).then(
-        () => toast(`Copied App URL: ${appUrl} ✓`),
-        () => prompt("Copy your App Redirect URL:", appUrl)
-      );
     }
 
     async function requestPasswordReset(emailInputId) {
@@ -3758,7 +3722,7 @@ create policy "Users can delete own settings"
       if (!email) return;
 
       try {
-        const redirectUrl = window.location.href.split("#")[0].split("?")[0];
+        const redirectUrl = getCanonicalAuthRedirectUrl();
         const { error } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
         if (error) throw error;
         authFeedback = { type: "ok", text: `Password reset email sent to ${email}. Open the link on this device to set a new password.` };

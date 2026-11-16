@@ -1,3 +1,13 @@
 # Supabase CLI & Monorepo Project Configuration
 project_id = "voczhrkycygwquxqswxx"
 
+[auth]
+enabled = true
+site_url = "https://syed98hafiz.github.io/Prescription-main/v2/"
+additional_redirect_urls = [
+  "https://syed98hafiz.github.io/Prescription-main/v2/",
+  "https://syed98hafiz.github.io/Prescription-main/v2/index.html",
+  "https://syed98hafiz.github.io/Prescription-main/"
+]
+
+

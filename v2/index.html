@@ -14,10 +14,10 @@
   <link rel="apple-touch-icon" sizes="180x180" href="../icon-192.png">
   <link rel="icon" href="../icon-192.png">
   <title>DS Builder v2 — Dashboard &amp; Discharge Summary</title>
-  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="stylesheet" href="styles.css?v=6">
   <script src="../html2pdf.bundle.min.js"></script>
-  <script src="supabase.min.js?v=5"></script>
-  <script src="supabase-config.js?v=5"></script>
+  <script src="supabase.min.js?v=6"></script>
+  <script src="supabase-config.js?v=6"></script>
 </head>
 
 <body>
@@ -658,15 +658,6 @@ Take diet as advised.</textarea>
         </form>
 
         <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
-        <div class="setup-sql-head" style="margin-bottom:10px">
-          <div>
-            <b>Email Confirmation &amp; Redirect URL Setup</b>
-            <p class="hint" style="margin:2px 0 0">If confirmation emails redirect to <code>localhost:3000</code>, copy your live App URL below and set it as <b>Site URL</b> &amp; <b>Redirect URL</b> in <b>Supabase → Authentication → URL Configuration</b> (or disable <i>Confirm email</i> under <b>Authentication → Providers → Email</b>).</p>
-          </div>
-          <button type="button" class="btn sm out" onclick="copyAppRedirectUrl()">📋 Copy App URL</button>
-        </div>
-
-        <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
         <div class="setup-sql-head">
           <div>
             <b>Database Setup SQL (Optional — Auto-Fallback Active)</b>
@@ -729,7 +720,7 @@ Take diet as advised.</textarea>
     </div>
   </div>
 
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
 </body>
 
 </html>
