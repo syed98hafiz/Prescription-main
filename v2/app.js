@@ -93,8 +93,6 @@
     let authFeedback = null;
     let offlineDismissedAuthCard = false;
 
-    const SB_OVERRIDE_URL_KEY = "ds-v2:sb-url";
-    const SB_OVERRIDE_KEY_KEY = "ds-v2:sb-key";
     let sbClient = null;
     let sbConfig = { url: "", anonKey: "", source: "none" };
     let currentUser = null;
@@ -108,95 +106,6 @@
     let guestDraftsCount = 0;
     let savedTemplates = [];
     let themeConfig = { mode: "solid", color: "#14425f", color2: "#0284c7" };
-
-    const SUPABASE_SCHEMA_SQL = `-- Run once in Supabase Dashboard -> SQL Editor -> New query
-create table if not exists public.discharge_summaries (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade default auth.uid(),
-  status text not null default 'incomplete' check (status in ('incomplete', 'completed')),
-  patient_name text not null default '',
-  ip_no text not null default '',
-  doa text not null default '',
-  dod text not null default '',
-  unit text not null default '',
-  diagnosis_preview text not null default '',
-  payload jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists public.user_settings (
-  user_id uuid primary key references auth.users(id) on delete cascade default auth.uid(),
-  defaults jsonb not null default '{}'::jsonb,
-  theme_color text not null default '#14425f',
-  updated_at timestamptz not null default now()
-);
-
-create index if not exists idx_discharge_summaries_user_updated
-  on public.discharge_summaries (user_id, updated_at desc);
-
-create index if not exists idx_discharge_summaries_user_status
-  on public.discharge_summaries (user_id, status);
-
-create or replace function public.ds_touch_updated_at()
-returns trigger
-language plpgsql
-set search_path = public
-as $$
-begin
-  if new.updated_at is null then
-    new.updated_at = now();
-  elsif tg_op = 'UPDATE' and new.updated_at = old.updated_at then
-    new.updated_at = now();
-  end if;
-  return new;
-end;
-$$;
-
-drop trigger if exists trg_discharge_summaries_updated_at on public.discharge_summaries;
-create trigger trg_discharge_summaries_updated_at
-  before insert or update on public.discharge_summaries
-  for each row execute function public.ds_touch_updated_at();
-
-drop trigger if exists trg_user_settings_updated_at on public.user_settings;
-create trigger trg_user_settings_updated_at
-  before insert or update on public.user_settings
-  for each row execute function public.ds_touch_updated_at();
-
-alter table public.discharge_summaries enable row level security;
-alter table public.user_settings enable row level security;
-
-drop policy if exists "Users can view own summaries" on public.discharge_summaries;
-create policy "Users can view own summaries"
-  on public.discharge_summaries for select to authenticated using (auth.uid() = user_id);
-
-drop policy if exists "Users can insert own summaries" on public.discharge_summaries;
-create policy "Users can insert own summaries"
-  on public.discharge_summaries for insert to authenticated with check (auth.uid() = user_id);
-
-drop policy if exists "Users can update own summaries" on public.discharge_summaries;
-create policy "Users can update own summaries"
-  on public.discharge_summaries for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-drop policy if exists "Users can delete own summaries" on public.discharge_summaries;
-create policy "Users can delete own summaries"
-  on public.discharge_summaries for delete to authenticated using (auth.uid() = user_id);
-
-drop policy if exists "Users can view own settings" on public.user_settings;
-create policy "Users can view own settings"
-  on public.user_settings for select to authenticated using (auth.uid() = user_id);
-
-drop policy if exists "Users can upsert own settings" on public.user_settings;
-create policy "Users can upsert own settings"
-  on public.user_settings for insert to authenticated with check (auth.uid() = user_id);
-
-drop policy if exists "Users can update own settings" on public.user_settings;
-create policy "Users can update own settings"
-  on public.user_settings for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-drop policy if exists "Users can delete own settings" on public.user_settings;
-create policy "Users can delete own settings"
-  on public.user_settings for delete to authenticated using (auth.uid() = user_id);`;
 
     /* ---------- UUID & date normalization helpers ---------- */
     function generateUUID() {
@@ -2750,10 +2659,10 @@ create policy "Users can delete own settings"
             hero.innerHTML = `
               <div class="dash-hero-info">
                 <h2>${esc(docName)} <span class="role-badge warn">📱 Local Email</span></h2>
-                <p>${esc(currentUser.email || "")} · Continue with Google to enable cloud sync</p>
+                <p>${esc(currentUser.email || "")} · Sign in with Google to enable cloud sync</p>
               </div>
               <div class="dash-hero-actions">
-                <button type="button" class="btn sm btn-google-hero" onclick="signInWithGoogle()">${GOOGLE_SVG} Continue with Google</button>
+                <button type="button" class="btn sm btn-google-hero" onclick="signInWithGoogle()">${GOOGLE_SVG} Sign in with Google</button>
                 <button type="button" class="btn sm" onclick="newSummary()">+ New Patient</button>
                 <button type="button" class="btn sm out" onclick="openAuthModal()">👤 Account</button>
                 <button type="button" class="btn sm out" onclick="signOutUser()">Sign Out</button>
@@ -2777,29 +2686,16 @@ create policy "Users can delete own settings"
               </div>
             `;
           }
-        } else if (isConfigured) {
-          hero.innerHTML = `
-            <div class="dash-hero-info">
-              <h2>Clinical Workspace <span class="role-badge warn">Guest Session</span></h2>
-              <p>Cloud Ready · Sign in with Google or Email</p>
-            </div>
-            <div class="dash-hero-actions">
-              <button type="button" class="btn sm btn-google-hero" onclick="signInWithGoogle()">${GOOGLE_SVG} Continue with Google</button>
-              <button type="button" class="btn sm out" onclick="openAuthModal('signin')">✉ Email</button>
-              <button type="button" class="btn sm out" onclick="newSummary()">+ New Patient</button>
-              <button type="button" class="btn sm out" onclick="openSupabaseSetupModal()">⚙ Cloud</button>
-            </div>
-          `;
         } else {
           hero.innerHTML = `
             <div class="dash-hero-info">
-              <h2>Clinical Workspace <span class="role-badge">Local Storage</span></h2>
-              <p>On-device auto-save · Cloud sync unconfigured</p>
+              <h2>Clinical Workspace <span class="role-badge warn">Guest Session</span></h2>
+              <p>Sign in with Google or Email to sync summaries across devices</p>
             </div>
             <div class="dash-hero-actions">
+              <button type="button" class="btn sm btn-google-hero" onclick="signInWithGoogle()">${GOOGLE_SVG} Sign in with Google</button>
+              <button type="button" class="btn sm out" onclick="openAuthModal('signin')">✉ Email Sign In</button>
               <button type="button" class="btn sm" onclick="newSummary()">+ New Patient</button>
-              <button type="button" class="btn sm out" onclick="openSupabaseSetupModal()">☁ Cloud Setup</button>
-              <button type="button" class="btn sm out" onclick="autofillTest()">⚡ Sample Data</button>
             </div>
           `;
         }
@@ -3005,23 +2901,10 @@ create policy "Users can delete own settings"
     }
 
     function resolveSupabaseConfig() {
-      let localUrl = "";
-      let localKey = "";
-      try {
-        localUrl = normalizeSupabaseUrl(localStorage.getItem(SB_OVERRIDE_URL_KEY) || "");
-        localKey = (localStorage.getItem(SB_OVERRIDE_KEY_KEY) || "").trim();
-      } catch (e) { }
-
-      if (localUrl && localKey) {
-        return { url: localUrl, anonKey: localKey, source: "local-override" };
-      }
       const cfg = window.DS_SUPABASE_CONFIG || {};
-      const fileUrl = normalizeSupabaseUrl(cfg.url || "");
-      const fileKey = String(cfg.anonKey || "").trim();
-      if (fileUrl && fileKey) {
-        return { url: fileUrl, anonKey: fileKey, source: "config-file" };
-      }
-      return { url: "", anonKey: "", source: "none" };
+      const fileUrl = normalizeSupabaseUrl(cfg.url || "https://voczhrkycygwquxqswxx.supabase.co");
+      const fileKey = String(cfg.anonKey || "sb_publishable_6zeQfj-22YzFdjuSHpvQGg_ZbBiTxaC").trim();
+      return { url: fileUrl, anonKey: fileKey, source: "config-file" };
     }
 
     function isMissingTableError(err) {
@@ -3289,9 +3172,9 @@ create policy "Users can delete own settings"
 
       const dirtyCount = records.filter(r => r.dirty).length + pendingDeletes.length;
       let dotClass = "offline";
-      let topLabel = "Local";
-      let statLabel = "Local";
-      let statSub = "Configure";
+      let topLabel = "Sign in";
+      let statLabel = "Sign in";
+      let statSub = "Google / Email";
 
       if (currentUser) {
         const displayUser = (currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email || "Doctor";
@@ -3310,8 +3193,8 @@ create policy "Users can delete own settings"
           statSub = dirtyCount > 0 ? `${dirtyCount} queued` : "Local cache";
         } else if (syncState === "error") {
           dotClass = "error";
-          statLabel = "Error";
-          statSub = "Check setup";
+          statLabel = "Sync Error";
+          statSub = "Tap to retry";
         } else if (dirtyCount > 0) {
           dotClass = "syncing";
           statLabel = `${dirtyCount} Pending`;
@@ -3324,8 +3207,8 @@ create policy "Users can delete own settings"
       } else if (sbConfig.url && sbConfig.anonKey) {
         dotClass = "offline";
         topLabel = "Sign in";
-        statLabel = "Ready";
-        statSub = "Sign in";
+        statLabel = "Sign in";
+        statSub = "Google / Email";
       }
 
       if (dot) dot.className = `sync-dot ${dotClass}`;
@@ -3337,9 +3220,7 @@ create policy "Users can delete own settings"
     }
 
     function handleSyncCardClick() {
-      if (!sbConfig.url || !sbConfig.anonKey) {
-        openSupabaseSetupModal();
-      } else if (!currentUser || currentUser.local_email_session) {
+      if (!currentUser || currentUser.local_email_session) {
         openAuthModal("signin");
       } else {
         syncNow(true);
@@ -3522,10 +3403,6 @@ create policy "Users can delete own settings"
     }
 
     async function syncNow(interactive = false) {
-      if (!sbConfig.url || !sbConfig.anonKey) {
-        if (interactive) openSupabaseSetupModal();
-        return;
-      }
       if (!currentUser || !sbClient) {
         if (interactive) openAuthModal("signin");
         return;
@@ -3533,7 +3410,7 @@ create policy "Users can delete own settings"
       if (currentUser.local_email_session) {
         syncState = "local";
         updateSyncIndicators();
-        if (interactive) toast("Signed in locally — click Continue with Google to enable cloud sync");
+        if (interactive) toast("Signed in locally — click Sign in with Google to enable cloud sync");
         return;
       }
       if (!navigator.onLine) {
@@ -3828,16 +3705,24 @@ create policy "Users can delete own settings"
     }
 
     async function signInWithGoogle() {
-      if (!sbConfig.url || !sbConfig.anonKey || !sbClient) {
-        if (!sbConfig.url || !sbConfig.anonKey) {
-          openSupabaseSetupModal();
-          return;
-        }
+      if (!sbClient) {
+        await initSupabase();
+      }
+      if (!sbClient) {
+        authFeedback = {
+          type: "err",
+          text: navigator.onLine
+            ? "Authentication service is still loading. Please reload and try again."
+            : "You are offline. Connect to the internet to sign in with Google, or use Email & Password below."
+        };
+        if (document.getElementById("authModal").style.display === "none") openAuthModal("signin");
+        else renderAuthFeedback();
+        return;
       }
       if (!navigator.onLine) {
         authFeedback = {
           type: "err",
-          text: "You are offline. Connect to the internet to continue with Google, or use Email & Password below."
+          text: "You are offline. Connect to the internet to sign in with Google, or use Email & Password below."
         };
         if (document.getElementById("authModal").style.display === "none") openAuthModal("signin");
         else renderAuthFeedback();
@@ -3848,7 +3733,7 @@ create policy "Users can delete own settings"
       renderAuthFeedback();
 
       try {
-        // Pre-check Supabase Auth settings so a disabled Google provider shows clear setup guidance cleanly
+        // Pre-check Supabase Auth settings so a disabled Google provider fails cleanly
         try {
           const ctl = new AbortController();
           const timer = setTimeout(() => ctl.abort(), 3000);
@@ -3862,7 +3747,7 @@ create policy "Users can delete own settings"
             if (settings && settings.external && settings.external.google === false) {
               authFeedback = {
                 type: "info",
-                text: `Google provider is disabled in Supabase. Enable it under Authentication -> Providers -> Google (Callback: ${sbConfig.url}/auth/v1/callback). Meanwhile, Email & Password works immediately below with no OTP.`
+                text: "Google Sign-In is temporarily unavailable. Please use Email & Password below."
               };
               const modalEl = document.getElementById("authModal");
               if (modalEl && modalEl.style.display === "none") {
@@ -3912,16 +3797,15 @@ create policy "Users can delete own settings"
               <div class="auth-feature-pills">
                 <span class="auth-feat-pill">🔑 Google + Email Linked</span>
                 <span class="auth-feat-pill">☁ Multi-Device Sync</span>
-                <span class="auth-feat-pill">📡 No OTP Required</span>
               </div>
             </div>
           ` : ""}
           <div>
             <button type="button" class="btn-google-primary" onclick="signInWithGoogle()">
               ${GOOGLE_SVG}
-              <span>Continue with Google</span>
+              <span>Sign in with Google</span>
             </button>
-            <div class="auth-divider"><span>or use email &amp; password (no OTP)</span></div>
+            <div class="auth-divider"><span>or use email &amp; password</span></div>
             <div class="auth-tabs" role="tablist">
               <button type="button" class="${authMode === "signin" ? "active" : ""}" onclick="setAuthMode('signin')">Sign In</button>
               <button type="button" class="${isSignUp ? "active" : ""}" onclick="setAuthMode('signup')">Create Account</button>
@@ -3983,10 +3867,6 @@ create policy "Users can delete own settings"
     }
 
     function openAuthOrAccount() {
-      if (!sbConfig.url || !sbConfig.anonKey) {
-        openSupabaseSetupModal();
-        return;
-      }
       openAuthModal();
     }
 
@@ -4015,7 +3895,7 @@ create policy "Users can delete own settings"
             <div style="margin-bottom:12px">
               <button type="button" class="btn-google-primary" onclick="signInWithGoogle()">
                 ${GOOGLE_SVG}
-                <span>Continue with Google to Sync Cloud</span>
+                <span>Sign in with Google to Sync Cloud</span>
               </button>
             </div>
           ` : ""}
@@ -4034,7 +3914,6 @@ create policy "Users can delete own settings"
           </form>
           <div class="modal-actions">
             ${isLocalSession ? "" : `<button type="button" class="btn" onclick="syncNow(true)">☁ Sync Now</button>`}
-            <button type="button" class="btn out" onclick="closeAuthModal();openSupabaseSetupModal()">⚙ Cloud Setup</button>
             <button type="button" class="btn danger" onclick="signOutUser()">Sign Out</button>
           </div>
         `;
@@ -4194,7 +4073,7 @@ create policy "Users can delete own settings"
             }
             authFeedback = {
               type: "info",
-              text: `This email (${email}) is already registered. Click 'Continue with Google' above once to link this password to your Google account, or try signing in with your existing password.`
+              text: `This email (${email}) is already registered. Click 'Sign in with Google' above once to link this password to your Google account, or try signing in with your existing password.`
             };
             renderAuthFeedback();
             return;
@@ -4236,7 +4115,7 @@ create policy "Users can delete own settings"
 
         authFeedback = {
           type: "err",
-          text: `Invalid email or password. If you signed up using Google for ${email}, click 'Continue with Google' above — your password will link automatically.`
+          text: `Invalid email or password. If you signed up using Google for ${email}, click 'Sign in with Google' above — your password will link automatically.`
         };
         renderAuthFeedback();
       } catch (e) {
@@ -4386,114 +4265,6 @@ create policy "Users can delete own settings"
       } catch (e) {
         toast(`Could not update password: ${e.message || "error"}`);
       }
-    }
-
-    /* ---------- Supabase Setup Modal ---------- */
-    function openSupabaseSetupModal() {
-      const cfg = resolveSupabaseConfig();
-      document.getElementById("sbUrlInput").value = cfg.url || "";
-      document.getElementById("sbKeyInput").value = cfg.anonKey || "";
-      document.getElementById("setupSqlCode").textContent = SUPABASE_SCHEMA_SQL;
-      const resBox = document.getElementById("sbTestResult");
-      resBox.style.display = "none";
-      resBox.textContent = "";
-      document.getElementById("supabaseSetupModal").style.display = "flex";
-    }
-
-    function closeSupabaseSetupModal() {
-      document.getElementById("supabaseSetupModal").style.display = "none";
-    }
-
-    async function saveSupabaseSetup(event) {
-      event.preventDefault();
-      const url = normalizeSupabaseUrl(document.getElementById("sbUrlInput").value);
-      const key = document.getElementById("sbKeyInput").value.trim();
-      document.getElementById("sbUrlInput").value = url;
-      if (!url || !key) return;
-
-      try {
-        localStorage.setItem(SB_OVERRIDE_URL_KEY, url);
-        localStorage.setItem(SB_OVERRIDE_KEY_KEY, key);
-      } catch (e) {
-        toast("Could not save settings to localStorage");
-        return;
-      }
-
-      await initSupabase();
-      await loadScopedRecords();
-      await loadSavedTemplates();
-      await checkGuestDraftsForMigration();
-      renderDashboard();
-      await testSupabaseConnection();
-      toast("Supabase settings saved ✓");
-    }
-
-    async function clearSupabaseSetupOverride() {
-      try {
-        localStorage.removeItem(SB_OVERRIDE_URL_KEY);
-        localStorage.removeItem(SB_OVERRIDE_KEY_KEY);
-      } catch (e) { }
-      await initSupabase();
-      await loadScopedRecords();
-      renderDashboard();
-      const cfg = resolveSupabaseConfig();
-      document.getElementById("sbUrlInput").value = cfg.url || "";
-      document.getElementById("sbKeyInput").value = cfg.anonKey || "";
-      const resBox = document.getElementById("sbTestResult");
-      resBox.style.display = "block";
-      resBox.className = "setup-status info";
-      resBox.textContent = cfg.url ? "Reset to v2/supabase-config.js values." : "Cleared browser Supabase settings (Local mode active).";
-    }
-
-    async function testSupabaseConnection() {
-      const url = normalizeSupabaseUrl(document.getElementById("sbUrlInput").value);
-      const key = document.getElementById("sbKeyInput").value.trim();
-      document.getElementById("sbUrlInput").value = url;
-      const resBox = document.getElementById("sbTestResult");
-      resBox.style.display = "block";
-
-      if (!url || !key) {
-        resBox.className = "setup-status err";
-        resBox.textContent = "Please enter both Project URL and Anon Key.";
-        return;
-      }
-      if (!window.supabase || typeof window.supabase.createClient !== "function") {
-        resBox.className = "setup-status err";
-        resBox.textContent = "Supabase JS library is not loaded (check your internet connection and reload).";
-        return;
-      }
-
-      resBox.className = "setup-status info";
-      resBox.textContent = "Testing connection & database tables...";
-
-      try {
-        const probeClient = window.supabase.createClient(url, key, { auth: { persistSession: false } });
-        const { error } = await probeClient
-          .from("discharge_summaries")
-          .select("id")
-          .limit(1);
-
-        if (!error) {
-          resBox.className = "setup-status ok";
-          resBox.textContent = "Connected ✓ — 'discharge_summaries' table is ready! You can sign in now.";
-        } else if (isMissingTableError(error)) {
-          resBox.className = "setup-status ok";
-          resBox.textContent = "Connected to Supabase ✓ — Cloud sync is active (using Auth account storage until you run the optional SQL schema below).";
-        } else {
-          resBox.className = "setup-status ok";
-          resBox.textContent = `Supabase reachable (${error.message}). Verify the SQL schema & Auth settings below.`;
-        }
-      } catch (e) {
-        resBox.className = "setup-status err";
-        resBox.textContent = `Connection failed: ${e.message || "Check URL and Anon Key"}`;
-      }
-    }
-
-    function copySetupSQL() {
-      navigator.clipboard.writeText(SUPABASE_SCHEMA_SQL).then(
-        () => toast("Supabase SQL copied to clipboard ✓"),
-        () => toast("Copy failed — select SQL manually from box")
-      );
     }
 
     /* ---------- autofill sample data for testing ---------- */

@@ -14,10 +14,10 @@
   <link rel="apple-touch-icon" sizes="180x180" href="../icon-192.png">
   <link rel="icon" href="../icon-192.png">
   <title>DS Builder v2 — Dashboard &amp; Discharge Summary</title>
-  <link rel="stylesheet" href="styles.css?v=9">
+  <link rel="stylesheet" href="styles.css?v=10">
   <script src="../html2pdf.bundle.min.js"></script>
-  <script src="supabase.min.js?v=9"></script>
-  <script src="supabase-config.js?v=9"></script>
+  <script src="supabase.min.js?v=10"></script>
+  <script src="supabase-config.js?v=10"></script>
 </head>
 
 <body>
@@ -127,13 +127,10 @@
             </div>
 
             <hr>
-            <div class="menu-label">Tools &amp; Setup</div>
-            <div class="menu-tile-grid cols-3">
+            <div class="menu-label">Tools</div>
+            <div class="menu-tile-grid cols-2">
               <button type="button" class="menu-tile" onclick="autofillTest();closeMenu()" title="Autofill sample test patient">
                 <span class="tile-icon">⚡</span><span class="tile-label">Test Data</span>
-              </button>
-              <button type="button" class="menu-tile" onclick="openSupabaseSetupModal();closeMenu()" title="Supabase cloud setup">
-                <span class="tile-icon">⚙</span><span class="tile-label">Cloud Setup</span>
               </button>
               <button type="button" class="menu-tile" onclick="requestPersistentStorage();closeMenu()" title="Enable persistent browser storage">
                 <span class="tile-icon">🔒</span><span class="tile-label">Keep Data</span>
@@ -188,8 +185,8 @@
       </button>
       <button type="button" class="stat-card cloud" id="statSyncCard" onclick="handleSyncCardClick()">
         <span class="stat-label">Cloud Sync</span>
-        <span class="stat-val stat-val-sm" id="statSyncText">Local</span>
-        <span class="stat-sub" id="statSyncSub">Configure</span>
+        <span class="stat-val stat-val-sm" id="statSyncText">Sign in</span>
+        <span class="stat-sub" id="statSyncSub">Google / Email</span>
       </button>
     </section>
 
@@ -703,49 +700,6 @@ Take diet as advised.</textarea>
     </div>
   </div>
 
-  <!-- ================= SUPABASE SETUP MODAL ================= -->
-  <div class="modal-backdrop no-print" id="supabaseSetupModal" style="display:none" onclick="if(event.target===this) closeSupabaseSetupModal()">
-    <div class="modal-card modal-wide" role="dialog" aria-modal="true" aria-labelledby="setupModalTitle">
-      <div class="modal-head">
-        <h2 id="setupModalTitle">⚙ Connect Supabase Project</h2>
-        <button type="button" class="modal-close" onclick="closeSupabaseSetupModal()" aria-label="Close">×</button>
-      </div>
-      <div class="modal-body">
-        <p class="hint" style="margin-top:0;font-size:13px">
-          Enter your Supabase <b>Project URL</b> and <b>Anon / Publishable Key</b> from
-          <i>Supabase Dashboard → Project Settings → API</i>. These are saved in your browser (or you can hardcode them permanently in <code>v2/supabase-config.js</code>).<br>
-          <b>Google &amp; Email Sign-In:</b> Enable Google OAuth under <i>Authentication → Providers → Google</i> for primary cross-device login. Email + Password sign-up works immediately without OTP.
-        </p>
-        <form onsubmit="saveSupabaseSetup(event)">
-          <div class="field">
-            <label for="sbUrlInput">Supabase Project URL</label>
-            <input type="url" id="sbUrlInput" placeholder="https://your-project-id.supabase.co" required>
-          </div>
-          <div class="field">
-            <label for="sbKeyInput">Supabase Anon (Public) Key</label>
-            <textarea id="sbKeyInput" rows="2" placeholder="eyJhbGciOi..." style="min-height:56px;font-family:monospace;font-size:12px" required></textarea>
-          </div>
-          <div id="sbTestResult" class="setup-status" style="display:none"></div>
-          <div class="modal-actions">
-            <button type="submit" class="btn">Save &amp; Connect</button>
-            <button type="button" class="btn out" onclick="testSupabaseConnection()">Test Connection</button>
-            <button type="button" class="btn danger" onclick="clearSupabaseSetupOverride()">Reset</button>
-          </div>
-        </form>
-
-        <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
-        <div class="setup-sql-head">
-          <div>
-            <b>Database Setup SQL (Optional — Auto-Fallback Active)</b>
-            <p class="hint" style="margin:2px 0 0">Cloud sync works immediately via your Supabase Auth account even before running this SQL. Run once in <b>Supabase → SQL Editor</b> to enable dedicated <code>discharge_summaries</code> &amp; <code>user_settings</code> tables.</p>
-          </div>
-          <button type="button" class="btn sm out" onclick="copySetupSQL()">📋 Copy SQL</button>
-        </div>
-        <pre class="sql-preview" id="setupSqlCode"></pre>
-      </div>
-    </div>
-  </div>
-
   <!-- ================= SAVED TEMPLATES MANAGER MODAL ================= -->
   <div class="modal-backdrop no-print" id="templatesModal" style="display:none" onclick="if(event.target===this) closeTemplatesModal()">
     <div class="modal-card modal-wide" role="dialog" aria-modal="true" aria-labelledby="templatesModalTitle">
@@ -796,7 +750,7 @@ Take diet as advised.</textarea>
     </div>
   </div>
 
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=10"></script>
 </body>
 
 </html>
