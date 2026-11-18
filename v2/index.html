@@ -14,10 +14,10 @@
   <link rel="apple-touch-icon" sizes="180x180" href="../icon-192.png">
   <link rel="icon" href="../icon-192.png">
   <title>DS Builder v2 — Dashboard &amp; Discharge Summary</title>
-  <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="styles.css?v=11">
   <script src="../html2pdf.bundle.min.js"></script>
-  <script src="supabase.min.js?v=10"></script>
-  <script src="supabase-config.js?v=10"></script>
+  <script src="supabase.min.js?v=11"></script>
+  <script src="supabase-config.js?v=11"></script>
 </head>
 
 <body>
@@ -679,6 +679,11 @@ Take diet as advised.</textarea>
         <span class="apb-summary-name" id="summaryPatientTitle">Patient Summary</span>
       </div>
       <div class="apb-right">
+        <div class="summary-add-sec-wrap" id="summaryAddSecWrap">
+          <button type="button" class="btn sm out" id="summaryAddSecBtn" onclick="toggleAddSectionMenu(event)">+ Add Section</button>
+          <div class="summary-add-sec-menu" id="summaryAddSecMenu" role="menu"></div>
+        </div>
+        <button type="button" class="btn sm out" onclick="refitSummaryPages()" title="Re-fit edited content across A4 pages">⟳ Re-fit A4</button>
         <button type="button" class="status-toggle-btn incomplete" id="summaryStatusBtn" onclick="toggleActiveStatus()">
           <span id="summaryStatusText">Incomplete</span>
         </button>
@@ -750,7 +755,7 @@ Take diet as advised.</textarea>
     </div>
   </div>
 
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=11"></script>
 </body>
 
 </html>

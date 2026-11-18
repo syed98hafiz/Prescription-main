@@ -529,77 +529,77 @@
       h += `<div class="doc-head">
     ${logoHTML}
     <div class="head-text">
-      <div class="college">${esc(val("college"))}</div>
-      ${val("address") ? `<div class="addr">${esc(val("address"))}</div>` : ""}
-      <div class="dept">${esc(val("dept"))}</div>
-      <div class="kind">${esc(kind)}</div>
+      <div class="college" contenteditable="true" data-edit-field="college" data-placeholder="Institution Name">${esc(val("college"))}</div>
+      ${val("address") ? `<div class="addr" contenteditable="true" data-edit-field="address" data-placeholder="Address">${esc(val("address"))}</div>` : ""}
+      <div class="dept" contenteditable="true" data-edit-field="dept" data-placeholder="Department">${esc(val("dept"))}</div>
+      <div class="kind" contenteditable="true" data-edit-field="summaryType" data-placeholder="DISCHARGE SUMMARY">${esc(kind)}</div>
     </div>
   </div>`;
 
       const ageSex = [val("age"), val("sex")].filter(Boolean).join(" / ");
       h += `<div class="pt-grid">
-    <div><b>Name</b> : ${esc(val("name"))}</div>
-    <div><b>Age/Sex</b> : ${esc(ageSex)}</div>
-    <div><b>IP No.</b> : ${esc(val("ipno"))}</div>
-    <div><b>DOA</b> : ${fmtDate(val("doa"))}</div>
-    <div><b>DOD</b> : ${fmtDate(val("dod"))}</div>
-    <div><b>Unit</b> : ${esc(getUnit())}</div>
-    <div><b>Mode of D/C</b> : ${esc(val("modeOfDischarge"))}</div>
+    <div><b>Name</b> : <span class="pt-edit" contenteditable="true" data-edit-field="name" data-placeholder="Patient Name">${esc(val("name"))}</span></div>
+    <div><b>Age/Sex</b> : <span class="pt-edit" contenteditable="true" data-edit-custom="ageSex" data-placeholder="Age / Sex">${esc(ageSex)}</span></div>
+    <div><b>IP No.</b> : <span class="pt-edit" contenteditable="true" data-edit-field="ipno" data-placeholder="IP No.">${esc(val("ipno"))}</span></div>
+    <div><b>DOA</b> : <span class="pt-edit" contenteditable="true" data-edit-field="doa" data-placeholder="DD.MM.YYYY">${esc(fmtDate(val("doa")))}</span></div>
+    <div><b>DOD</b> : <span class="pt-edit" contenteditable="true" data-edit-field="dod" data-placeholder="DD.MM.YYYY">${esc(fmtDate(val("dod")))}</span></div>
+    <div><b>Unit</b> : <span class="pt-edit" contenteditable="true" data-edit-custom="unit" data-placeholder="Unit">${esc(getUnit())}</span></div>
+    <div><b>Mode of D/C</b> : <span class="pt-edit" contenteditable="true" data-edit-field="modeOfDischarge" data-placeholder="Discharge">${esc(val("modeOfDischarge"))}</span></div>
   </div>`;
 
-      h += section("Diagnosis", listOrText(val("diagnosis")), "diagnosis");
+      h += section("Diagnosis", listOrText(val("diagnosis"), "diagnosis", "diagnosis"), "diagnosis");
 
-      h += section("Presenting Complaints (Chief C/O)", complaints.length ? ul(complaints) : empty(), "complaints");
-      if (val("hopi")) h += section("HOPI", `<div class="content">${esc(val("hopi"))}</div>`, "history");
+      h += section("Presenting Complaints (Chief C/O)", complaints.length ? ul(complaints, "complaints") : empty("complaints"), "complaints");
+      if (val("hopi")) h += section("HOPI", `<div class="content" contenteditable="true" data-edit-field="hopi" data-placeholder="History of present illness">${esc(val("hopi"))}</div>`, "history");
       if (pastHistory.length || rxHistory.length) {
         if (pastHistory.length && rxHistory.length) {
           h += `<div class="two-col">`;
-          h += `<div class="col-half">${section("Past History", ul(pastHistory), "history")}</div>`;
-          h += `<div class="col-half">${section("Rx History (Pre-admission)", ul(rxHistory), "history")}</div>`;
+          h += `<div class="col-half">${section("Past History", ul(pastHistory, "pastHistory"), "history")}</div>`;
+          h += `<div class="col-half">${section("Rx History (Pre-admission)", ul(rxHistory, "rxHistory"), "history")}</div>`;
           h += `</div>`;
         } else if (pastHistory.length) {
-          h += section("Past History", ul(pastHistory), "history");
+          h += section("Past History", ul(pastHistory, "pastHistory"), "history");
         } else {
-          h += section("Rx History (Pre-admission)", ul(rxHistory), "history");
+          h += section("Rx History (Pre-admission)", ul(rxHistory, "rxHistory"), "history");
         }
       } else if (!val("hopi") && (includeEmpty.history || (includeEmptyLines.history > 0))) {
-        h += section("History", empty(), "history");
+        h += section("History", empty("history"), "history");
       }
 
       const exam = examinationHTML();
       if (exam || includeEmpty.examination || (includeEmptyLines.examination > 0)) {
-        h += section("Examination", exam || empty(), "examination");
+        h += section("Examination", exam || empty("examination"), "examination");
       }
 
       h += section("Investigations", investigationsHTML(), "investigations");
-      h += section("Opinions", val("opinions") ? `<div class="content">${esc(val("opinions"))}</div>` : empty(), "opinions");
-      h += section("Course in the Hospital", val("course") ? `<div class="content">${esc(val("course"))}</div>` : empty(), "course");
+      h += section("Opinions", val("opinions") ? `<div class="content" contenteditable="true" data-edit-field="opinions" data-placeholder="Specialist opinions">${esc(val("opinions"))}</div>` : empty("opinions"), "opinions");
+      h += section("Course in the Hospital", val("course") ? `<div class="content" contenteditable="true" data-edit-field="course" data-placeholder="Hospital course">${esc(val("course"))}</div>` : empty("course"), "course");
       if (treatment.length > 0 && treatment.length <= 6) {
-        h += section("Treatment Given", contentColumns(treatment), "treatment");
+        h += section("Treatment Given", contentColumns(treatment, "", "treatment"), "treatment");
       } else {
-        h += section("Treatment Given", treatment.length ? ul(treatment) : empty(), "treatment");
+        h += section("Treatment Given", treatment.length ? ul(treatment, "treatment") : empty("treatment"), "treatment");
       }
       const cond = [val("condition"), val("condExtra")].filter(Boolean).join(" — ");
-      h += section("Condition at Discharge", cond ? `<div class="content">${esc(cond)}</div>` : empty(), "condition");
+      h += section("Condition at Discharge", cond ? `<div class="content" contenteditable="true" data-edit-custom="conditionFull" data-placeholder="Condition at discharge">${esc(cond)}</div>` : empty("condition"), "condition");
 
       let adv = "";
       const advBits = [];
-      if (val("diet")) advBits.push(`<div class="adv-item"><b>Diet:</b> ${esc(val("diet"))}</div>`);
-      if (val("physicalActivity")) advBits.push(`<div class="adv-item"><b>Physical Activity:</b> ${esc(val("physicalActivity"))}</div>`);
-      if (ynState.physio) advBits.push(`<div class="adv-item"><b>Physiotherapy at home:</b> ${ynState.physio}</div>`);
-      if (ynState.equip) advBits.push(`<div class="adv-item"><b>Home medical equipment needed:</b> ${ynState.equip}</div>`);
-      if (ynState.dress) advBits.push(`<div class="adv-item"><b>Dressing needs at home:</b> ${ynState.dress}</div>`);
-      if (val("otherNeeds")) advBits.push(`<div class="adv-item"><b>Other needs:</b> ${esc(val("otherNeeds"))}</div>`);
+      if (val("diet")) advBits.push(`<div class="adv-item"><b>Diet:</b> <span class="inline-edit" contenteditable="true" data-edit-field="diet" data-placeholder="Diet">${esc(val("diet"))}</span></div>`);
+      if (val("physicalActivity")) advBits.push(`<div class="adv-item"><b>Physical Activity:</b> <span class="inline-edit" contenteditable="true" data-edit-field="physicalActivity" data-placeholder="Activity">${esc(val("physicalActivity"))}</span></div>`);
+      if (ynState.physio) advBits.push(`<div class="adv-item"><b>Physiotherapy at home:</b> <span class="inline-edit" contenteditable="true" data-edit-yn="physio" data-placeholder="Yes / No">${esc(ynState.physio)}</span></div>`);
+      if (ynState.equip) advBits.push(`<div class="adv-item"><b>Home medical equipment needed:</b> <span class="inline-edit" contenteditable="true" data-edit-yn="equip" data-placeholder="Yes / No">${esc(ynState.equip)}</span></div>`);
+      if (ynState.dress) advBits.push(`<div class="adv-item"><b>Dressing needs at home:</b> <span class="inline-edit" contenteditable="true" data-edit-yn="dress" data-placeholder="Yes / No">${esc(ynState.dress)}</span></div>`);
+      if (val("otherNeeds")) advBits.push(`<div class="adv-item"><b>Other needs:</b> <span class="inline-edit" contenteditable="true" data-edit-field="otherNeeds" data-placeholder="Other needs">${esc(val("otherNeeds"))}</span></div>`);
       if (advBits.length) adv += `<div class="adv-items-group">${advBits.join("")}</div>`;
       if (rxMeds.length) {
         adv += `<div class="adv-item" style="font-weight:700;margin-top:6px;margin-bottom:2px">Medications:</div>`;
-        adv += contentColumns(rxMeds, "med-list");
+        adv += contentColumns(rxMeds, "med-list", "rxMeds");
       }
-      if (val("advice")) adv += `<div class="content adv-item" style="margin-top:5px">${esc(val("advice"))}</div>`;
-      if (val("emergencyContact")) adv += `<div class="content adv-item" style="margin-top:5px"><b>Emergency contact:</b> ${esc(val("emergencyContact"))}</div>`;
-      if (val("review")) adv += `<div class="content adv-item" style="margin-top:5px"><b>Follow-Up:</b> ${esc(val("review"))}</div>`;
-      if (val("warning")) adv += `<div class="content adv-item" style="margin-top:5px"><b>Return immediately if:</b> ${esc(val("warning"))}</div>`;
-      h += section("Advice on Discharge (Rx)", adv || empty(), "advice");
+      if (val("advice")) adv += `<div class="content adv-item" style="margin-top:5px" contenteditable="true" data-edit-field="advice" data-placeholder="Discharge advice">${esc(val("advice"))}</div>`;
+      if (val("emergencyContact")) adv += `<div class="content adv-item" style="margin-top:5px"><b>Emergency contact:</b> <span class="inline-edit" contenteditable="true" data-edit-field="emergencyContact" data-placeholder="Contact">${esc(val("emergencyContact"))}</span></div>`;
+      if (val("review")) adv += `<div class="content adv-item" style="margin-top:5px"><b>Follow-Up:</b> <span class="inline-edit" contenteditable="true" data-edit-field="review" data-placeholder="Follow-up">${esc(val("review"))}</span></div>`;
+      if (val("warning")) adv += `<div class="content adv-item" style="margin-top:5px"><b>Return immediately if:</b> <span class="inline-edit" contenteditable="true" data-edit-field="warning" data-placeholder="Return advice">${esc(val("warning"))}</span></div>`;
+      h += section("Advice on Discharge (Rx)", adv || empty("advice"), "advice");
 
       const prep = ensureDr(val("preparedBy")), chf = ensureDr(val("chief"));
       const sigLines = includeEmptyLines.signatures || 0;
@@ -607,8 +607,8 @@
         const sigSpace = sigLines > 0 ? `<div class="empty-lines-space" style="height:${(sigLines * 1.4).toFixed(2)}em"></div>` : "";
         h += `<div class="sign-row${signaturePinned ? " signature-pinned" : ""}">
       ${sigSpace}
-      <div>${esc(prep)}<br><small>Prepared by</small></div>
-      <div>${esc(chf)}<br><small>Medical Officer (Name &amp; Seal)</small>${val("signDateTime") ? `<br><small>${esc(val("signDateTime"))}</small>` : ""}</div>
+      <div><span class="inline-edit" contenteditable="true" data-edit-field="preparedBy" data-placeholder="Prepared by">${esc(prep)}</span><br><small>Prepared by</small></div>
+      <div><span class="inline-edit" contenteditable="true" data-edit-field="chief" data-placeholder="Medical Officer">${esc(chf)}</span><br><small>Medical Officer (Name &amp; Seal)</small>${(val("signDateTime") || includeEmpty.signatures) ? `<br><small class="inline-edit" contenteditable="true" data-edit-field="signDateTime" data-placeholder="Date & Time">${esc(val("signDateTime"))}</small>` : ""}</div>
     </div>`;
       }
       document.getElementById("paper").innerHTML = h;
@@ -620,20 +620,20 @@
     }
 
     function section(title, content, key) {
-      const isEmpty = !content || content === `<div class="empty">—</div>`;
+      const isEmpty = !content || content === `<div class="empty">—</div>` || content.includes('data-edit-empty="');
       const linesCount = includeEmptyLines[key] || 0;
       if (isEmpty && !includeEmpty[key] && linesCount <= 0) return "";
       let bodyHTML = "";
       if (linesCount > 0) {
         const spaceHeight = (linesCount * 1.4).toFixed(2);
         const spaceHTML = `<div class="empty-lines-space" style="height:${spaceHeight}em;" aria-hidden="true"></div>`;
-        bodyHTML = isEmpty ? spaceHTML : `${content}${spaceHTML}`;
+        bodyHTML = isEmpty ? `<div class="empty" contenteditable="true" data-edit-empty="${esc(key)}" data-placeholder=""></div>${spaceHTML}` : `${content}${spaceHTML}`;
       } else if (isEmpty) {
-        bodyHTML = `<div class="empty">—</div>`;
+        bodyHTML = empty(key);
       } else {
         bodyHTML = content;
       }
-      return `<div class="sec"><h3>${title}</h3>${bodyHTML}</div>`;
+      return `<div class="sec" data-sec-key="${esc(key)}"><h3>${title}</h3>${bodyHTML}</div>`;
     }
 
     function summarySectionHasContent(key) {
@@ -699,22 +699,37 @@
       updateFormSectionStates();
       render();
     }
-    function empty() { return `<div class="empty">—</div>`; }
-    function ul(arr) { return `<ul>${arr.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`; }
-    function contentColumns(arr, className = "") {
-      return `<ul class="content-columns ${className}">${arr.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+    function empty(sectionKey = "") {
+      if (sectionKey) {
+        return `<div class="empty" contenteditable="true" data-edit-empty="${esc(sectionKey)}" data-placeholder="Click to type...">—</div>`;
+      }
+      return `<div class="empty">—</div>`;
     }
-    function listOrText(t) { const l = lines(t); if (!l.length) return empty(); return l.length > 1 ? ul(l) : `<div class="content">${esc(l[0])}</div>`; }
+    function ul(arr, listKey = "") {
+      const attr = listKey ? ` contenteditable="true" data-edit-list="${esc(listKey)}"` : "";
+      return `<ul${attr}>${arr.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+    }
+    function contentColumns(arr, className = "", listKey = "") {
+      const attr = listKey ? ` contenteditable="true" data-edit-list="${esc(listKey)}"` : "";
+      return `<ul class="content-columns ${className}"${attr}>${arr.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+    }
+    function listOrText(t, fieldKey = "", listKey = "") {
+      const l = lines(t);
+      if (!l.length) return empty(fieldKey);
+      if (l.length > 1) return ul(l, listKey || fieldKey);
+      const attr = fieldKey ? ` contenteditable="true" data-edit-field="${esc(fieldKey)}" data-placeholder="Enter diagnosis..."` : "";
+      return `<div class="content"${attr}>${esc(l[0])}</div>`;
+    }
     function listOrTextRaw(t) { const l = lines(t); return l.join(", "); }
 
     function examinationHTML() {
       let parts = [];
-      if (val("generalExam")) parts.push(`<div class="content">${esc(val("generalExam"))}</div>`);
-      const vit = [["BP", val("vBP")], ["PR", val("vPR")], ["RR", val("vRR")], ["SpO2", val("vSpO2")], ["Temp", val("vTemp")], ["GRBS", val("vGRBS")]]
-        .filter(([, v]) => v);
-      if (vit.length) parts.push(`<div class="content" style="margin-top:4px"><b>Vitals:</b> ${vit.map(([k, v]) => `${k} - ${esc(v)}`).join(", ")}</div>`);
-      const se = [["CVS", val("seCVS")], ["RS", val("seRS")], ["P/A", val("sePA")], ["CNS", val("seCNS")]].filter(([, v]) => v);
-      if (se.length) parts.push(`<div class="content" style="margin-top:4px"><b>Systemic Examination:</b> ${se.map(([k, v]) => `${k} - ${esc(v)}`).join("; ")}</div>`);
+      if (val("generalExam")) parts.push(`<div class="content" contenteditable="true" data-edit-field="generalExam" data-placeholder="General examination findings">${esc(val("generalExam"))}</div>`);
+      const vit = [["BP", "vBP", val("vBP")], ["PR", "vPR", val("vPR")], ["RR", "vRR", val("vRR")], ["SpO2", "vSpO2", val("vSpO2")], ["Temp", "vTemp", val("vTemp")], ["GRBS", "vGRBS", val("vGRBS")]]
+        .filter(([, , v]) => v);
+      if (vit.length) parts.push(`<div class="content" style="margin-top:4px"><b>Vitals:</b> ${vit.map(([k, id, v]) => `${k} - <span class="inline-edit" contenteditable="true" data-edit-field="${id}" data-placeholder="—">${esc(v)}</span>`).join(", ")}</div>`);
+      const se = [["CVS", "seCVS", val("seCVS")], ["RS", "seRS", val("seRS")], ["P/A", "sePA", val("sePA")], ["CNS", "seCNS", val("seCNS")]].filter(([, , v]) => v);
+      if (se.length) parts.push(`<div class="content" style="margin-top:4px"><b>Systemic Examination:</b> ${se.map(([k, id, v]) => `${k} - <span class="inline-edit" contenteditable="true" data-edit-field="${id}" data-placeholder="—">${esc(v)}</span>`).join("; ")}</div>`);
       return parts.join("");
     }
 
@@ -723,18 +738,18 @@
       const hasTable = invDates.length && invParams.some(p => p.name.trim());
       if (hasTable) {
         let h = `<div class="inv-table-wrap"><table class="prev-table"><thead><tr><th>Investigation</th>`;
-        invDates.forEach(d => { h += `<th>${d.date ? fmtDateShort(d.date) : "—"}</th>`; });
+        invDates.forEach(d => { h += `<th contenteditable="true" data-edit-inv-date="${d.id}" data-placeholder="DD.MM.YYYY">${d.date ? esc(fmtDateShort(d.date)) : "—"}</th>`; });
         h += `</tr></thead><tbody>`;
         invParams.forEach(p => {
           if (!p.name.trim()) return;
-          h += `<tr><td class="pn">${esc(p.name)}</td>`;
-          invDates.forEach(d => { h += `<td>${esc(p.values[d.id] || "")}</td>`; });
+          h += `<tr><td class="pn" contenteditable="true" data-edit-inv-param="${p.id}" data-placeholder="Parameter">${esc(p.name)}</td>`;
+          invDates.forEach(d => { h += `<td contenteditable="true" data-edit-inv-val="${p.id}:${d.id}">${esc(p.values[d.id] || "")}</td>`; });
           h += `</tr>`;
         });
         h += `</tbody></table></div>`; out += h;
       }
-      if (val("invOther")) out += `<div class="content" style="margin-top:6px">${esc(val("invOther"))}</div>`;
-      return out || empty();
+      if (val("invOther")) out += `<div class="content" style="margin-top:6px" contenteditable="true" data-edit-field="invOther" data-placeholder="Imaging, ECG & other reports">${esc(val("invOther"))}</div>`;
+      return out || empty("investigations");
     }
 
     /* ---------- tabs / copy / navigation ---------- */
@@ -909,19 +924,24 @@
 
       const addSection = sectionBlock => {
         paper.removeChild(sectionBlock);
+        const makeSecFragment = headingEl => {
+          const frag = document.createElement("div");
+          frag.className = "sec";
+          if (sectionBlock.dataset && sectionBlock.dataset.secKey) {
+            frag.dataset.secKey = sectionBlock.dataset.secKey;
+          }
+          if (headingEl) frag.appendChild(headingEl);
+          return frag;
+        };
         const heading = sectionBlock.querySelector(":scope > h3");
         const children = Array.from(sectionBlock.children).filter(child => child !== heading);
-        let fragment = document.createElement("div");
-        fragment.className = "sec";
-        if (heading) fragment.appendChild(heading);
+        let fragment = makeSecFragment(heading);
         page.appendChild(fragment);
 
         if (!fits() && page.children.length > 1) {
           page.removeChild(fragment);
           newPage();
-          fragment = document.createElement("div");
-          fragment.className = "sec";
-          if (heading) fragment.appendChild(heading);
+          fragment = makeSecFragment(heading);
           page.appendChild(fragment);
         }
 
@@ -947,11 +967,9 @@
                 if (!fits() && tableBody.children.length > 1) {
                   tableBody.removeChild(row);
                   newPage();
-                  fragment = document.createElement("div");
-                  fragment.className = "sec";
                   const continuedHeading = document.createElement("h3");
                   continuedHeading.textContent = continuationTitle(heading && heading.textContent);
-                  fragment.appendChild(continuedHeading);
+                  fragment = makeSecFragment(continuedHeading);
                   page.appendChild(fragment);
                   tableBody = addTablePage();
                   tableBody.appendChild(row);
@@ -964,11 +982,9 @@
           if (!fits() && fragment.children.length > 1) {
             fragment.removeChild(child);
             newPage();
-            fragment = document.createElement("div");
-            fragment.className = "sec";
             const continuedHeading = document.createElement("h3");
             continuedHeading.textContent = continuationTitle(heading && heading.textContent);
-            fragment.appendChild(continuedHeading);
+            fragment = makeSecFragment(continuedHeading);
             page.appendChild(fragment);
             fragment.appendChild(child);
           }
@@ -1051,14 +1067,15 @@
       else if (isCompact) note = " · Auto-optimized (Compact fit)";
       else if (isRelaxed) note = " · Relaxed spacing";
 
+      const editHint = `<span style="opacity:.82;font-weight:500"> · ✎ Click any text on the A4 page to edit directly</span>`;
       if (pages <= 2) {
         banner.style.display = "flex";
         banner.className = "pagebanner no-print ok";
-        banner.innerHTML = `<span>📄 <b>A4 print preview</b>: ${pages} A4 page${pages > 1 ? "s" : ""}${note}.</span>`;
+        banner.innerHTML = `<span>📄 <b>A4 print preview</b>: ${pages} A4 page${pages > 1 ? "s" : ""}${note}.${editHint}</span>`;
       } else {
         banner.style.display = "flex";
         banner.className = "pagebanner no-print warn";
-        banner.innerHTML = `<span>📄 <b>A4 print preview</b>: ${pages} pages${note}.</span>`;
+        banner.innerHTML = `<span>📄 <b>A4 print preview</b>: ${pages} pages${note}.${editHint}</span>`;
       }
     }
 
@@ -1119,6 +1136,7 @@
 
       const exportPaper = paper.cloneNode(true);
       exportPaper.querySelectorAll(".a4-page-guide").forEach(el => el.remove());
+      exportPaper.querySelectorAll("[contenteditable]").forEach(el => el.removeAttribute("contenteditable"));
       exportPaper.classList.add("pdf-export-paper");
 
       let exportPages = Array.from(exportPaper.querySelectorAll(".paper-page"));
@@ -1287,6 +1305,7 @@
     }
     document.addEventListener("click", e => {
       if (!e.target.closest(".menu-wrap")) closeMenu();
+      if (!e.target.closest(".summary-add-sec-wrap")) closeAddSectionMenu();
     });
 
     /* ---------- Export & Import JSON ---------- */
@@ -1446,8 +1465,349 @@
       await generatePdf(true);
     }
 
-    /* live update on any form input */
+    /* ---------- Direct Interactive A4 Preview Editing (Bi-Directional Sync) ---------- */
+    const MULTILINE_PAPER_FIELDS = new Set([
+      "address", "diagnosis", "hopi", "generalExam", "invOther", "opinions", "course", "advice"
+    ]);
+    const SUMMARY_ADDABLE_SECTIONS = [
+      { key: "diagnosis", label: "Diagnosis" },
+      { key: "complaints", label: "Chief Complaints" },
+      { key: "history", label: "History (HOPI)" },
+      { key: "examination", label: "Examination" },
+      { key: "investigations", label: "Investigations" },
+      { key: "opinions", label: "Opinions" },
+      { key: "course", label: "Course in Hospital" },
+      { key: "treatment", label: "Treatment Given" },
+      { key: "condition", label: "Condition at Discharge" },
+      { key: "advice", label: "Advice on Discharge (Rx)" },
+      { key: "signatures", label: "Signatures" }
+    ];
+
+    function cleanPaperSingleLine(str) {
+      return String(str || "").replace(/\u00a0/g, " ").replace(/\r?\n/g, " ").trim();
+    }
+
+    function cleanPaperMultiLine(str) {
+      return String(str || "")
+        .replace(/\u00a0/g, " ")
+        .replace(/\r\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+
+    function setRawFieldFromPaper(fieldId, value) {
+      const el = document.getElementById(fieldId);
+      if (!el) return;
+      if (el.tagName === "SELECT") {
+        setVal_(fieldId, value);
+      } else {
+        el.value = value;
+      }
+    }
+
+    function collectPaperListItems(listKey) {
+      const listEls = Array.from(document.querySelectorAll(`#paper [data-edit-list="${listKey}"]`));
+      const items = [];
+      listEls.forEach(ulEl => {
+        const lis = Array.from(ulEl.querySelectorAll("li"));
+        if (lis.length) {
+          lis.forEach(li => {
+            const txt = cleanPaperSingleLine(li.innerText);
+            if (txt) items.push(txt);
+          });
+        } else {
+          cleanPaperMultiLine(ulEl.innerText)
+            .split("\n")
+            .map(s => s.trim())
+            .filter(Boolean)
+            .forEach(s => items.push(s));
+        }
+      });
+      return items;
+    }
+
+    function applyPaperListSync(listKey, items) {
+      if (listKey === "diagnosis") {
+        setRawFieldFromPaper("diagnosis", items.join("\n"));
+      } else if (listKey === "complaints") {
+        complaints = items;
+        renderComplaints();
+      } else if (listKey === "pastHistory") {
+        pastHistory = items;
+        renderPast();
+      } else if (listKey === "rxHistory") {
+        rxHistory = items;
+        renderRxHistory();
+      } else if (listKey === "treatment") {
+        treatment = items;
+        renderTx();
+      } else if (listKey === "rxMeds") {
+        rxMeds = items;
+        renderRx();
+      }
+    }
+
+    function handlePaperInlineEdit(e) {
+      const target = e.target && e.target.nodeType === 1 ? e.target : (e.target && e.target.parentElement);
+      const editable = target && target.closest('#paper [contenteditable="true"]');
+      if (!editable) return;
+
+      if (editable.hasAttribute("data-edit-field")) {
+        const fieldId = editable.getAttribute("data-edit-field");
+        const isMulti = MULTILINE_PAPER_FIELDS.has(fieldId);
+        const text = isMulti ? cleanPaperMultiLine(editable.innerText) : cleanPaperSingleLine(editable.innerText);
+        if (DISPLAY_DATE_FIELDS.has(fieldId)) {
+          const iso = normalizeDateValue(text);
+          const inp = document.getElementById(fieldId);
+          if (inp) inp.value = iso ? fmtDate(iso) : text;
+        } else {
+          setRawFieldFromPaper(fieldId, text);
+        }
+      } else if (editable.hasAttribute("data-edit-custom")) {
+        const customKey = editable.getAttribute("data-edit-custom");
+        const text = cleanPaperSingleLine(editable.innerText);
+        if (customKey === "ageSex") {
+          const slashIdx = text.indexOf("/");
+          if (slashIdx >= 0) {
+            setRawFieldFromPaper("age", text.slice(0, slashIdx).trim());
+            setRawFieldFromPaper("sex", text.slice(slashIdx + 1).trim());
+          } else if (/^(M|F|Male|Female|Other|O)$/i.test(text)) {
+            setRawFieldFromPaper("age", "");
+            setRawFieldFromPaper("sex", text);
+          } else {
+            setRawFieldFromPaper("age", text);
+            setRawFieldFromPaper("sex", "");
+          }
+        } else if (customKey === "unit") {
+          const m = text.match(/^(.+-)([A-Za-z0-9]+)$/);
+          if (m) {
+            setRawFieldFromPaper("unitPrefix", m[1]);
+            setVal_("unitRoman", m[2]);
+          } else {
+            setRawFieldFromPaper("unitPrefix", text);
+            setVal_("unitRoman", "");
+          }
+        } else if (customKey === "conditionFull") {
+          const sepMatch = text.match(/^(.*?)\s*(?:—|--|\s-\s)\s*(.+)$/);
+          if (sepMatch) {
+            setRawFieldFromPaper("condition", sepMatch[1].trim());
+            setRawFieldFromPaper("condExtra", sepMatch[2].trim());
+          } else {
+            setRawFieldFromPaper("condition", text);
+            setRawFieldFromPaper("condExtra", "");
+          }
+        }
+      } else if (editable.hasAttribute("data-edit-list")) {
+        const listKey = editable.getAttribute("data-edit-list");
+        const items = collectPaperListItems(listKey);
+        applyPaperListSync(listKey, items);
+      } else if (editable.hasAttribute("data-edit-inv-date")) {
+        const dateId = Number(editable.getAttribute("data-edit-inv-date"));
+        const raw = cleanPaperSingleLine(editable.innerText);
+        const iso = normalizeDateValue(raw === "—" ? "" : raw);
+        const dObj = invDates.find(x => x.id === dateId);
+        if (dObj) {
+          dObj.date = iso;
+          renderInvEditor();
+        }
+        document.querySelectorAll(`#paper [data-edit-inv-date="${dateId}"]`).forEach(el => {
+          if (el !== editable) el.textContent = raw;
+        });
+      } else if (editable.hasAttribute("data-edit-inv-param")) {
+        const paramId = Number(editable.getAttribute("data-edit-inv-param"));
+        const name = cleanPaperSingleLine(editable.innerText);
+        const pObj = invParams.find(x => x.id === paramId);
+        if (pObj) {
+          pObj.name = name;
+          renderInvEditor();
+        }
+      } else if (editable.hasAttribute("data-edit-inv-val")) {
+        const parts = (editable.getAttribute("data-edit-inv-val") || "").split(":");
+        const paramId = Number(parts[0]);
+        const dateId = Number(parts[1]);
+        const v = cleanPaperSingleLine(editable.innerText);
+        const pObj = invParams.find(x => x.id === paramId);
+        if (pObj) {
+          pObj.values[dateId] = v;
+          renderInvEditor();
+        }
+      } else if (editable.hasAttribute("data-edit-yn")) {
+        const ynKey = editable.getAttribute("data-edit-yn");
+        const v = cleanPaperSingleLine(editable.innerText);
+        ynState[ynKey] = v;
+        setYNui(ynKey, v);
+      } else if (editable.hasAttribute("data-edit-empty")) {
+        const secKey = editable.getAttribute("data-edit-empty");
+        const raw = cleanPaperMultiLine(editable.innerText);
+        const cleanVal = raw === "—" ? "" : raw;
+        includeEmpty[secKey] = true;
+        editable.classList.toggle("empty", !cleanVal);
+        if (secKey === "diagnosis") setRawFieldFromPaper("diagnosis", cleanVal);
+        else if (secKey === "complaints") {
+          complaints = cleanVal ? cleanVal.split("\n").map(s => s.trim()).filter(Boolean) : [];
+          renderComplaints();
+        } else if (secKey === "history") setRawFieldFromPaper("hopi", cleanVal);
+        else if (secKey === "examination") setRawFieldFromPaper("generalExam", cleanVal);
+        else if (secKey === "investigations") setRawFieldFromPaper("invOther", cleanVal);
+        else if (secKey === "opinions") setRawFieldFromPaper("opinions", cleanVal);
+        else if (secKey === "course") setRawFieldFromPaper("course", cleanVal);
+        else if (secKey === "treatment") {
+          treatment = cleanVal ? cleanVal.split("\n").map(s => s.trim()).filter(Boolean) : [];
+          renderTx();
+        } else if (secKey === "condition") {
+          setRawFieldFromPaper("condition", cleanVal);
+          setRawFieldFromPaper("condExtra", "");
+        } else if (secKey === "advice") setRawFieldFromPaper("advice", cleanVal);
+      }
+
+      updateFormSectionStates();
+      updateActivePatientBar();
+      if (!suppressSave) scheduleSave();
+    }
+
+    function closeAddSectionMenu() {
+      const menu = document.getElementById("summaryAddSecMenu");
+      if (menu) menu.classList.remove("open");
+    }
+
+    function toggleAddSectionMenu(event) {
+      if (event) event.stopPropagation();
+      const menu = document.getElementById("summaryAddSecMenu");
+      if (!menu) return;
+      const willOpen = !menu.classList.contains("open");
+      if (!willOpen) {
+        menu.classList.remove("open");
+        return;
+      }
+      menu.innerHTML = SUMMARY_ADDABLE_SECTIONS.map(sec => {
+        const isActive = summarySectionHasContent(sec.key) || Boolean(includeEmpty[sec.key]) || (includeEmptyLines[sec.key] > 0);
+        return `
+          <button type="button" class="summary-add-sec-item" role="menuitem" onclick="addSectionInSummary('${sec.key}')">
+            <span>${esc(sec.label)}</span>
+            <span class="summary-add-sec-badge${isActive ? " on" : ""}">${isActive ? "Visible" : "+ Add"}</span>
+          </button>
+        `;
+      }).join("");
+      menu.classList.add("open");
+    }
+
+    function addSectionInSummary(sectionKey) {
+      closeAddSectionMenu();
+      includeEmpty[sectionKey] = true;
+      updateFormSectionStates();
+      render();
+      clearTimeout(pageCheckTimer);
+      autoOptimizeSpacing();
+
+      const secEl = document.querySelector(`#paper [data-sec-key="${sectionKey}"]`) ||
+        (sectionKey === "signatures" ? document.querySelector("#paper .sign-row") : null);
+      if (!secEl) return;
+      secEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      const target = secEl.querySelector('[data-edit-empty], [contenteditable="true"]');
+      if (target) {
+        if (cleanPaperSingleLine(target.innerText) === "—") {
+          target.textContent = "";
+          target.classList.remove("empty");
+        }
+        target.focus();
+      }
+    }
+
+    function refitSummaryPages() {
+      render(false);
+      clearTimeout(pageCheckTimer);
+      autoOptimizeSpacing();
+      toast("A4 layout updated ✓");
+    }
+
+    const paperEl = document.getElementById("paper");
+    if (paperEl) {
+      paperEl.addEventListener("focusin", e => {
+        const target = e.target && e.target.nodeType === 1 ? e.target : (e.target && e.target.parentElement);
+        const el = target && target.closest('[contenteditable="true"][data-edit-empty]');
+        if (el && cleanPaperSingleLine(el.innerText) === "—") {
+          el.textContent = "";
+          el.classList.remove("empty");
+        }
+      });
+
+      paperEl.addEventListener("focusout", e => {
+        const target = e.target && e.target.nodeType === 1 ? e.target : (e.target && e.target.parentElement);
+        const editable = target && target.closest('[contenteditable="true"]');
+        if (!editable) return;
+        if (editable.hasAttribute("data-edit-empty") && !cleanPaperMultiLine(editable.innerText)) {
+          editable.textContent = "—";
+          editable.classList.add("empty");
+        } else if (editable.hasAttribute("data-edit-field")) {
+          const fieldId = editable.getAttribute("data-edit-field");
+          if (DISPLAY_DATE_FIELDS.has(fieldId)) {
+            const iso = normalizeDateValue(cleanPaperSingleLine(editable.innerText));
+            if (iso) {
+              const fmt = fmtDate(iso);
+              editable.textContent = fmt;
+              setVal_(fieldId, iso);
+            }
+          }
+        } else if (editable.hasAttribute("data-edit-inv-date")) {
+          const dateId = Number(editable.getAttribute("data-edit-inv-date"));
+          const raw = cleanPaperSingleLine(editable.innerText);
+          const iso = normalizeDateValue(raw === "—" ? "" : raw);
+          const display = iso ? fmtDateShort(iso) : "—";
+          editable.textContent = display;
+          document.querySelectorAll(`#paper [data-edit-inv-date="${dateId}"]`).forEach(el => {
+            if (el !== editable) el.textContent = display;
+          });
+        }
+      });
+
+      paperEl.addEventListener("keydown", e => {
+        if (e.key !== "Enter") return;
+        const target = e.target && e.target.nodeType === 1 ? e.target : (e.target && e.target.parentElement);
+        const editable = target && target.closest('[contenteditable="true"]');
+        if (!editable) return;
+        if (editable.hasAttribute("data-edit-list") || editable.hasAttribute("data-edit-empty")) return;
+        const fieldId = editable.getAttribute("data-edit-field");
+        if (fieldId && MULTILINE_PAPER_FIELDS.has(fieldId)) return;
+        e.preventDefault();
+        editable.blur();
+      });
+
+      paperEl.addEventListener("paste", e => {
+        const target = e.target && e.target.nodeType === 1 ? e.target : (e.target && e.target.parentElement);
+        const editable = target && target.closest('[contenteditable="true"]');
+        if (!editable) return;
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData("text/plain") || "";
+        if (!text) return;
+        let inserted = false;
+        try {
+          inserted = document.execCommand("insertText", false, text);
+        } catch (err) {
+          inserted = false;
+        }
+        if (!inserted && window.getSelection) {
+          const sel = window.getSelection();
+          if (sel && sel.rangeCount) {
+            const range = sel.getRangeAt(0);
+            range.deleteContents();
+            const textNode = document.createTextNode(text);
+            range.insertNode(textNode);
+            range.setStartAfter(textNode);
+            range.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(range);
+          }
+          editable.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+      });
+    }
+
+    /* live update on any form input or direct A4 preview edit */
     document.addEventListener("input", e => {
+      if (e.target && e.target.closest && e.target.closest("#paper")) {
+        handlePaperInlineEdit(e);
+        return;
+      }
       if (e.target.closest("#dashboardTab") || e.target.closest(".modal-backdrop")) return;
       if (e.target.closest("#invEditor") || e.target.closest(".include-toggle") || e.target.closest(".signature-pin")) return;
       render();

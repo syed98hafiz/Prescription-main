@@ -1709,6 +1709,18 @@
         margin-bottom: 0;
       }
 
+      .paper [contenteditable="true"],
+      .paper [contenteditable="true"]:focus,
+      .paper [contenteditable="true"]:hover {
+        background: transparent !important;
+        box-shadow: none !important;
+        outline: none !important;
+      }
+
+      .paper [contenteditable="true"]:empty::before {
+        content: "" !important;
+      }
+
       .two-col {
         page-break-inside: auto !important;
         break-inside: auto !important
@@ -3775,4 +3787,121 @@ select:focus {
   padding: 12px;
   margin-bottom: 12px;
 }
+
+/* ---------- Interactive Text Editing in A4 Summary Preview ---------- */
+.active-patient-bar.summary-bar .apb-right {
+  flex-wrap: wrap;
+}
+
+.summary-add-sec-wrap {
+  position: relative;
+}
+
+.summary-add-sec-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 230px;
+  max-height: 340px;
+  overflow-y: auto;
+  z-index: 80;
+  padding: 6px;
+}
+
+.summary-add-sec-menu.open {
+  display: block;
+}
+
+.summary-add-sec-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  gap: 8px;
+}
+
+.summary-add-sec-item:hover {
+  background: var(--surface-subtle);
+  color: var(--primary);
+}
+
+.summary-add-sec-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-subtle);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.summary-add-sec-badge.on {
+  background: #e3f4ea;
+  color: #1c6b3f;
+}
+
+.paper [contenteditable="true"] {
+  border-radius: 2px;
+  transition: background 0.12s ease, box-shadow 0.12s ease;
+  cursor: text;
+}
+
+.paper [contenteditable="true"]:hover {
+  background: rgba(2, 132, 199, 0.06);
+}
+
+.paper [contenteditable="true"]:focus {
+  outline: none;
+  background: rgba(2, 132, 199, 0.08);
+  box-shadow: 0 0 0 1.5px rgba(2, 132, 199, 0.55);
+}
+
+.paper [contenteditable="true"]:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  font-style: italic;
+  pointer-events: none;
+}
+
+.paper .pt-edit {
+  display: inline-block;
+  min-width: 28px;
+  min-height: 1em;
+  vertical-align: baseline;
+}
+
+.paper .inline-edit:empty {
+  display: inline-block;
+  min-width: 28px;
+  min-height: 1em;
+  vertical-align: baseline;
+}
+
+.pdf-export-paper [contenteditable="true"],
+.pdf-export-paper [contenteditable="true"]:focus,
+.pdf-export-paper [contenteditable="true"]:hover {
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.pdf-export-paper [contenteditable="true"]:empty::before {
+  content: "" !important;
+}
+
 
