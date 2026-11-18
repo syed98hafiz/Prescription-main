@@ -1776,9 +1776,19 @@ create policy "Users can delete own settings"
       r.readAsDataURL(f);
     }
 
-    /* ---------- Scope keys (isolates shared-browser users & guest drafts) ---------- */
+    /* ---------- Scope keys (unified by normalized email for Google & Email login) ---------- */
+    function normalizeEmail(email) {
+      return String(email || "").trim().toLowerCase();
+    }
     function getOwnerScope() {
-      return currentUser && currentUser.id ? `user:${currentUser.id}` : "guest";
+      if (!currentUser) return "guest";
+      const emailKey = normalizeEmail(currentUser.email);
+      if (emailKey) return `email:${emailKey}`;
+      return currentUser.id ? `user:${currentUser.id}` : "guest";
+    }
+    function getLegacyUserScope() {
+      if (!currentUser || !currentUser.id || !normalizeEmail(currentUser.email)) return null;
+      return `user:${currentUser.id}`;
     }
     function getRecordsKey(scope = getOwnerScope()) { return `ds-v2:records:${scope}`; }
     function getDeletesKey(scope = getOwnerScope()) { return `ds-v2:deletes:${scope}`; }
@@ -1892,10 +1902,10 @@ create policy "Users can delete own settings"
     async function saveDefaults() {
       const d = {}; DEFAULT_FIELDS.forEach(id => d[id] = document.getElementById(id).value);
       await store.set(getDefaultsKey(), JSON.stringify(d));
-      if (currentUser && sbClient && navigator.onLine) {
+      if (hasCloudAuthSession() && navigator.onLine) {
         await pushUserSettingsToCloud(d);
       }
-      toast("Saved as your defaults" + (currentUser ? " & synced ✓" : ""));
+      toast("Saved as your defaults" + (hasCloudAuthSession() ? " & synced ✓" : ""));
     }
 
     async function getActiveDefaults() {
@@ -1907,6 +1917,16 @@ create policy "Users can delete own settings"
         if (Object.keys(d).length > 0) return d;
       }
       let def = safeParse(await store.get(getDefaultsKey()));
+      if (!def) {
+        const legacyScope = getLegacyUserScope();
+        if (legacyScope) {
+          def = safeParse(await store.get(getDefaultsKey(legacyScope)));
+          if (def) {
+            await store.set(getDefaultsKey(), JSON.stringify(def));
+            await store.remove(getDefaultsKey(legacyScope));
+          }
+        }
+      }
       if (!def && currentUser) {
         def = safeParse(await store.get(getDefaultsKey("guest")));
       }
@@ -1926,11 +1946,32 @@ create policy "Users can delete own settings"
     }
 
     async function loadSavedTemplates() {
-      let list = safeParse(await store.get(getTemplatesKey()));
-      if (!Array.isArray(list) && currentUser) {
-        list = safeParse(await store.get(getTemplatesKey("guest")));
-      }
+      const scope = getOwnerScope();
+      let list = safeParse(await store.get(getTemplatesKey(scope)));
       if (!Array.isArray(list)) list = [];
+
+      const legacyScope = getLegacyUserScope();
+      if (legacyScope && legacyScope !== scope) {
+        const legacyList = safeParse(await store.get(getTemplatesKey(legacyScope)));
+        if (Array.isArray(legacyList) && legacyList.length) {
+          const seenIds = new Set(list.map(t => t && t.id));
+          const seenNames = new Set(list.map(t => (t && t.name || "").toLowerCase()));
+          legacyList.forEach(t => {
+            if (t && !seenIds.has(t.id) && !seenNames.has((t.name || "").toLowerCase())) {
+              list.push(t);
+              seenIds.add(t.id);
+              seenNames.add((t.name || "").toLowerCase());
+            }
+          });
+          await store.set(getTemplatesKey(scope), JSON.stringify(list));
+          await store.remove(getTemplatesKey(legacyScope));
+        }
+      }
+
+      if (!list.length && currentUser) {
+        const guestList = safeParse(await store.get(getTemplatesKey("guest")));
+        if (Array.isArray(guestList) && guestList.length) list = guestList;
+      }
 
       // Also sync any templates stored in localStorage under ds:tpl:* (from Template Library page)
       try {
@@ -1995,7 +2036,7 @@ create policy "Users can delete own settings"
       } catch (e) { }
 
       renderSavedTemplatesUI();
-      if (syncCloud && currentUser && sbClient && navigator.onLine) {
+      if (syncCloud && hasCloudAuthSession() && navigator.onLine) {
         pushUserSettingsToCloud().catch(() => {});
       }
     }
@@ -2289,7 +2330,7 @@ create policy "Users can delete own settings"
       updateActivePatientBar();
       if (activeTab === "dashboard") renderDashboard();
 
-      if (currentUser && sbClient) {
+      if (hasCloudAuthSession()) {
         if (explicit) {
           if (navigator.onLine) {
             await upsertRecordToSupabase(updated);
@@ -2304,14 +2345,14 @@ create policy "Users can delete own settings"
           clearTimeout(cloudSaveTimer);
           cloudSaveTimer = setTimeout(() => {
             const latest = records.find(r => r.id === updated.id);
-            if (latest && latest.dirty && currentUser && sbClient && navigator.onLine) {
+            if (latest && latest.dirty && hasCloudAuthSession() && navigator.onLine) {
               upsertRecordToSupabase(latest);
             }
           }, 1200);
         }
       } else {
         updateSaveStatusBadge("local");
-        if (explicit) toast("Patient draft saved on device ✓");
+        if (explicit) toast(currentUser ? "Saved to your email account ✓" : "Patient draft saved on device ✓");
       }
 
       return updated;
@@ -2328,6 +2369,36 @@ create policy "Users can delete own settings"
       const delRaw = safeParse(await store.get(getDeletesKey(scope)));
       records = Array.isArray(raw) ? raw : [];
       pendingDeletes = Array.isArray(delRaw) ? delRaw : [];
+
+      const legacyScope = getLegacyUserScope();
+      if (legacyScope && legacyScope !== scope) {
+        const legRaw = safeParse(await store.get(getRecordsKey(legacyScope)));
+        const legDel = safeParse(await store.get(getDeletesKey(legacyScope)));
+        let migrated = false;
+        if (Array.isArray(legRaw) && legRaw.length) {
+          const seen = new Set(records.map(r => r && r.id));
+          legRaw.forEach(r => {
+            if (r && r.id && !seen.has(r.id)) {
+              records.push(r);
+              seen.add(r.id);
+            }
+          });
+          migrated = true;
+        }
+        if (Array.isArray(legDel) && legDel.length) {
+          const delSet = new Set([...pendingDeletes, ...legDel]);
+          pendingDeletes = Array.from(delSet);
+          migrated = true;
+        }
+        const legActive = await store.get(getActiveIdKey(legacyScope));
+        if (legActive && !(await store.get(getActiveIdKey(scope)))) {
+          await store.set(getActiveIdKey(scope), legActive);
+        }
+        if (migrated) await persistScopedRecords(scope);
+        await store.remove(getRecordsKey(legacyScope));
+        await store.remove(getDeletesKey(legacyScope));
+        await store.remove(getActiveIdKey(legacyScope));
+      }
     }
 
     async function checkGuestDraftsForMigration() {
@@ -2373,7 +2444,7 @@ create policy "Users can delete own settings"
       guestDraftsCount = 0;
       renderDashboard();
       toast(`Moved ${importedCount} local draft(s) to your account`);
-      if (sbClient && navigator.onLine) await syncNow(false);
+      if (hasCloudAuthSession() && navigator.onLine) await syncNow(false);
     }
 
     async function dismissGuestMigration() {
@@ -2446,7 +2517,7 @@ create policy "Users can delete own settings"
       }
       await persistScopedRecords();
       renderDashboard();
-      if (currentUser && sbClient && navigator.onLine) {
+      if (hasCloudAuthSession() && navigator.onLine) {
         await upsertRecordToSupabase(rec);
       }
       toast(rec.status === "completed" ? "Marked as Completed ✓" : "Moved back to Incomplete");
@@ -2481,7 +2552,7 @@ create policy "Users can delete own settings"
       records.unshift(copyRec);
       await persistScopedRecords();
       renderDashboard();
-      if (currentUser && sbClient && navigator.onLine) {
+      if (hasCloudAuthSession() && navigator.onLine) {
         await upsertRecordToSupabase(copyRec);
       }
       toast("Patient summary duplicated ✓");
@@ -2519,7 +2590,7 @@ create policy "Users can delete own settings"
       await persistScopedRecords();
       renderDashboard();
 
-      if (currentUser && sbClient && navigator.onLine) {
+      if (hasCloudAuthSession() && navigator.onLine) {
         await flushPendingDeletes();
       }
       toast("Patient summary deleted");
@@ -2557,9 +2628,9 @@ create policy "Users can delete own settings"
       if (!metaEl) return;
       const rec = currentRecordId ? records.find(r => r.id === currentRecordId) : null;
       let statusMsg = "Auto-save ready";
-      const mode = override || (currentUser ? (rec && rec.dirty ? (navigator.onLine ? "pending" : "offline") : "synced") : "local");
+      const mode = override || (hasCloudAuthSession() ? (rec && rec.dirty ? (navigator.onLine ? "pending" : "offline") : "synced") : "local");
 
-      if (mode === "pending") statusMsg = currentUser ? "Saving..." : "Unsaved changes";
+      if (mode === "pending") statusMsg = hasCloudAuthSession() ? "Saving..." : "Unsaved changes";
       else if (mode === "syncing") statusMsg = "Syncing...";
       else if (mode === "offline") statusMsg = "Saved · Offline queue";
       else if (mode === "synced") statusMsg = "☁ Synced";
@@ -2675,30 +2746,46 @@ create policy "Users can delete own settings"
         if (currentUser) {
           const docName = (currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email || "Doctor";
           const dirtyCount = records.filter(r => r.dirty).length + pendingDeletes.length;
-          let badgeHTML = `<span class="role-badge ok">☁ Synced</span>`;
-          if (!navigator.onLine) badgeHTML = `<span class="role-badge warn">📡 Offline</span>`;
-          else if (dirtyCount > 0) badgeHTML = `<span class="role-badge warn">⏳ ${dirtyCount} Pending</span>`;
+          if (currentUser.local_email_session) {
+            hero.innerHTML = `
+              <div class="dash-hero-info">
+                <h2>${esc(docName)} <span class="role-badge warn">📱 Local Email</span></h2>
+                <p>${esc(currentUser.email || "")} · Continue with Google to enable cloud sync</p>
+              </div>
+              <div class="dash-hero-actions">
+                <button type="button" class="btn sm btn-google-hero" onclick="signInWithGoogle()">${GOOGLE_SVG} Continue with Google</button>
+                <button type="button" class="btn sm" onclick="newSummary()">+ New Patient</button>
+                <button type="button" class="btn sm out" onclick="openAuthModal()">👤 Account</button>
+                <button type="button" class="btn sm out" onclick="signOutUser()">Sign Out</button>
+              </div>
+            `;
+          } else {
+            let badgeHTML = `<span class="role-badge ok">☁ Synced</span>`;
+            if (!navigator.onLine) badgeHTML = `<span class="role-badge warn">📡 Offline</span>`;
+            else if (dirtyCount > 0) badgeHTML = `<span class="role-badge warn">⏳ ${dirtyCount} Pending</span>`;
 
-          hero.innerHTML = `
-            <div class="dash-hero-info">
-              <h2>${esc(docName)} ${badgeHTML}</h2>
-              <p>${esc(currentUser.email || "")}${lastSyncTime ? ` · Synced ${formatRelativeTime(lastSyncTime.toISOString())}` : " · Cloud Workspace"}</p>
-            </div>
-            <div class="dash-hero-actions">
-              <button type="button" class="btn sm" onclick="newSummary()">+ New Patient</button>
-              <button type="button" class="btn sm out" onclick="syncNow(true)">☁ Sync</button>
-              <button type="button" class="btn sm out" onclick="openSupabaseSetupModal()">⚙ Setup</button>
-              <button type="button" class="btn sm out" onclick="signOutUser()">Sign Out</button>
-            </div>
-          `;
+            hero.innerHTML = `
+              <div class="dash-hero-info">
+                <h2>${esc(docName)} ${badgeHTML}</h2>
+                <p>${esc(currentUser.email || "")}${lastSyncTime ? ` · Synced ${formatRelativeTime(lastSyncTime.toISOString())}` : " · Cloud Workspace"}</p>
+              </div>
+              <div class="dash-hero-actions">
+                <button type="button" class="btn sm" onclick="newSummary()">+ New Patient</button>
+                <button type="button" class="btn sm out" onclick="syncNow(true)">☁ Sync</button>
+                <button type="button" class="btn sm out" onclick="openAuthModal()">👤 Account</button>
+                <button type="button" class="btn sm out" onclick="signOutUser()">Sign Out</button>
+              </div>
+            `;
+          }
         } else if (isConfigured) {
           hero.innerHTML = `
             <div class="dash-hero-info">
               <h2>Clinical Workspace <span class="role-badge warn">Guest Session</span></h2>
-              <p>Cloud Ready · Sign in to sync across devices</p>
+              <p>Cloud Ready · Sign in with Google or Email</p>
             </div>
             <div class="dash-hero-actions">
-              <button type="button" class="btn sm" onclick="openAuthModal('signin')">👤 Sign In</button>
+              <button type="button" class="btn sm btn-google-hero" onclick="signInWithGoogle()">${GOOGLE_SVG} Continue with Google</button>
+              <button type="button" class="btn sm out" onclick="openAuthModal('signin')">✉ Email</button>
               <button type="button" class="btn sm out" onclick="newSummary()">+ New Patient</button>
               <button type="button" class="btn sm out" onclick="openSupabaseSetupModal()">⚙ Cloud</button>
             </div>
@@ -2804,7 +2891,7 @@ create policy "Users can delete own settings"
       const prog = computeRecordProgress(r.payload);
       const isActive = currentRecordId === r.id && hasRecordPersisted;
 
-      const syncHtml = currentUser
+      const syncHtml = hasCloudAuthSession()
         ? (r.dirty
             ? `<span class="sync-badge pending">⏳ Pending</span>`
             : `<span class="sync-badge synced">☁ Synced</span>`)
@@ -2865,7 +2952,7 @@ create policy "Users can delete own settings"
         const ageSex = [f.age, f.sex].filter(Boolean).join("/");
         const isCompleted = r.status === "completed";
         const dates = [r.doa ? `DOA ${fmtDate(r.doa)}` : "", r.dod ? `DOD ${fmtDate(r.dod)}` : ""].filter(Boolean).join(" · ") || "—";
-        const syncIcon = currentUser ? (r.dirty ? "⏳" : "☁") : "📱";
+        const syncIcon = hasCloudAuthSession() ? (r.dirty ? "⏳" : "☁") : "📱";
         return `
           <tr>
             <td><b>${esc(name)}</b>${ageSex ? `<br><small style="color:var(--muted)">${esc(ageSex)}</small>` : ""}</td>
@@ -2943,8 +3030,12 @@ create policy "Users can delete own settings"
       return /PGRST205|42P01|could not find the table|relation .* does not exist|schema cache/i.test(msg);
     }
 
+    function hasCloudAuthSession() {
+      return Boolean(currentUser && !currentUser.local_email_session && sbClient);
+    }
+
     async function readCloudAuthMeta(forceRefresh = false) {
-      if (!currentUser || !sbClient) return { summaries: [], deleted_ids: [], defaults: null, templates: null, theme_color: null };
+      if (!hasCloudAuthSession()) return { summaries: [], deleted_ids: [], defaults: null, templates: null, theme_color: null };
       if (forceRefresh && navigator.onLine) {
         try {
           const { data, error } = await sbClient.auth.getUser();
@@ -2965,7 +3056,7 @@ create policy "Users can delete own settings"
     }
 
     async function writeCloudAuthMeta(patch) {
-      if (!currentUser || !sbClient || !navigator.onLine) return false;
+      if (!hasCloudAuthSession() || !navigator.onLine) return false;
       const cur = await readCloudAuthMeta(false);
       const nextStore = {
         summaries: patch.summaries !== undefined ? patch.summaries.slice(0, 60) : cur.summaries,
@@ -3008,12 +3099,12 @@ create policy "Users can delete own settings"
           if (/otp_expired/i.test(errCode) || /expired|invalid/i.test(errDesc)) {
             authFeedback = {
               type: "info",
-              text: "That confirmation link expired or was already used. Please sign in directly with your email and password below, or tap 'Resend confirmation' / enter your 6-digit code."
+              text: "That link expired. Sign in with Google above or enter your email & password directly below."
             };
           } else {
             authFeedback = {
               type: "err",
-              text: (errDesc || err || "Authentication link error").replace(/\+/g, " ")
+              text: (errDesc || err || "Authentication error").replace(/\+/g, " ")
             };
           }
         }
@@ -3027,6 +3118,10 @@ create policy "Users can delete own settings"
       currentUser = null;
 
       if (!sbConfig.url || !sbConfig.anonKey) {
+        try {
+          const cachedUser = safeParse(localStorage.getItem("ds-v2:last-user"));
+          if (cachedUser && cachedUser.id && cachedUser.local_email_session) currentUser = cachedUser;
+        } catch (e) { }
         syncState = "local";
         updateSyncIndicators();
         return;
@@ -3053,7 +3148,7 @@ create policy "Users can delete own settings"
           }
         });
 
-        // Automatically complete standard email confirmation callbacks (?code=... or ?token_hash=...)
+        // Automatically complete standard OAuth / email callbacks (?code=... or ?token_hash=...)
         try {
           const sParams = new URLSearchParams(window.location.search);
           const code = sParams.get("code");
@@ -3078,10 +3173,18 @@ create policy "Users can delete own settings"
             openRecoveryModal();
           }
           const nextUser = session && session.user ? session.user : null;
+          // Preserve active local-email session across initial GoTrue check when no OAuth/cloud session exists
+          if (!nextUser && event === "INITIAL_SESSION" && currentUser && currentUser.local_email_session) {
+            return;
+          }
           const prevUserId = currentUser ? currentUser.id : null;
           const nextUserId = nextUser ? nextUser.id : null;
           currentUser = nextUser;
           cacheLastUser(nextUser);
+
+          if (nextUser && event !== "USER_UPDATED") {
+            await syncPendingEmailPasswordLink(nextUser);
+          }
 
           if (prevUserId !== nextUserId) {
             await handleUserScopeChange(nextUserId);
@@ -3095,9 +3198,12 @@ create policy "Users can delete own settings"
         if (!error && data && data.session && data.session.user) {
           currentUser = data.session.user;
           cacheLastUser(currentUser);
-        } else if (!navigator.onLine) {
+          await syncPendingEmailPasswordLink(currentUser);
+        } else {
           const cachedUser = safeParse(localStorage.getItem("ds-v2:last-user"));
-          if (cachedUser && cachedUser.id) currentUser = cachedUser;
+          if (cachedUser && cachedUser.id && (!navigator.onLine || cachedUser.local_email_session)) {
+            currentUser = cachedUser;
+          }
         }
       } catch (e) {
         console.warn("Supabase init warning:", e);
@@ -3113,8 +3219,9 @@ create policy "Users can delete own settings"
         if (user && user.id) {
           localStorage.setItem("ds-v2:last-user", JSON.stringify({
             id: user.id,
-            email: user.email,
-            user_metadata: user.user_metadata || {}
+            email: normalizeEmail(user.email),
+            user_metadata: user.user_metadata || {},
+            local_email_session: Boolean(user.local_email_session)
           }));
         } else {
           localStorage.removeItem("ds-v2:last-user");
@@ -3150,7 +3257,7 @@ create policy "Users can delete own settings"
           suppressSave = false;
         }
 
-        if (navigator.onLine && sbClient) {
+        if (hasCloudAuthSession() && navigator.onLine) {
           await syncNow(false);
         }
       } else {
@@ -3189,7 +3296,11 @@ create policy "Users can delete own settings"
       if (currentUser) {
         const displayUser = (currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email || "Doctor";
         topLabel = displayUser.split("@")[0];
-        if (syncState === "syncing") {
+        if (currentUser.local_email_session) {
+          dotClass = "offline";
+          statLabel = "Local Email";
+          statSub = "Link Google to sync";
+        } else if (syncState === "syncing") {
           dotClass = "syncing";
           statLabel = "Syncing";
           statSub = "In progress";
@@ -3228,7 +3339,7 @@ create policy "Users can delete own settings"
     function handleSyncCardClick() {
       if (!sbConfig.url || !sbConfig.anonKey) {
         openSupabaseSetupModal();
-      } else if (!currentUser) {
+      } else if (!currentUser || currentUser.local_email_session) {
         openAuthModal("signin");
       } else {
         syncNow(true);
@@ -3236,7 +3347,7 @@ create policy "Users can delete own settings"
     }
 
     async function upsertRecordToSupabase(rec) {
-      if (!currentUser || !sbClient) return false;
+      if (!hasCloudAuthSession()) return false;
       try {
         syncState = "syncing";
         updateSyncIndicators();
@@ -3288,7 +3399,7 @@ create policy "Users can delete own settings"
     }
 
     async function flushPendingDeletes() {
-      if (!currentUser || !sbClient || !pendingDeletes.length) return;
+      if (!hasCloudAuthSession() || !pendingDeletes.length) return;
       const remaining = [];
       let usedMetaFallback = false;
       const deletedViaMeta = [];
@@ -3323,7 +3434,7 @@ create policy "Users can delete own settings"
     }
 
     async function pushUserSettingsToCloud(explicitDefaults = null) {
-      if (!currentUser || !sbClient || !navigator.onLine) return;
+      if (!hasCloudAuthSession() || !navigator.onLine) return;
       try {
         const rawDef = explicitDefaults || safeParse(await store.get(getDefaultsKey())) || {};
         const defaultsPayload = {
@@ -3352,7 +3463,7 @@ create policy "Users can delete own settings"
     }
 
     async function pullUserSettingsFromCloud() {
-      if (!currentUser || !sbClient || !navigator.onLine) return;
+      if (!hasCloudAuthSession() || !navigator.onLine) return;
       try {
         const { data, error } = await sbClient
           .from("user_settings")
@@ -3419,6 +3530,12 @@ create policy "Users can delete own settings"
         if (interactive) openAuthModal("signin");
         return;
       }
+      if (currentUser.local_email_session) {
+        syncState = "local";
+        updateSyncIndicators();
+        if (interactive) toast("Signed in locally — click Continue with Google to enable cloud sync");
+        return;
+      }
       if (!navigator.onLine) {
         syncState = "offline";
         updateSyncIndicators();
@@ -3432,6 +3549,14 @@ create policy "Users can delete own settings"
 
       try {
         await flushPendingDeletes();
+
+        // Ensure records created under the same email before linking Google sync under current user_id
+        records.forEach(r => {
+          if (r && (!r.user_id || r.user_id !== currentUser.id)) {
+            r.user_id = currentUser.id;
+            r.dirty = true;
+          }
+        });
 
         const dirtyList = records.filter(r => r.dirty && !pendingDeletes.includes(r.id));
         for (const rec of dirtyList) {
@@ -3546,7 +3671,7 @@ create policy "Users can delete own settings"
     }
 
     window.addEventListener("online", () => {
-      if (currentUser && sbClient) syncNow(false);
+      if (hasCloudAuthSession()) syncNow(false);
       else updateSyncIndicators();
     });
     window.addEventListener("offline", () => {
@@ -3555,8 +3680,12 @@ create policy "Users can delete own settings"
       if (activeTab === "dashboard") renderDashboardHeroAndAuth();
     });
 
-    /* ---------- Auth UI & Actions ---------- */
+    /* ---------- Auth UI & Actions (Google-First + Unified Email Login) ---------- */
     let pendingVerifyEmail = "";
+    const LOCAL_EMAIL_ACCOUNTS_KEY = "ds-v2:email-accounts";
+    const PENDING_PW_LINKS_KEY = "ds-v2:pending-pw-links";
+
+    const GOOGLE_SVG = `<svg class="google-g-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"/></svg>`;
 
     function getCanonicalAuthRedirectUrl() {
       const host = window.location.hostname || "";
@@ -3566,9 +3695,208 @@ create policy "Users can delete own settings"
       return window.location.origin + window.location.pathname;
     }
 
+    function hashCredential(salt, secret) {
+      const input = `${salt}:${secret}`;
+      let h1 = 0x811c9dc5;
+      let h2 = 0x9e3779b9;
+      for (let round = 0; round < 64; round++) {
+        for (let i = 0; i < input.length; i++) {
+          const c = input.charCodeAt(i);
+          h1 ^= c ^ round;
+          h1 = Math.imul(h1, 0x01000193);
+          h2 ^= (c + round * 31) ^ (h1 >>> 16);
+          h2 = Math.imul(h2, 0x85ebca6b);
+        }
+      }
+      return `v1:${(h1 >>> 0).toString(16).padStart(8, "0")}${(h2 >>> 0).toString(16).padStart(8, "0")}`;
+    }
+
+    function deterministicEmailUuid(email) {
+      const e = normalizeEmail(email);
+      const parts = [];
+      for (let k = 0; k < 4; k++) {
+        let h = 0x811c9dc5 ^ (k * 0x9e3779b9);
+        for (let i = 0; i < e.length; i++) {
+          h ^= e.charCodeAt(i) + k * 17;
+          h = Math.imul(h, 0x01000193);
+        }
+        parts.push((h >>> 0).toString(16).padStart(8, "0"));
+      }
+      const hex = parts.join("");
+      return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+    }
+
+    function getLocalEmailAccounts() {
+      return safeParse(localStorage.getItem(LOCAL_EMAIL_ACCOUNTS_KEY)) || {};
+    }
+
+    function saveLocalEmailAccount(email, password, fullName = "", userId = null, hasCloudPassword = false) {
+      const key = normalizeEmail(email);
+      if (!key) return null;
+      const map = getLocalEmailAccounts();
+      const prev = map[key] || {};
+      const salt = prev.salt || generateUUID();
+      const next = {
+        id: userId || prev.id || deterministicEmailUuid(key),
+        email: key,
+        fullName: fullName || prev.fullName || "",
+        salt,
+        hash: password ? hashCredential(salt, password) : prev.hash || "",
+        hasCloudPassword: Boolean(hasCloudPassword || prev.hasCloudPassword),
+        updatedAt: new Date().toISOString()
+      };
+      map[key] = next;
+      try { localStorage.setItem(LOCAL_EMAIL_ACCOUNTS_KEY, JSON.stringify(map)); } catch (e) { }
+      return next;
+    }
+
+    function verifyLocalEmailAccount(email, password) {
+      const key = normalizeEmail(email);
+      if (!key || !password) return null;
+      const map = getLocalEmailAccounts();
+      const acct = map[key];
+      if (!acct || !acct.hash || !acct.salt) return null;
+      return acct.hash === hashCredential(acct.salt, password) ? acct : null;
+    }
+
+    function savePendingPasswordLink(email, password, fullName = "") {
+      const key = normalizeEmail(email);
+      if (!key || !password) return;
+      const map = safeParse(localStorage.getItem(PENDING_PW_LINKS_KEY)) || {};
+      map[key] = { password, fullName: fullName || "", ts: Date.now() };
+      try { localStorage.setItem(PENDING_PW_LINKS_KEY, JSON.stringify(map)); } catch (e) { }
+    }
+
+    function clearPendingPasswordLink(email) {
+      const key = normalizeEmail(email);
+      if (!key) return;
+      const map = safeParse(localStorage.getItem(PENDING_PW_LINKS_KEY)) || {};
+      if (key in map) {
+        delete map[key];
+        try { localStorage.setItem(PENDING_PW_LINKS_KEY, JSON.stringify(map)); } catch (e) { }
+      }
+    }
+
+    async function syncPendingEmailPasswordLink(user) {
+      const key = normalizeEmail(user && user.email);
+      if (!key || !sbClient || !navigator.onLine) return;
+      const map = safeParse(localStorage.getItem(PENDING_PW_LINKS_KEY)) || {};
+      const pending = map[key];
+      if (!pending || !pending.password) return;
+
+      saveLocalEmailAccount(
+        key,
+        pending.password,
+        pending.fullName || (user.user_metadata && user.user_metadata.full_name) || "",
+        user.id,
+        false
+      );
+
+      suppressAuthReload = true;
+      try {
+        const updatePayload = { password: pending.password };
+        if (pending.fullName) updatePayload.data = { full_name: pending.fullName };
+        const { error } = await sbClient.auth.updateUser(updatePayload);
+        if (!error) {
+          saveLocalEmailAccount(key, pending.password, pending.fullName || "", user.id, true);
+          clearPendingPasswordLink(key);
+          toast(`Google & Email sign-in linked for ${key} ✓`);
+        }
+      } catch (e) {
+      } finally {
+        suppressAuthReload = false;
+      }
+    }
+
+    async function activateLocalEmailSession(email, fullName = "", userId = null) {
+      const key = normalizeEmail(email);
+      const acctMap = getLocalEmailAccounts();
+      const existing = acctMap[key] || {};
+      const resolvedName = fullName || existing.fullName || "";
+      const resolvedId = userId || existing.id || deterministicEmailUuid(key);
+
+      currentUser = {
+        id: resolvedId,
+        email: key,
+        user_metadata: { full_name: resolvedName },
+        local_email_session: true
+      };
+      cacheLastUser(currentUser);
+      authFeedback = null;
+      await handleUserScopeChange(currentUser.id);
+      closeAuthModal();
+    }
+
+    async function signInWithGoogle() {
+      if (!sbConfig.url || !sbConfig.anonKey || !sbClient) {
+        if (!sbConfig.url || !sbConfig.anonKey) {
+          openSupabaseSetupModal();
+          return;
+        }
+      }
+      if (!navigator.onLine) {
+        authFeedback = {
+          type: "err",
+          text: "You are offline. Connect to the internet to continue with Google, or use Email & Password below."
+        };
+        if (document.getElementById("authModal").style.display === "none") openAuthModal("signin");
+        else renderAuthFeedback();
+        return;
+      }
+
+      authFeedback = { type: "info", text: "Connecting to Google Sign-In..." };
+      renderAuthFeedback();
+
+      try {
+        // Pre-check Supabase Auth settings so a disabled Google provider shows clear setup guidance cleanly
+        try {
+          const ctl = new AbortController();
+          const timer = setTimeout(() => ctl.abort(), 3000);
+          const res = await fetch(`${sbConfig.url}/auth/v1/settings`, {
+            headers: { apikey: sbConfig.anonKey },
+            signal: ctl.signal
+          });
+          clearTimeout(timer);
+          if (res.ok) {
+            const settings = await res.json();
+            if (settings && settings.external && settings.external.google === false) {
+              authFeedback = {
+                type: "info",
+                text: `Google provider is disabled in Supabase. Enable it under Authentication -> Providers -> Google (Callback: ${sbConfig.url}/auth/v1/callback). Meanwhile, Email & Password works immediately below with no OTP.`
+              };
+              const modalEl = document.getElementById("authModal");
+              if (modalEl && modalEl.style.display === "none") {
+                modalEl.style.display = "flex";
+                document.getElementById("authModalTitle").textContent = "Sign In or Create Account";
+              }
+              renderAuthFeedback();
+              return;
+            }
+          }
+        } catch (e) { }
+
+        const redirectUrl = getCanonicalAuthRedirectUrl();
+        const { error } = await sbClient.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: redirectUrl,
+            queryParams: { prompt: "select_account" }
+          }
+        });
+        if (error) throw error;
+      } catch (e) {
+        authFeedback = {
+          type: "err",
+          text: (e && e.message) ? `${e.message}. You can sign in directly with Email & Password below.` : "Could not start Google Sign-In."
+        };
+        const modalEl = document.getElementById("authModal");
+        if (modalEl && modalEl.style.display === "none") modalEl.style.display = "flex";
+        renderAuthFeedback();
+      }
+    }
+
     function buildAuthPanelHTML(inline = false) {
       const isSignUp = authMode === "signup";
-      const isVerify = authMode === "verify";
       const msgHtml = authFeedback
         ? `<div class="auth-msg ${esc(authFeedback.type)}">${esc(authFeedback.text)}</div>`
         : "";
@@ -3578,60 +3906,49 @@ create policy "Users can delete own settings"
         <div class="${inline ? "auth-grid" : ""}">
           ${inline ? `
             <div class="auth-intro">
-              <div class="auth-eyebrow">CLOUD SYNC</div>
+              <div class="auth-eyebrow">GOOGLE &amp; CLOUD SYNC</div>
               <h3>Doctor Workspace</h3>
-              <p>Multi-device access for patient records and clinical templates.</p>
+              <p>Sign in with Google or create an email password account—both share the same email workspace.</p>
               <div class="auth-feature-pills">
-                <span class="auth-feat-pill">☁ Real-time Cloud Sync</span>
-                <span class="auth-feat-pill">🔒 Per-Doctor Isolation</span>
-                <span class="auth-feat-pill">📡 Offline Ward Cache</span>
+                <span class="auth-feat-pill">🔑 Google + Email Linked</span>
+                <span class="auth-feat-pill">☁ Multi-Device Sync</span>
+                <span class="auth-feat-pill">📡 No OTP Required</span>
               </div>
             </div>
           ` : ""}
           <div>
+            <button type="button" class="btn-google-primary" onclick="signInWithGoogle()">
+              ${GOOGLE_SVG}
+              <span>Continue with Google</span>
+            </button>
+            <div class="auth-divider"><span>or use email &amp; password (no OTP)</span></div>
             <div class="auth-tabs" role="tablist">
               <button type="button" class="${authMode === "signin" ? "active" : ""}" onclick="setAuthMode('signin')">Sign In</button>
               <button type="button" class="${isSignUp ? "active" : ""}" onclick="setAuthMode('signup')">Create Account</button>
-              ${isVerify ? `<button type="button" class="active" onclick="setAuthMode('verify')">Verify Email</button>` : ""}
             </div>
             ${msgHtml}
-            ${isVerify ? `
-              <form onsubmit="submitVerifyOtpForm(event, '${prefix}')">
+            <form onsubmit="submitAuthForm(event, '${prefix}')">
+              ${isSignUp ? `
                 <div class="field">
-                  <label for="${prefix}AuthEmail">Email</label>
-                  <input type="email" id="${prefix}AuthEmail" value="${esc(pendingVerifyEmail)}" placeholder="doctor@hospital.org" autocomplete="email" required>
+                  <label for="${prefix}AuthName">Doctor Name &amp; Role (optional)</label>
+                  <input type="text" id="${prefix}AuthName" placeholder="e.g. Kavitha S. (JR)" autocomplete="name">
                 </div>
-                <div class="field">
-                  <label for="${prefix}AuthOtpCode">Verification Code</label>
-                  <input type="text" id="${prefix}AuthOtpCode" inputmode="numeric" placeholder="Enter 6-digit code from email" autocomplete="one-time-code" required>
+              ` : ""}
+              <div class="field">
+                <label for="${prefix}AuthEmail">Email</label>
+                <input type="email" id="${prefix}AuthEmail" value="${esc(pendingVerifyEmail)}" placeholder="doctor@gmail.com" autocomplete="email" required>
+              </div>
+              <div class="field">
+                <label for="${prefix}AuthPassword">Password</label>
+                <div class="password-wrap">
+                  <input type="password" id="${prefix}AuthPassword" placeholder="${isSignUp ? "Min 6 characters" : "Enter password"}" autocomplete="${isSignUp ? "new-password" : "current-password"}" minlength="6" required>
+                  <button type="button" class="password-toggle" onclick="togglePasswordVisibility('${prefix}AuthPassword', this)">Show</button>
                 </div>
-                <button type="submit" class="btn" style="width:100%">Verify &amp; Sign In</button>
-              </form>
-            ` : `
-              <form onsubmit="submitAuthForm(event, '${prefix}')">
-                ${isSignUp ? `
-                  <div class="field">
-                    <label for="${prefix}AuthName">Doctor Name &amp; Role (optional)</label>
-                    <input type="text" id="${prefix}AuthName" placeholder="e.g. Kavitha S. (JR)" autocomplete="name">
-                  </div>
-                ` : ""}
-                <div class="field">
-                  <label for="${prefix}AuthEmail">Email</label>
-                  <input type="email" id="${prefix}AuthEmail" value="${esc(pendingVerifyEmail)}" placeholder="doctor@hospital.org" autocomplete="email" required>
-                </div>
-                <div class="field">
-                  <label for="${prefix}AuthPassword">Password</label>
-                  <div class="password-wrap">
-                    <input type="password" id="${prefix}AuthPassword" placeholder="${isSignUp ? "Min 6 characters" : "Enter password"}" autocomplete="${isSignUp ? "new-password" : "current-password"}" minlength="6" required>
-                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('${prefix}AuthPassword', this)">Show</button>
-                  </div>
-                </div>
-                <button type="submit" class="btn" style="width:100%">${isSignUp ? "Create Doctor Account" : "Sign In &amp; Sync"}</button>
-              </form>
-            `}
+              </div>
+              <button type="submit" class="btn" style="width:100%">${isSignUp ? "Create Account &amp; Sign In" : "Sign In with Email"}</button>
+            </form>
             <div class="auth-footer-links">
               <button type="button" class="link-btn" onclick="requestPasswordReset('${prefix}AuthEmail')">Forgot password?</button>
-              <button type="button" class="link-btn" onclick="resendConfirmationEmail('${prefix}AuthEmail')">Resend confirmation</button>
               ${inline ? `<button type="button" class="link-btn" onclick="continueOfflineMode()">Local-only mode</button>` : ""}
             </div>
           </div>
@@ -3640,12 +3957,12 @@ create policy "Users can delete own settings"
     }
 
     function setAuthMode(mode) {
-      authMode = mode;
+      authMode = mode === "signup" ? "signup" : "signin";
       authFeedback = null;
       const modalEl = document.getElementById("authModal");
       if (modalEl && modalEl.style.display !== "none" && !currentUser) {
         const titleEl = document.getElementById("authModalTitle");
-        if (titleEl) titleEl.textContent = authMode === "signup" ? "Create Doctor Account" : (authMode === "verify" ? "Verify Email" : "Sign In to DS Builder v2");
+        if (titleEl) titleEl.textContent = authMode === "signup" ? "Create Doctor Account" : "Sign In to DS Builder v2";
         document.getElementById("authModalBody").innerHTML = buildAuthPanelHTML(false);
       }
       renderDashboardHeroAndAuth();
@@ -3674,7 +3991,7 @@ create policy "Users can delete own settings"
     }
 
     function openAuthModal(preferredMode = null) {
-      if (preferredMode) authMode = preferredMode;
+      if (preferredMode) authMode = preferredMode === "signup" ? "signup" : "signin";
       authFeedback = null;
       const modal = document.getElementById("authModal");
       const title = document.getElementById("authModalTitle");
@@ -3682,16 +3999,41 @@ create policy "Users can delete own settings"
 
       if (currentUser) {
         const docName = (currentUser.user_metadata && currentUser.user_metadata.full_name) || "Doctor Account";
+        const isLocalSession = Boolean(currentUser.local_email_session);
         title.textContent = "Signed-in Doctor Account";
         body.innerHTML = `
-          <div class="auth-msg ok">Signed in as <b>${esc(currentUser.email || docName)}</b></div>
+          <div class="auth-msg ${isLocalSession ? "info" : "ok"}">
+            Signed in as <b>${esc(currentUser.email || docName)}</b>
+            ${isLocalSession ? "<br><small>Local email workspace active. Connect Google below to sync across devices.</small>" : ""}
+          </div>
           <p class="hint" style="font-size:13px">
             <b>Name:</b> ${esc(docName)}<br>
-            <b>Saved summaries on account:</b> ${records.length}<br>
-            <b>Pending cloud uploads:</b> ${records.filter(r => r.dirty).length + pendingDeletes.length}
+            <b>Workspace Email:</b> ${esc(currentUser.email || "—")}<br>
+            <b>Saved summaries:</b> ${records.length}
           </p>
+          ${isLocalSession ? `
+            <div style="margin-bottom:12px">
+              <button type="button" class="btn-google-primary" onclick="signInWithGoogle()">
+                ${GOOGLE_SVG}
+                <span>Continue with Google to Sync Cloud</span>
+              </button>
+            </div>
+          ` : ""}
+          <form class="account-pw-box" onsubmit="saveAccountEmailPassword(event)">
+            <div style="font-size:12.5px;font-weight:700;color:var(--primary);margin-bottom:4px">
+              🔑 Email Password Login (${esc(currentUser.email || "")})
+            </div>
+            <p class="hint" style="margin:0 0 8px;font-size:12px">
+              Set or update a password for this email so you can sign in via Google OR Email + Password.
+            </p>
+            <div class="inline-btn-field">
+              <input type="password" id="accountLinkPassword" minlength="6" placeholder="New password (min 6 chars)" autocomplete="new-password" required>
+              <button type="submit" class="btn sm">Save Password</button>
+            </div>
+            <div id="accountPwStatus" class="hint" style="margin-top:6px;display:none"></div>
+          </form>
           <div class="modal-actions">
-            <button type="button" class="btn" onclick="syncNow(true)">☁ Sync Now</button>
+            ${isLocalSession ? "" : `<button type="button" class="btn" onclick="syncNow(true)">☁ Sync Now</button>`}
             <button type="button" class="btn out" onclick="closeAuthModal();openSupabaseSetupModal()">⚙ Cloud Setup</button>
             <button type="button" class="btn danger" onclick="signOutUser()">Sign Out</button>
           </div>
@@ -3704,27 +4046,87 @@ create policy "Users can delete own settings"
       modal.style.display = "flex";
     }
 
+    async function saveAccountEmailPassword(event) {
+      event.preventDefault();
+      if (!currentUser || !currentUser.email) return;
+      const inp = document.getElementById("accountLinkPassword");
+      const statusEl = document.getElementById("accountPwStatus");
+      const pw = inp ? inp.value : "";
+      if (!pw || pw.length < 6) return;
+
+      const email = normalizeEmail(currentUser.email);
+      const fullName = (currentUser.user_metadata && currentUser.user_metadata.full_name) || "";
+      saveLocalEmailAccount(email, pw, fullName, currentUser.id, hasCloudAuthSession());
+
+      if (hasCloudAuthSession() && navigator.onLine) {
+        suppressAuthReload = true;
+        try {
+          const { error } = await sbClient.auth.updateUser({ password: pw });
+          if (error) throw error;
+          clearPendingPasswordLink(email);
+          if (statusEl) {
+            statusEl.style.display = "block";
+            statusEl.style.color = "#1c6b3f";
+            statusEl.textContent = `Password saved for ${email} ✓ You can now sign in with Google or Email & Password.`;
+          }
+          toast("Email password linked to Google account ✓");
+        } catch (e) {
+          savePendingPasswordLink(email, pw, fullName);
+          if (statusEl) {
+            statusEl.style.display = "block";
+            statusEl.style.color = "#92400e";
+            statusEl.textContent = `Saved on this device (${e.message || "cloud pending"}).`;
+          }
+        } finally {
+          suppressAuthReload = false;
+        }
+      } else {
+        savePendingPasswordLink(email, pw, fullName);
+        if (statusEl) {
+          statusEl.style.display = "block";
+          statusEl.style.color = "#1c6b3f";
+          statusEl.textContent = `Password saved for ${email} ✓ Connect Google when ready to link to cloud.`;
+        }
+        toast("Email password saved ✓");
+      }
+      if (inp) inp.value = "";
+    }
+
     function closeAuthModal() {
       document.getElementById("authModal").style.display = "none";
     }
 
     async function submitAuthForm(event, prefix) {
       event.preventDefault();
-      if (!sbClient) {
-        authFeedback = { type: "err", text: "Supabase is not connected yet. Check Cloud Setup or your internet connection." };
-        renderAuthFeedback();
-        return;
-      }
-
       const emailEl = document.getElementById(`${prefix}AuthEmail`);
       const passEl = document.getElementById(`${prefix}AuthPassword`);
       const nameEl = document.getElementById(`${prefix}AuthName`);
-      const email = (emailEl && emailEl.value || "").trim();
+      const email = normalizeEmail(emailEl && emailEl.value);
       const password = (passEl && passEl.value) || "";
       const fullName = (nameEl && nameEl.value || "").trim();
 
       if (!email || !password) return;
       pendingVerifyEmail = email;
+      savePendingPasswordLink(email, password, fullName);
+
+      // If offline or Supabase client is unavailable, allow instant local email sign-up / login
+      if (!sbClient || !navigator.onLine) {
+        if (authMode === "signup") {
+          const acct = saveLocalEmailAccount(email, password, fullName, null, false);
+          await activateLocalEmailSession(email, fullName, acct && acct.id);
+          toast("Account created & signed in ✓");
+          return;
+        }
+        const verified = verifyLocalEmailAccount(email, password);
+        if (verified) {
+          await activateLocalEmailSession(email, verified.fullName, verified.id);
+          toast("Signed in ✓");
+        } else {
+          authFeedback = { type: "err", text: "Offline and password did not match this device's saved credentials." };
+          renderAuthFeedback();
+        }
+        return;
+      }
 
       authFeedback = { type: "info", text: authMode === "signup" ? "Creating account..." : "Signing in..." };
       renderAuthFeedback();
@@ -3740,29 +4142,113 @@ create policy "Users can delete own settings"
               data: fullName ? { full_name: fullName } : {}
             }
           });
-          if (error) throw error;
-          if (data && data.session) {
+
+          if (!error && data && data.session) {
+            saveLocalEmailAccount(email, password, fullName, data.user && data.user.id, true);
+            clearPendingPasswordLink(email);
             authFeedback = null;
             toast("Account created & signed in ✓");
             closeAuthModal();
-          } else {
-            authMode = "verify";
+            return;
+          }
+
+          if (!error) {
+            // Try direct password sign-in in case auto-confirm is active; otherwise activate without blocking on OTP
+            const tryIn = await sbClient.auth.signInWithPassword({ email, password });
+            if (!tryIn.error && tryIn.data && tryIn.data.session) {
+              saveLocalEmailAccount(email, password, fullName, tryIn.data.user && tryIn.data.user.id, true);
+              clearPendingPasswordLink(email);
+              authFeedback = null;
+              toast("Account created & signed in ✓");
+              closeAuthModal();
+              return;
+            }
+            const acct = saveLocalEmailAccount(email, password, fullName, data && data.user && data.user.id, false);
+            await activateLocalEmailSession(email, fullName, acct && acct.id);
+            toast("Account created & signed in ✓ (no OTP needed)");
+            return;
+          }
+
+          const msg = error.message || "";
+          if (/already registered|already been registered|user_already_exists/i.test(msg)) {
+            const signRes = await sbClient.auth.signInWithPassword({ email, password });
+            if (!signRes.error && signRes.data && signRes.data.session) {
+              saveLocalEmailAccount(email, password, fullName, signRes.data.user && signRes.data.user.id, true);
+              clearPendingPasswordLink(email);
+              authFeedback = null;
+              toast("Signed in to your existing account ✓");
+              closeAuthModal();
+              return;
+            }
+            if (signRes.error && /email not confirmed/i.test(signRes.error.message || "")) {
+              const acct = saveLocalEmailAccount(email, password, fullName, null, false);
+              await activateLocalEmailSession(email, fullName, acct && acct.id);
+              toast("Signed in ✓");
+              return;
+            }
+            const localAcct = verifyLocalEmailAccount(email, password);
+            if (localAcct) {
+              await activateLocalEmailSession(email, localAcct.fullName || fullName, localAcct.id);
+              toast("Signed in ✓");
+              return;
+            }
             authFeedback = {
-              type: "ok",
-              text: "Check your email to confirm your account (click the link in the email or enter the verification code below)."
+              type: "info",
+              text: `This email (${email}) is already registered. Click 'Continue with Google' above once to link this password to your Google account, or try signing in with your existing password.`
             };
             renderAuthFeedback();
+            return;
           }
-        } else {
-          const { error } = await sbClient.auth.signInWithPassword({ email, password });
-          if (error) throw error;
+
+          // Email/OTP sending failed or rate-limited: never block user — sign them in seamlessly
+          const acct = saveLocalEmailAccount(email, password, fullName, null, false);
+          await activateLocalEmailSession(email, fullName, acct && acct.id);
+          toast("Account created & signed in ✓");
+          return;
+        }
+
+        // Sign In mode
+        const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
+        if (!error && data && data.session) {
+          const metaName = (data.user && data.user.user_metadata && data.user.user_metadata.full_name) || "";
+          saveLocalEmailAccount(email, password, metaName, data.user && data.user.id, true);
+          clearPendingPasswordLink(email);
           authFeedback = null;
           toast("Signed in ✓ Syncing summaries...");
           closeAuthModal();
+          return;
         }
-      } catch (e) {
-        authFeedback = { type: "err", text: e.message || "Authentication failed" };
+
+        if (error && /email not confirmed/i.test(error.message || "")) {
+          // Email+password validated by Supabase even though OTP email was never confirmed
+          const acct = saveLocalEmailAccount(email, password, "", null, false);
+          await activateLocalEmailSession(email, acct && acct.fullName, acct && acct.id);
+          toast("Signed in ✓");
+          return;
+        }
+
+        const localAcct = verifyLocalEmailAccount(email, password);
+        if (localAcct) {
+          await activateLocalEmailSession(email, localAcct.fullName, localAcct.id);
+          toast("Signed in ✓");
+          return;
+        }
+
+        authFeedback = {
+          type: "err",
+          text: `Invalid email or password. If you signed up using Google for ${email}, click 'Continue with Google' above — your password will link automatically.`
+        };
         renderAuthFeedback();
+      } catch (e) {
+        const localAcct = verifyLocalEmailAccount(email, password);
+        if (localAcct || authMode === "signup") {
+          const acct = localAcct || saveLocalEmailAccount(email, password, fullName, null, false);
+          await activateLocalEmailSession(email, (acct && acct.fullName) || fullName, acct && acct.id);
+          toast("Signed in ✓");
+        } else {
+          authFeedback = { type: "err", text: e.message || "Authentication failed" };
+          renderAuthFeedback();
+        }
       }
     }
 
@@ -3860,17 +4346,17 @@ create policy "Users can delete own settings"
 
     async function signOutUser() {
       const dirtyCount = records.filter(r => r.dirty).length + pendingDeletes.length;
-      if (dirtyCount > 0 && navigator.onLine && sbClient) {
+      if (dirtyCount > 0 && hasCloudAuthSession() && navigator.onLine) {
         await syncNow(false);
       }
       const remainingDirty = records.filter(r => r.dirty).length;
-      if (remainingDirty > 0) {
+      if (hasCloudAuthSession() && remainingDirty > 0) {
         if (!confirm(`You have ${remainingDirty} offline unsynced edit(s) waiting for internet.\n\nSign out anyway? (Your unsynced drafts remain cached safely for this account on this device until you sign back in.)`)) {
           return;
         }
       }
 
-      if (sbClient) {
+      if (sbClient && currentUser && !currentUser.local_email_session) {
         try { await sbClient.auth.signOut(); } catch (e) { console.warn("signOut:", e); }
       }
       currentUser = null;
@@ -4174,7 +4660,7 @@ create policy "Users can delete own settings"
 
       showTab("dashboard");
 
-      if (currentUser && sbClient && navigator.onLine) {
+      if (hasCloudAuthSession() && navigator.onLine) {
         await syncNow(false);
       }
     }

@@ -14,10 +14,10 @@
   <link rel="apple-touch-icon" sizes="180x180" href="../icon-192.png">
   <link rel="icon" href="../icon-192.png">
   <title>DS Builder v2 — Dashboard &amp; Discharge Summary</title>
-  <link rel="stylesheet" href="styles.css?v=8">
+  <link rel="stylesheet" href="styles.css?v=9">
   <script src="../html2pdf.bundle.min.js"></script>
-  <script src="supabase.min.js?v=8"></script>
-  <script src="supabase-config.js?v=8"></script>
+  <script src="supabase.min.js?v=9"></script>
+  <script src="supabase-config.js?v=9"></script>
 </head>
 
 <body>
@@ -713,7 +713,8 @@ Take diet as advised.</textarea>
       <div class="modal-body">
         <p class="hint" style="margin-top:0;font-size:13px">
           Enter your Supabase <b>Project URL</b> and <b>Anon / Publishable Key</b> from
-          <i>Supabase Dashboard → Project Settings → API</i>. These are saved in your browser (or you can hardcode them permanently in <code>v2/supabase-config.js</code>).
+          <i>Supabase Dashboard → Project Settings → API</i>. These are saved in your browser (or you can hardcode them permanently in <code>v2/supabase-config.js</code>).<br>
+          <b>Google &amp; Email Sign-In:</b> Enable Google OAuth under <i>Authentication → Providers → Google</i> for primary cross-device login. Email + Password sign-up works immediately without OTP.
         </p>
         <form onsubmit="saveSupabaseSetup(event)">
           <div class="field">
@@ -795,7 +796,7 @@ Take diet as advised.</textarea>
     </div>
   </div>
 
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 </body>
 
 </html>
